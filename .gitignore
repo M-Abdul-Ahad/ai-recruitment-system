@@ -219,4 +219,6 @@ yarn-error.log*
 
 # Build output
 frontend/build/
+.env
+
 
