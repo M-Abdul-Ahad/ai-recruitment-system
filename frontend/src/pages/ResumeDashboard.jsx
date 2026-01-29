@@ -1,6 +1,79 @@
-import React from "react";
+import React, { useState, useRef } from "react";
+
+const API_URL = import.meta.env.VITE_API_URL || "http://127.0.0.1:8000";
 
 const ResumeDashboard = () => {
+  const [uploadedFile, setUploadedFile] = useState(null);
+  const [isUploading, setIsUploading] = useState(false);
+  const [uploadError, setUploadError] = useState(null);
+  const fileInputRef = useRef(null);
+
+  const handleUploadClick = () => {
+    fileInputRef.current?.click();
+  };
+
+  const handleFileSelect = async (event) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    // Validate file type by extension and MIME type
+    const validExtensions = ['.pdf', '.docx'];
+    const validMimeTypes = ['application/pdf', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'];
+    const fileName = file.name.toLowerCase();
+    const isValidExtension = validExtensions.some(ext => fileName.endsWith(ext));
+    const isValidMimeType = validMimeTypes.includes(file.type);
+
+    if (!isValidExtension && !isValidMimeType) {
+      setUploadError('Only PDF and DOCX files are allowed');
+      return;
+    }
+
+    // Validate file size (e.g., max 10MB)
+    if (file.size > 10 * 1024 * 1024) {
+      setUploadError('File size must be less than 10MB');
+      return;
+    }
+
+    setUploadError(null);
+    setIsUploading(true);
+
+    const formData = new FormData();
+    formData.append('file', file);
+
+    try {
+      const response = await fetch(
+        `${API_URL}/api/resumes/upload/`,
+        {
+          method: 'POST',
+          body: formData,
+        }
+      );
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Upload failed');
+      }
+
+      const result = await response.json();
+      setUploadedFile({
+        id: result.data.id,
+        name: file.name,
+        size: (file.size / 1024 / 1024).toFixed(2),
+        uploadDate: new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' }),
+      });
+    } catch (error) {
+      setUploadError(error.message || 'Failed to upload file');
+    } finally {
+      setIsUploading(false);
+      // Reset file input
+      event.target.value = '';
+    }
+  };
+
+  const handleRemoveFile = () => {
+    setUploadedFile(null);
+  };
+
   return (
     <div className="min-h-screen bg-[#f8fafc] dark:bg-[#0f172a] font-sans text-slate-900 dark:text-slate-100 transition-colors duration-300">
       
@@ -9,7 +82,6 @@ const ResumeDashboard = () => {
         <div className="max-w-7xl mx-auto px-6 py-3 flex items-center justify-between">
           <div className="flex items-center gap-3">
             <div className="size-10 bg-gradient-to-br from-indigo-600 to-violet-600 rounded-xl flex items-center justify-center shadow-lg shadow-indigo-500/20">
-              <span className="material-symbols-outlined text-white text-[22px]">auto_awesome</span>
             </div>
             <div>
               <h2 className="text-lg font-bold tracking-tight leading-tight">InsightCV</h2>
@@ -25,7 +97,6 @@ const ResumeDashboard = () => {
 
             <div className="flex items-center gap-4 border-l border-slate-200 dark:border-slate-800 pl-6">
               <button className="relative size-10 flex items-center justify-center rounded-full hover:bg-slate-100 dark:hover:bg-slate-800 transition">
-                <span className="material-symbols-outlined text-slate-500">notifications</span>
                 <span className="absolute top-2 right-2 size-2 bg-red-500 rounded-full border-2 border-white dark:border-[#1e293b]"></span>
               </button>
               <div className="flex items-center gap-3 cursor-pointer group">
@@ -50,7 +121,7 @@ const ResumeDashboard = () => {
           <div className="col-span-12 lg:col-span-4 space-y-8">
             <section className="bg-white dark:bg-[#1e293b] p-8 rounded-[2rem] shadow-sm border border-slate-200 dark:border-slate-800 relative overflow-hidden">
               <div className="absolute top-0 right-0 p-6">
-                <span className="material-symbols-outlined text-slate-200 dark:text-slate-800 text-6xl">analytics</span>
+                <span className="material-symbols-outlined text-slate-200 dark:text-slate-800 text-6xl"></span>
               </div>
               
               <div className="relative flex flex-col items-center">
@@ -80,34 +151,105 @@ const ResumeDashboard = () => {
 
             {/* QUICK ACTIONS */}
             <div className="grid grid-cols-2 gap-4">
-              <button className="flex flex-col items-center gap-3 p-6 bg-indigo-600 hover:bg-indigo-700 text-white rounded-[1.5rem] transition-all shadow-lg shadow-indigo-500/20">
-                <span className="material-symbols-outlined">file_upload</span>
-                <span className="text-xs font-bold">New Scan</span>
+              <button 
+                onClick={handleUploadClick}
+                disabled={isUploading}
+                className="flex flex-col items-center gap-3 p-6 bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed text-white rounded-[1.5rem] transition-all shadow-lg shadow-indigo-500/20"
+              >
+                <span className="material-symbols-outlined">{isUploading ? 'hourglass_top' : 'file_upload'}</span>
+                <span className="text-xs font-bold">{isUploading ? 'Uploading...' : 'New Scan'}</span>
               </button>
               <button className="flex flex-col items-center gap-3 p-6 bg-white dark:bg-[#1e293b] border border-slate-200 dark:border-slate-800 hover:border-indigo-500 rounded-[1.5rem] transition-all">
                 <span className="material-symbols-outlined text-indigo-500">download</span>
                 <span className="text-xs font-bold">PDF Report</span>
               </button>
             </div>
+
+            {/* Hidden file input */}
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept=".pdf,.docx"
+              onChange={handleFileSelect}
+              className="hidden"
+            />
           </div>
 
           {/* RIGHT COLUMN: ANALYSIS */}
           <div className="col-span-12 lg:col-span-8 space-y-6">
             
             {/* FILE STATUS */}
-            <div className="bg-white dark:bg-[#1e293b] p-2 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm flex items-center justify-between">
-              <div className="flex items-center gap-4 p-2">
-                <div className="size-12 bg-red-50 dark:bg-red-500/10 rounded-xl flex items-center justify-center">
-                  <span className="material-symbols-outlined text-red-500">picture_as_pdf</span>
+            <div className="bg-white dark:bg-[#1e293b] p-6 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm">
+              {uploadError && (
+                <div className="mb-4 p-4 bg-red-50 dark:bg-red-500/10 border border-red-200 dark:border-red-500/20 rounded-xl">
+                  <div className="flex items-start gap-3">
+                    <span className="material-symbols-outlined text-red-500 mt-0.5">error</span>
+                    <p className="text-sm text-red-700 dark:text-red-400">{uploadError}</p>
+                  </div>
                 </div>
-                <div>
-                  <p className="text-sm font-bold tracking-tight">resume_senior_dev_2026.pdf</p>
-                  <p className="text-[11px] text-slate-500 font-medium">Uploaded Jan 27 • 2.4 MB</p>
+              )}
+              
+              {isUploading && (
+                <div className="flex flex-col items-center justify-center py-8 gap-4">
+                  <div className="relative size-16">
+                    <svg className="size-full animate-spin" viewBox="0 0 36 36">
+                      <circle cx="18" cy="18" r="14" fill="none" strokeWidth="2" className="stroke-slate-200 dark:stroke-slate-800" />
+                      <circle cx="18" cy="18" r="14" fill="none" strokeWidth="2" strokeDasharray="22, 88" strokeLinecap="round" className="stroke-indigo-500" />
+                    </svg>
+                  </div>
+                  <div className="text-center">
+                    <p className="text-sm font-bold text-slate-700 dark:text-slate-300">Uploading resume...</p>
+                    <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">Please wait while we process your file</p>
+                  </div>
                 </div>
-              </div>
-              <button className="mr-2 px-5 py-2 text-xs font-bold bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 rounded-xl transition">
-                Replace File
-              </button>
+              )}
+
+              {!isUploading && !uploadedFile && (
+                <div 
+                  onClick={handleUploadClick}
+                  className="flex flex-col items-center justify-center py-12 gap-4 cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-900/50 rounded-xl transition-colors"
+                >
+                  <div className="size-16 bg-indigo-50 dark:bg-indigo-500/10 rounded-2xl flex items-center justify-center">
+                    <span className="material-symbols-outlined text-indigo-500 text-3xl">cloud_upload</span>
+                  </div>
+                  <div className="text-center">
+                    <p className="text-sm font-bold text-slate-700 dark:text-slate-300">No resume uploaded yet</p>
+                    <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">Click to select PDF or DOCX file</p>
+                  </div>
+                </div>
+              )}
+
+              {!isUploading && uploadedFile && (
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-4">
+                    <div className="size-12 bg-emerald-50 dark:bg-emerald-500/10 rounded-xl flex items-center justify-center">
+                      <span className="material-symbols-outlined text-emerald-500">
+                        {uploadedFile.name.endsWith('.pdf') ? '' : 'description'}
+                      </span>
+                    </div>
+                    <div>
+                      <p className="text-sm font-bold tracking-tight line-clamp-1">{uploadedFile.name}</p>
+                      <p className="text-[11px] text-slate-500 font-medium">
+                        Uploaded {uploadedFile.uploadDate} • {uploadedFile.size} MB
+                      </p>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <button 
+                      onClick={handleUploadClick}
+                      className="px-5 py-2 text-xs font-bold bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 rounded-xl transition"
+                    >
+                      Replace
+                    </button>
+                    <button 
+                      onClick={handleRemoveFile}
+                      className="px-3 py-2 text-xs font-bold text-red-500 hover:bg-red-50 dark:hover:bg-red-500/10 rounded-xl transition"
+                    >
+                      <span className="material-symbols-outlined">delete</span>
+                    </button>
+                  </div>
+                </div>
+              )}
             </div>
 
             {/* ANALYSIS GRID */}
