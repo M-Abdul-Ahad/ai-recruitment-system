@@ -1,11 +1,14 @@
 import React, { useState, useRef } from "react";
 
+
 const API_URL = import.meta.env.VITE_API_URL || "http://127.0.0.1:8000";
 
 const ResumeDashboard = () => {
   const [uploadedFile, setUploadedFile] = useState(null);
   const [isUploading, setIsUploading] = useState(false);
   const [uploadError, setUploadError] = useState(null);
+  const [resumeData, setResumeData] = useState(null);
+
   const fileInputRef = useRef(null);
 
   const handleUploadClick = () => {
@@ -41,34 +44,42 @@ const ResumeDashboard = () => {
     formData.append('file', file);
 
     try {
-      const response = await fetch(
-        `${API_URL}/api/resumes/upload/`,
-        {
-          method: 'POST',
-          body: formData,
-        }
-      );
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || 'Upload failed');
-      }
-
-      const result = await response.json();
-      setUploadedFile({
-        id: result.data.id,
-        name: file.name,
-        size: (file.size / 1024 / 1024).toFixed(2),
-        uploadDate: new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' }),
-      });
-    } catch (error) {
-      setUploadError(error.message || 'Failed to upload file');
-    } finally {
-      setIsUploading(false);
-      // Reset file input
-      event.target.value = '';
+  const response = await fetch(
+    `${API_URL}/api/resumes/upload/`,
+    {
+      method: 'POST',
+      body: formData,
     }
-  };
+  );
+
+  if (!response.ok) {
+    const errorData = await response.json();
+    throw new Error(errorData.error || 'Upload failed');
+  }
+
+  const result = await response.json();
+
+  setUploadedFile({
+    id: result.data.id,
+    name: file.name,
+    size: (file.size / 1024 / 1024).toFixed(2),
+    uploadDate: new Date().toLocaleDateString('en-US', {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric',
+    }),
+  });
+
+  // ⭐ STORE PARSED RESUME DATA
+  setResumeData(result.data);
+
+} catch (error) {
+  setUploadError(error.message || 'Failed to upload file');
+} finally {
+  setIsUploading(false);
+  event.target.value = '';
+}
+}
 
   const handleRemoveFile = () => {
     setUploadedFile(null);
@@ -262,24 +273,21 @@ const ResumeDashboard = () => {
                   Key Skill Gaps
                 </h4>
                 <div className="space-y-3">
-                  {[
-                    { name: "System Design", level: "70%" },
-                    { name: "Cloud Arch", level: "45%" },
-                    { name: "Kubernetes", level: "20%" }
-                  ].map((skill) => (
-                    <div key={skill.name} className="group">
-                      <div className="flex justify-between text-xs font-bold mb-1.5">
-                        <span>{skill.name}</span>
-                        <span className="text-indigo-500">{skill.level}</span>
+                  {resumeData?.skills?.length ? (
+                    resumeData.skills.map((skill) => (
+                      <div key={skill.id} className="group">
+                        <div className="flex justify-between text-xs font-bold mb-1.5">
+                          <span className="capitalize">{skill.name}</span>
+                          <span className="text-indigo-500">✓</span>
+                        </div>
+                        <div className="h-1.5 w-full bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
+                          <div className="h-full bg-indigo-500 rounded-full w-full"></div>
+                        </div>
                       </div>
-                      <div className="h-1.5 w-full bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
-                        <div 
-                          className="h-full bg-indigo-500 rounded-full transition-all duration-1000" 
-                          style={{ width: skill.level }}
-                        ></div>
-                      </div>
-                    </div>
-                  ))}
+                    ))
+                  ) : (
+                    <p className="text-xs text-slate-400">No skills detected</p>
+                  )}
                 </div>
               </div>
 
@@ -317,16 +325,23 @@ const ResumeDashboard = () => {
                 </div>
               </div>
               <div className="p-6 h-64 overflow-y-auto font-mono text-[11px] leading-relaxed text-slate-400">
-                <span className="text-emerald-400">const</span> candidate = {"{"} <br />
-                &nbsp;&nbsp;name: <span className="text-amber-300">"Alex Rivera"</span>,<br />
-                &nbsp;&nbsp;role: <span className="text-amber-300">"Senior Full-Stack Developer"</span>,<br />
-                &nbsp;&nbsp;experience: <span className="text-purple-400">8</span>,<br />
-                &nbsp;&nbsp;top_skills: [<span className="text-amber-300">"React", "Node.js", "PostgreSQL"</span>],<br />
-                &nbsp;&nbsp;score: <span className="text-purple-400">0.85</span><br />
-                {"}"};<br /><br />
-                <span className="text-slate-600">// Extracting work history...</span><br />
-                - Lead Architect at TechFlow (2021-Present)<br />
-                - Senior Developer at CloudScale (2018-2021)
+                {resumeData ? (
+                  <>
+                    <span className="text-emerald-400">const</span> candidate = {"{"} <br />
+                    &nbsp;&nbsp;name: <span className="text-amber-300">"{resumeData.name || "Unknown"}"</span>,<br />
+                    &nbsp;&nbsp;role: <span className="text-amber-300">"{resumeData.role || "Unknown"}"</span>,<br />
+                    &nbsp;&nbsp;experience: <span className="text-purple-400">{resumeData.experience?.length || 0}</span>,<br />
+                    &nbsp;&nbsp;top_skills: [<span className="text-amber-300">"{resumeData.skills?.map(s => s.name).join('", "') || ""}"</span>],<br />
+                    &nbsp;&nbsp;score: <span className="text-purple-400">0.85</span><br />
+                    {"}"};<br /><br />
+                    <span className="text-slate-600">// Extracting work history...</span><br />
+                    {resumeData.experience?.map((exp, idx) => (
+                      <span key={idx}>- {exp.job_title || exp.role} at {exp.company} ({exp.duration || exp.years})<br /></span>
+                    )) || "No experience data"}
+                  </>
+                ) : (
+                  <span className="text-slate-600">// No resume data available</span>
+                )}
               </div>
             </div>
 
