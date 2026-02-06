@@ -29,10 +29,12 @@ import re
 
 def clean_resume_text(text):
     text = text.lower()
-    text = re.sub(r'\n+', '\n', text)
-    text = re.sub(r'[^\w\s\n]', '', text)
-    text = re.sub(r'\s+', ' ', text)
+    text = re.sub(r'\n+', '\n', text)              # keep structure
+    text = re.sub(r'[^\w\s\n]', '', text)          # keep \n
+    text = re.sub(r'[ \t]+', ' ', text)            # only spaces
     return text.strip()
+
+
 
 def extract_skills(cleaned_text):
     found_skills = []
@@ -48,33 +50,35 @@ def extract_education_section(cleaned_text):
     education_lines = []
     capture = False
 
+    start_keywords = [
+        "education", "academic", "academics",
+        "qualification", "qualifications",
+        "educational background", "academic background"
+    ]
+
+    stop_keywords = [
+        "experience", "work", "skills",
+        "projects", "certifications", "internships"
+    ]
+
     for line in lines:
         line = line.strip()
 
         if not line:
             continue
 
-        # Start education section
-        if any(keyword in line for keyword in [
-            "education",
-            "academic"
-        ]):
+        if any(k in line for k in start_keywords):
             capture = True
             continue
 
-        # Stop when another section starts
-        if capture and any(keyword in line for keyword in [
-            "experience",
-            "skills",
-            "projects",
-            "certifications"
-        ]):
+        if capture and any(k in line for k in stop_keywords):
             break
 
         if capture:
             education_lines.append(line)
 
     return education_lines
+
 
 def extract_year(text):
     match = re.search(r'(19|20)\d{2}', text)
@@ -122,27 +126,28 @@ def extract_experience_section(cleaned_text):
     experience_lines = []
     capture = False
 
+    start_keywords = [
+        "experience", "work experience",
+        "employment", "professional experience",
+        "internship", "industrial training"
+    ]
+
+    stop_keywords = [
+        "education", "skills",
+        "projects", "certifications", "awards"
+    ]
+
     for line in lines:
         line = line.strip()
+
         if not line:
             continue
 
-        # Start experience section
-        if any(keyword in line for keyword in [
-            "experience",
-            "work experience",
-            "employment"
-        ]):
+        if any(k in line for k in start_keywords):
             capture = True
             continue
 
-        # Stop when next section starts
-        if capture and any(keyword in line for keyword in [
-            "education",
-            "skills",
-            "projects",
-            "certifications"
-        ]):
+        if capture and any(k in line for k in stop_keywords):
             break
 
         if capture:
@@ -150,13 +155,13 @@ def extract_experience_section(cleaned_text):
 
     return experience_lines
 
+
 def split_experience_blocks(experience_lines):
     blocks = []
     current_block = []
 
     for line in experience_lines:
-        # Detect date range
-        if re.search(r'(20\d{2})\s*[-–]\s*(20\d{2}|present)', line):
+        if re.search(DATE_PATTERN, line):
             if current_block:
                 blocks.append(current_block)
                 current_block = []
@@ -166,6 +171,7 @@ def split_experience_blocks(experience_lines):
         blocks.append(current_block)
 
     return blocks
+
 
 def parse_experience(blocks):
     experience_data = []

@@ -274,10 +274,10 @@ const ResumeDashboard = () => {
                 </h4>
                 <div className="space-y-3">
                   {resumeData?.skills?.length ? (
-                    resumeData.skills.map((skill) => (
-                      <div key={skill.id} className="group">
+                    resumeData.skills.map((skill, index) => (
+                      <div key={index} className="group">
                         <div className="flex justify-between text-xs font-bold mb-1.5">
-                          <span className="capitalize">{skill.name}</span>
+                          <span className="capitalize">{skill.name || skill}</span>
                           <span className="text-indigo-500">✓</span>
                         </div>
                         <div className="h-1.5 w-full bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
@@ -324,26 +324,36 @@ const ResumeDashboard = () => {
                   <div className="size-2.5 rounded-full bg-emerald-500/20"></div>
                 </div>
               </div>
-              <div className="p-6 h-64 overflow-y-auto font-mono text-[11px] leading-relaxed text-slate-400">
+              <div className="p-6 h-64 overflow-y-auto font-mono text-[11px] leading-relaxed text-slate-400" style={{
+                scrollbarWidth: 'thin',
+                scrollbarColor: '#000 #0f172a'
+              }}>
                 {resumeData ? (
-                  <>
-                    <span className="text-emerald-400">const</span> candidate = {"{"} <br />
-                    &nbsp;&nbsp;name: <span className="text-amber-300">"{resumeData.name || "Unknown"}"</span>,<br />
-                    &nbsp;&nbsp;role: <span className="text-amber-300">"{resumeData.role || "Unknown"}"</span>,<br />
-                    &nbsp;&nbsp;experience: <span className="text-purple-400">{resumeData.experience?.length || 0}</span>,<br />
-                    &nbsp;&nbsp;top_skills: [<span className="text-amber-300">"{resumeData.skills?.map(s => s.name).join('", "') || ""}"</span>],<br />
-                    &nbsp;&nbsp;score: <span className="text-purple-400">0.85</span><br />
-                    {"}"};<br /><br />
-                    <span className="text-slate-600">// Extracting work history...</span><br />
-                    {resumeData.experience?.map((exp, idx) => (
-                      <span key={idx}>- {exp.job_title || exp.role} at {exp.company} ({exp.duration || exp.years})<br /></span>
-                    )) || "No experience data"}
-                  </>
+                  <pre className="whitespace-pre-wrap text-[11px] text-slate-300">{JSON.stringify(resumeData, null, 2)}</pre>
                 ) : (
                   <span className="text-slate-600">// No resume data available</span>
                 )}
               </div>
             </div>
+
+            <style>{`
+              .black-scrollbar::-webkit-scrollbar {
+                width: 8px;
+              }
+
+              .black-scrollbar::-webkit-scrollbar-track {
+                background: #0f172a;
+              }
+
+              .black-scrollbar::-webkit-scrollbar-thumb {
+                background-color: #000;
+                border-radius: 10px;
+              }
+
+              .black-scrollbar::-webkit-scrollbar-thumb:hover {
+                background-color: #111;
+              }
+            `}</style>
 
           </div>
         </div>
