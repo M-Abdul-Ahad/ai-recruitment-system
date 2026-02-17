@@ -11,8 +11,17 @@ class Resume(models.Model):
     )
     file = models.FileField(upload_to='resumes/')
     extracted_text = models.TextField(null=True, blank=True)
-    cleaned_text = models.TextField(null=True, blank=True)  # ✅ added for NLP
+    cleaned_text = models.TextField(null=True, blank=True)
     uploaded_at = models.DateTimeField(auto_now_add=True)
+
+    # 🔥 AI Fields
+    ai_score = models.IntegerField(null=True, blank=True)
+    ai_feedback = models.TextField(null=True, blank=True)
+    ai_strengths = models.JSONField(null=True, blank=True)
+    ai_weaknesses = models.JSONField(null=True, blank=True)
+    ai_suggestions = models.JSONField(null=True, blank=True)
+    ai_category_scores = models.JSONField(null=True, blank=True)
+    ai_recommended_certifications = models.JSONField(null=True, blank=True)
 
     def __str__(self):
         return f"{self.user.username if self.user else 'Anonymous'} - Resume"

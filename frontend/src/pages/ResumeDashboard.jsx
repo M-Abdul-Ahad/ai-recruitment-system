@@ -8,6 +8,9 @@ const ResumeDashboard = () => {
   const [isUploading, setIsUploading] = useState(false);
   const [uploadError, setUploadError] = useState(null);
   const [resumeData, setResumeData] = useState(null);
+  const [aiLoading, setAiLoading] = useState(false);
+  const [aiFeedback, setAiFeedback] = useState(null);
+  const [aiError, setAiError] = useState(null);
 
   const fileInputRef = useRef(null);
 
@@ -73,6 +76,9 @@ const ResumeDashboard = () => {
   // ⭐ STORE PARSED RESUME DATA
   setResumeData(result.data);
 
+  // 🔥 AUTO-GENERATE AI FEEDBACK AFTER UPLOAD
+  await generateAIFeedback(result.data.id);
+
 } catch (error) {
   setUploadError(error.message || 'Failed to upload file');
 } finally {
@@ -83,6 +89,45 @@ const ResumeDashboard = () => {
 
   const handleRemoveFile = () => {
     setUploadedFile(null);
+    setAiFeedback(null);
+    setAiError(null);
+  };
+
+  const generateAIFeedback = async (resumeId = null) => {
+    const aiResumeId = resumeId || uploadedFile?.id;
+    
+    if (!aiResumeId) {
+      setAiError('Please upload a resume first');
+      return;
+    }
+
+    setAiLoading(true);
+    setAiError(null);
+
+    try {
+      const response = await fetch(
+        `${API_URL}/api/resumes/ai-feedback/${aiResumeId}/`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+            // ❌ NO AUTH HEADER
+          }
+        }
+      );
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to generate AI feedback');
+      }
+
+      const result = await response.json();
+      setAiFeedback(result.data);
+    } catch (error) {
+      setAiError(error.message || 'Failed to generate AI feedback');
+    } finally {
+      setAiLoading(false);
+    }
   };
 
   return (
@@ -95,7 +140,7 @@ const ResumeDashboard = () => {
             <div className="size-10 bg-gradient-to-br from-indigo-600 to-violet-600 rounded-xl flex items-center justify-center shadow-lg shadow-indigo-500/20">
             </div>
             <div>
-              <h2 className="text-lg font-bold tracking-tight leading-tight">InsightCV</h2>
+              <h2 className="text-lg font-bold tracking-tight leading-tight">Resume Feedback</h2>
               <p className="text-[10px] text-slate-500 font-medium uppercase tracking-widest">AI Analytics</p>
             </div>
           </div>
@@ -138,24 +183,69 @@ const ResumeDashboard = () => {
               <div className="relative flex flex-col items-center">
                 <div className="relative size-48">
                   {/* Progress Circle */}
-                  <svg className="size-full -rotate-90" viewBox="0 0 36 36">
-                    <circle cx="18" cy="18" r="16" fill="none" strokeWidth="2.5" className="stroke-slate-100 dark:stroke-slate-800" />
-                    <circle cx="18" cy="18" r="16" fill="none" strokeWidth="2.5" strokeDasharray="85, 100" strokeLinecap="round" className="stroke-emerald-500 drop-shadow-[0_0_8px_rgba(16,185,129,0.4)]" />
+                  <svg className="size-full rotate-90" viewBox="0 0 36 36">
+                    <circle
+                      cx="18"
+                      cy="18"
+                      r="16"
+                      fill="none"
+                      strokeWidth="2.5"
+                      className="stroke-slate-100 dark:stroke-slate-800"
+                    />
+                    <circle
+                      cx="18"
+                      cy="18"
+                      r="16"
+                      fill="none"
+                      strokeWidth="2.5"
+                      strokeDasharray={aiFeedback ? `${Math.min(aiFeedback.score || 0, 100)}, 100` : "0, 100"}
+                      strokeLinecap="round"
+                      className={aiFeedback
+                        ? "stroke-indigo-500 drop-shadow-[0_0_8px_rgba(99,102,241,0.4)]"
+                        : "stroke-slate-300 drop-shadow-[0_0_8px_rgba(0,0,0,0.1)]"}
+                    />
                   </svg>
-                  <div className="absolute inset-0 flex flex-col items-center justify-center rotate-90">
-                    <span className="text-5xl font-black tracking-tighter">85<span className="text-xl text-slate-400">%</span></span>
-                    <span className="text-[10px] text-slate-400 font-black uppercase tracking-[0.2em]">ATS Score</span>
+                  <div className="absolute inset-0 flex flex-col items-center justify-center">
+                    <span className="text-5xl font-black tracking-tighter">
+                      {aiFeedback ? aiFeedback.score || 0 : '--'}
+                      <span className="text-xl text-slate-400">
+                        {aiFeedback ? '%' : ''}
+                      </span>
+                    </span>
+                    <span className="text-[10px] text-slate-400 font-black uppercase tracking-[0.2em]">
+                      AI Score
+                    </span>
                   </div>
                 </div>
 
                 <div className="text-center mt-8">
-                  <div className="inline-block px-4 py-1 rounded-full bg-emerald-50 dark:bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 text-xs font-bold mb-3">
-                    Highly Competitive
-                  </div>
-                  <h3 className="text-2xl font-bold tracking-tight">Excellent Match</h3>
-                  <p className="text-sm text-slate-500 dark:text-slate-400 mt-2 leading-relaxed">
-                    Your profile ranks in the <span className="text-indigo-500 font-bold font-mono">top 5%</span> for Senior Full-Stack positions.
-                  </p>
+                  {aiFeedback ? (
+                    <>
+                      <div className={`inline-block px-4 py-1 rounded-full text-xs font-bold mb-3 ${
+                        aiFeedback.score >= 80 ? 'bg-emerald-50 dark:bg-emerald-500/10 text-emerald-600 dark:text-emerald-400' :
+                        aiFeedback.score >= 60 ? 'bg-blue-50 dark:bg-blue-500/10 text-blue-600 dark:text-blue-400' :
+                        'bg-amber-50 dark:bg-amber-500/10 text-amber-600 dark:text-amber-400'
+                      }`}>
+                        {aiFeedback.score >= 80 ? 'Excellent' : aiFeedback.score >= 60 ? 'Good' : 'Needs Work'}
+                      </div>
+                      <h3 className="text-2xl font-bold tracking-tight">Resume Analysis Complete</h3>
+                      <p className="text-sm text-slate-500 dark:text-slate-400 mt-2 leading-relaxed">
+                        {aiFeedback.score >= 80 ? 'Your resume is well-optimized and highly competitive.' : 
+                         aiFeedback.score >= 60 ? 'Your resume has good structure. Review suggestions to improve further.' :
+                         'Follow the AI suggestions below to strengthen your resume.'}
+                      </p>
+                    </>
+                  ) : (
+                    <>
+                      <div className="inline-block px-4 py-1 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 text-xs font-bold mb-3">
+                        Ready for Analysis
+                      </div>
+                      <h3 className="text-2xl font-bold tracking-tight">Upload Your Resume</h3>
+                      <p className="text-sm text-slate-500 dark:text-slate-400 mt-2 leading-relaxed">
+                        Upload and get instant AI-powered feedback on your resume quality and suggestions for improvement.
+                      </p>
+                    </>
+                  )}
                 </div>
               </div>
             </section>
@@ -170,9 +260,13 @@ const ResumeDashboard = () => {
                 <span className="material-symbols-outlined">{isUploading ? 'hourglass_top' : 'file_upload'}</span>
                 <span className="text-xs font-bold">{isUploading ? 'Uploading...' : 'New Scan'}</span>
               </button>
-              <button className="flex flex-col items-center gap-3 p-6 bg-white dark:bg-[#1e293b] border border-slate-200 dark:border-slate-800 hover:border-indigo-500 rounded-[1.5rem] transition-all">
-                <span className="material-symbols-outlined text-indigo-500">download</span>
-                <span className="text-xs font-bold">PDF Report</span>
+              <button 
+                onClick={generateAIFeedback}
+                disabled={aiLoading || !uploadedFile}
+                className="flex flex-col items-center gap-3 p-6 bg-white dark:bg-[#1e293b] border border-slate-200 dark:border-slate-800 hover:border-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed rounded-[1.5rem] transition-all"
+              >
+                <span className="material-symbols-outlined text-indigo-500">{aiLoading ? 'hourglass_top' : 'sparkles'}</span>
+                <span className="text-xs font-bold">{aiLoading ? 'Analyzing...' : 'AI Analysis'}</span>
               </button>
             </div>
 
@@ -263,6 +357,16 @@ const ResumeDashboard = () => {
               )}
             </div>
 
+            {/* AI FEEDBACK ERROR */}
+            {aiError && (
+              <div className="p-4 bg-red-50 dark:bg-red-500/10 border border-red-200 dark:border-red-500/20 rounded-xl">
+                <div className="flex items-start gap-3">
+                  <span className="material-symbols-outlined text-red-500 mt-0.5">error</span>
+                  <p className="text-sm text-red-700 dark:text-red-400">{aiError}</p>
+                </div>
+              </div>
+            )}
+
             {/* ANALYSIS GRID */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               
@@ -297,41 +401,202 @@ const ResumeDashboard = () => {
                   <span className="size-2 bg-amber-500 rounded-full"></span>
                   AI Suggestions
                 </h4>
-                <ul className="space-y-4">
-                  <li className="flex gap-3">
-                    <span className="material-symbols-outlined text-amber-500 text-lg">lightbulb</span>
-                    <p className="text-xs leading-relaxed text-slate-600 dark:text-slate-400">
-                      Use <strong>action verbs</strong> like "Architected" instead of "Worked on".
-                    </p>
-                  </li>
-                  <li className="flex gap-3">
-                    <span className="material-symbols-outlined text-blue-500 text-lg">info</span>
-                    <p className="text-xs leading-relaxed text-slate-600 dark:text-slate-400">
-                      Add a dedicated "Certifications" section for Cloud credentials.
-                    </p>
-                  </li>
-                </ul>
+                {aiFeedback?.suggestions ? (
+                  <div className="space-y-3">
+                    {Array.isArray(aiFeedback.suggestions) ? (
+                      aiFeedback.suggestions.map((suggestion, index) => (
+                        <div key={index} className="flex gap-4 p-3 bg-amber-50 dark:bg-amber-500/5 rounded-lg border border-amber-100 dark:border-amber-500/20 hover:border-amber-200 dark:hover:border-amber-500/40 transition">
+                          <div className="flex-shrink-0">
+                            <span className="flex items-center justify-center h-6 w-6 rounded-full bg-amber-100 dark:bg-amber-500/20 text-amber-600 dark:text-amber-400 text-sm font-bold">
+                              {index + 1}
+                            </span>
+                          </div>
+                          <p className="text-sm leading-relaxed text-slate-700 dark:text-slate-300 pt-0.5">
+                            {suggestion}
+                          </p>
+                        </div>
+                      ))
+                    ) : (
+                      <div className="flex gap-4 p-3 bg-amber-50 dark:bg-amber-500/5 rounded-lg border border-amber-100 dark:border-amber-500/20">
+                        <div className="flex-shrink-0">
+                          <span className="flex items-center justify-center h-6 w-6 rounded-full bg-amber-100 dark:bg-amber-500/20 text-amber-600 dark:text-amber-400 text-sm font-bold">
+                            1
+                          </span>
+                        </div>
+                        <p className="text-sm leading-relaxed text-slate-700 dark:text-slate-300 pt-0.5">
+                          {aiFeedback.suggestions}
+                        </p>
+                      </div>
+                    )}
+                  </div>
+                ) : (
+                  <div className="space-y-3">
+                    <div className="flex gap-4 p-3 bg-amber-50 dark:bg-amber-500/5 rounded-lg border border-amber-100 dark:border-amber-500/20">
+                      <div className="flex-shrink-0">
+                        <span className="flex items-center justify-center h-6 w-6 rounded-full bg-amber-100 dark:bg-amber-500/20 text-amber-600 dark:text-amber-400 text-sm font-bold">
+                          1
+                        </span>
+                      </div>
+                      <p className="text-sm leading-relaxed text-slate-700 dark:text-slate-300 pt-0.5">
+                        Use <strong>action verbs</strong> like "Architected" instead of "Worked on".
+                      </p>
+                    </div>
+                    <div className="flex gap-4 p-3 bg-amber-50 dark:bg-amber-500/5 rounded-lg border border-amber-100 dark:border-amber-500/20">
+                      <div className="flex-shrink-0">
+                        <span className="flex items-center justify-center h-6 w-6 rounded-full bg-amber-100 dark:bg-amber-500/20 text-amber-600 dark:text-amber-400 text-sm font-bold">
+                          2
+                        </span>
+                      </div>
+                      <p className="text-sm leading-relaxed text-slate-700 dark:text-slate-300 pt-0.5">
+                        Add a dedicated "Certifications" section for Cloud credentials.
+                      </p>
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
 
+            {/* AI FEEDBACK RESULTS */}
+            {aiFeedback && (
+              <div className="space-y-6">
+
+                {/* STRENGTHS */}
+                {aiFeedback.strengths && (
+                  <div className="bg-emerald-50 dark:bg-emerald-500/10 border border-emerald-200 dark:border-emerald-500/30 p-6 rounded-2xl">
+                    <h4 className="flex items-center gap-2 text-sm font-black uppercase tracking-widest text-emerald-700 dark:text-emerald-400 mb-4">
+                      <span className="material-symbols-outlined">check_circle</span>
+                      Strengths
+                    </h4>
+                    {Array.isArray(aiFeedback.strengths) ? (
+                      <div className="space-y-3">
+                        {aiFeedback.strengths.map((strength, index) => (
+                          <div key={index} className="flex gap-4 p-4 bg-white dark:bg-slate-800/50 rounded-lg border border-emerald-100 dark:border-emerald-500/20 hover:border-emerald-300 dark:hover:border-emerald-500/40 transition">
+                            <div className="flex-shrink-0">
+                              <span className="flex items-center justify-center h-7 w-7 rounded-full bg-emerald-100 dark:bg-emerald-500/20 text-emerald-600 dark:text-emerald-400">
+                                <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                                  <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                                </svg>
+                              </span>
+                            </div>
+                            <p className="text-sm leading-relaxed text-slate-700 dark:text-slate-300 pt-0.5">
+                              {strength}
+                            </p>
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <div className="flex gap-4 p-4 bg-white dark:bg-slate-800/50 rounded-lg border border-emerald-100 dark:border-emerald-500/20">
+                        <div className="flex-shrink-0">
+                          <span className="flex items-center justify-center h-7 w-7 rounded-full bg-emerald-100 dark:bg-emerald-500/20 text-emerald-600 dark:text-emerald-400">
+                            <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                              <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                            </svg>
+                          </span>
+                        </div>
+                        <p className="text-sm leading-relaxed text-slate-700 dark:text-slate-300 pt-0.5">
+                          {aiFeedback.strengths}
+                        </p>
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {/* WEAKNESSES */}
+                {aiFeedback.weaknesses && (
+                  <div className="bg-amber-50 dark:bg-amber-500/10 border border-amber-200 dark:border-amber-500/30 p-6 rounded-2xl">
+                    <h4 className="flex items-center gap-2 text-sm font-black uppercase tracking-widest text-amber-700 dark:text-amber-400 mb-4">
+                      <span className="material-symbols-outlined">warning</span>
+                      Areas to Improve
+                    </h4>
+                    {Array.isArray(aiFeedback.weaknesses) ? (
+                      <div className="space-y-3">
+                        {aiFeedback.weaknesses.map((weakness, index) => (
+                          <div key={index} className="flex gap-4 p-4 bg-white dark:bg-slate-800/50 rounded-lg border border-amber-100 dark:border-amber-500/20 hover:border-amber-300 dark:hover:border-amber-500/40 transition">
+                            <div className="flex-shrink-0">
+                              <span className="flex items-center justify-center h-7 w-7 rounded-full bg-amber-100 dark:bg-amber-500/20 text-amber-600 dark:text-amber-400 text-sm font-bold">
+                                {index + 1}
+                              </span>
+                            </div>
+                            <p className="text-sm leading-relaxed text-slate-700 dark:text-slate-300 pt-0.5">
+                              {weakness}
+                            </p>
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <div className="flex gap-4 p-4 bg-white dark:bg-slate-800/50 rounded-lg border border-amber-100 dark:border-amber-500/20">
+                        <div className="flex-shrink-0">
+                          <span className="flex items-center justify-center h-7 w-7 rounded-full bg-amber-100 dark:bg-amber-500/20 text-amber-600 dark:text-amber-400 text-sm font-bold">
+                            1
+                          </span>
+                        </div>
+                        <p className="text-sm leading-relaxed text-slate-700 dark:text-slate-300 pt-0.5">
+                          {aiFeedback.weaknesses}
+                        </p>
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {/* RECOMMENDED CERTIFICATIONS */}
+                {aiFeedback.recommended_certifications && (
+                  <div className="bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-blue-500/10 dark:to-indigo-500/10 border border-blue-200 dark:border-blue-500/30 p-6 rounded-2xl">
+                    <h4 className="flex items-center gap-2 text-sm font-black uppercase tracking-widest text-blue-700 dark:text-blue-400 mb-4">
+                      <span className="material-symbols-outlined"></span>
+                      Recommended Certifications
+                    </h4>
+                    {Array.isArray(aiFeedback.recommended_certifications) ? (
+                      <div className="space-y-3">
+                        {aiFeedback.recommended_certifications.map((cert, index) => (
+                          <div key={index} className="flex gap-4 p-4 bg-white dark:bg-slate-800/50 rounded-lg border border-blue-100 dark:border-blue-500/20 hover:border-blue-300 dark:hover:border-blue-500/40 transition">
+                            <div className="flex-shrink-0">
+                              <span className="flex items-center justify-center h-7 w-7 rounded-full bg-blue-100 dark:bg-blue-500/20 text-blue-600 dark:text-blue-400">
+                                <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                                  <path d="M10.894 2.553a1 1 0 00-1.788 0l-7 14a1 1 0 001.169 1.409l5.951-1.429 5.951 1.429a1 1 0 001.169-1.409l-7-14z" />
+                                </svg>
+                              </span>
+                            </div>
+                            <div className="flex-1">
+                              <h5 className="text-sm font-bold text-slate-800 dark:text-slate-200">{cert.name}</h5>
+                              <p className="text-xs text-slate-600 dark:text-slate-400 mt-1">{cert.reason}</p>
+                              <div className="flex gap-3 mt-2 text-[11px] text-slate-500 dark:text-slate-400">
+                                {cert.platform && <span className="bg-slate-100 dark:bg-slate-700 px-2 py-1 rounded">{cert.platform}</span>}
+                                {cert.estimated_duration && <span className="bg-slate-100 dark:bg-slate-700 px-2 py-1 rounded">{cert.estimated_duration}</span>}
+                                {cert.difficulty && <span className="bg-slate-100 dark:bg-slate-700 px-2 py-1 rounded">{cert.difficulty}</span>}
+                              </div>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    ) : null}
+                  </div>
+                )}
+              </div>
+            )}
+
             {/* RAW DATA PREVIEW */}
-            <div className="bg-[#0f172a] rounded-[2rem] overflow-hidden border border-slate-800">
-              <div className="px-6 py-4 border-b border-slate-800 flex justify-between items-center bg-slate-900/50">
-                <span className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-500">Parsed Entity Output</span>
+            <div className="bg-gradient-to-br from-slate-900 via-slate-900 to-slate-800 rounded-[2rem] overflow-hidden border border-slate-700 shadow-xl">
+              <div className="px-6 py-4 border-b border-slate-700 flex justify-between items-center bg-slate-950/50 backdrop-blur">
+                <span className="text-sm font-black uppercase tracking-[0.2em] text-slate-300">{aiFeedback ? 'AI Feedback Output' : 'Parsed Entity Output'}</span>
                 <div className="flex gap-1.5">
-                  <div className="size-2.5 rounded-full bg-red-500/20"></div>
-                  <div className="size-2.5 rounded-full bg-amber-500/20"></div>
-                  <div className="size-2.5 rounded-full bg-emerald-500/20"></div>
+                  <div className="size-2.5 rounded-full bg-red-500/40 animate-pulse"></div>
+                  <div className="size-2.5 rounded-full bg-amber-500/40 animate-pulse" style={{animationDelay: "0.1s"}}></div>
+                  <div className="size-2.5 rounded-full bg-emerald-500/40 animate-pulse" style={{animationDelay: "0.2s"}}></div>
                 </div>
               </div>
-              <div className="p-6 h-64 overflow-y-auto font-mono text-[11px] leading-relaxed text-slate-400" style={{
+              <div className="p-6 h-72 overflow-y-auto font-mono text-sm leading-relaxed text-slate-300" style={{
                 scrollbarWidth: 'thin',
-                scrollbarColor: '#000 #0f172a'
+                scrollbarColor: '#475569 #1e293b'
               }}>
-                {resumeData ? (
-                  <pre className="whitespace-pre-wrap text-[11px] text-slate-300">{JSON.stringify(resumeData, null, 2)}</pre>
+                {aiFeedback || resumeData ? (
+                  <pre className="whitespace-pre-wrap text-sm font-light tracking-wide">
+                    {JSON.stringify(aiFeedback || resumeData, null, 2)}
+                  </pre>
                 ) : (
-                  <span className="text-slate-600">// No resume data available</span>
+                  <div className="text-slate-500 italic flex items-center gap-2">
+                    <span className="material-symbols-outlined">info</span>
+                    No resume data available yet
+                  </div>
                 )}
               </div>
             </div>
