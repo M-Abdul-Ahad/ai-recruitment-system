@@ -2,7 +2,13 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
 from rest_framework.permissions import IsAuthenticated
-from .serializers import SignupSerializer
+from .serializers import SignupSerializer, CustomTokenObtainPairSerializer
+from rest_framework_simplejwt.views import TokenObtainPairView
+
+
+class CustomTokenObtainPairView(TokenObtainPairView):
+    """Use the custom serializer that adds user info to the response."""
+    serializer_class = CustomTokenObtainPairSerializer
 
 class SignupView(APIView):
     def post(self, request):
