@@ -12,12 +12,13 @@ class UserAdmin(DjangoUserAdmin):
         "email",
         "username",
         "role",
+        "company",
         "is_staff",
         "is_active",
     )
     fieldsets = DjangoUserAdmin.fieldsets + (
-        ("RBAC", {"fields": ("role",)}),
+        ("RBAC", {"fields": ("role", "company")}),
     )
     add_fieldsets = DjangoUserAdmin.add_fieldsets + (
-        ("RBAC", {"fields": ("role",)}),
+        ("RBAC", {"fields": ("role", "company")}),
     )
