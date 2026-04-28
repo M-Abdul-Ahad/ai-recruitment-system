@@ -28,6 +28,7 @@ urlpatterns = [
     path('api/resumes/', include('resumes.urls')),
     path('api/auth/', include('users.urls')),
     path('api/companies/', include('companies.urls')),
+    path('api/jobs/', include('jobs.urls')),
 ]
 if settings.DEBUG:
     urlpatterns += static(

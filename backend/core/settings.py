@@ -42,6 +42,7 @@ INSTALLED_APPS = [
     'users',
     'companies',
     'resumes',
+    'jobs',
     "corsheaders",
 ]
 
