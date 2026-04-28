@@ -1,15 +1,27 @@
 import { useContext } from "react";
 import { AuthContext } from "../auth/AuthContext";
 
-export default function Company() {
+const Company = () => {
   const { user } = useContext(AuthContext);
-  console.log("PAGE LOADED: CompanyProfile");
-  console.log("CURRENT USER:", user);
-  
+
+  console.log("PAGE LOADED: Company Management");
+
   return (
-    <div style={{ padding: "2rem" }}>
-      <h1>Company Profile</h1>
-      <p>Manage company details here.</p>
+    <div>
+      <h1>Company & HR Management</h1>
+
+      <h3>Company Info</h3>
+      <p>Company Name: Demo Company</p>
+
+      <h3>HR Members</h3>
+      <ul>
+        <li>hr1@example.com</li>
+        <li>hr2@example.com</li>
+      </ul>
+
+      <button>Add HR</button>
     </div>
   );
-}
+};
+
+export default Company;

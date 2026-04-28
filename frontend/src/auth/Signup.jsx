@@ -6,25 +6,43 @@ export default function Signup() {
   const { signup } = useContext(AuthContext);
   const navigate = useNavigate();
   
-  const [name, setName] = useState("");
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [confirmPassword, setConfirmPassword] = useState("");
-  const [role, setRole] = useState("applicant");
+  const [formData, setFormData] = useState({
+    username: "",
+    email: "",
+    password: "",
+    confirmPassword: "",
+    role: "applicant"
+  });
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (password !== confirmPassword) {
+    
+    // 1. ADD DEBUG LOGS
+    console.log("Current formData state:", formData);
+    console.log("Current role value:", formData.role);
+
+    if (formData.password !== formData.confirmPassword) {
       alert("Passwords do not match");
       return;
     }
+    
+    // 2. FIX ROLE VALUE & 5. VERIFY API PAYLOAD
+    const payload = {
+      username: formData.username,
+      email: formData.email,
+      password: formData.password,
+      role: formData.role.toLowerCase()
+    };
+    
+    console.log("API Payload before call:", payload);
+
     try {
-      // Backend expects 'username' instead of 'name' typically,
-      // but we send the requested shape mapped to backend fields.
-      await signup({ username: name, email, password, role });
+      await signup(payload);
       alert("Signup successful! Please login.");
       navigate("/login");
     } catch (err) {
+      // Log API error
+      console.error("API Error during signup:", err);
       alert("Signup failed. Please try again.");
     }
   };
@@ -45,33 +63,34 @@ export default function Signup() {
       <form onSubmit={handleSubmit}>
         <div style={styles.formGroup}>
           <label style={styles.label}>I am a:</label>
-          <select value={role} onChange={e => setRole(e.target.value)} style={styles.select}>
-            <option value="applicant">Applicant (Looking for jobs)</option>
-            <option value="recruiter">Recruiter (Hiring for a company)</option>
+          {/* 3. FIX SELECT INPUT & 4. VERIFY STATE UPDATE */}
+          <select value={formData.role} onChange={e => setFormData({ ...formData, role: e.target.value })} style={styles.select}>
+            <option value="applicant">Applicant</option>
+            <option value="recruiter">Recruiter</option>
           </select>
         </div>
 
         <div style={styles.formGroup}>
           <label style={styles.label}>Name</label>
-          <input type="text" value={name} onChange={e => setName(e.target.value)} style={styles.input} required />
+          <input type="text" value={formData.username} onChange={e => setFormData({ ...formData, username: e.target.value })} style={styles.input} required />
         </div>
         
         <div style={styles.formGroup}>
           <label style={styles.label}>Email</label>
-          <input type="email" value={email} onChange={e => setEmail(e.target.value)} style={styles.input} required />
+          <input type="email" value={formData.email} onChange={e => setFormData({ ...formData, email: e.target.value })} style={styles.input} required />
         </div>
         
         <div style={styles.formGroup}>
           <label style={styles.label}>Password</label>
-          <input type="password" value={password} onChange={e => setPassword(e.target.value)} style={styles.input} required minLength={8} />
+          <input type="password" value={formData.password} onChange={e => setFormData({ ...formData, password: e.target.value })} style={styles.input} required minLength={8} />
         </div>
 
         <div style={styles.formGroup}>
           <label style={styles.label}>Confirm Password</label>
-          <input type="password" value={confirmPassword} onChange={e => setConfirmPassword(e.target.value)} style={styles.input} required minLength={8} />
+          <input type="password" value={formData.confirmPassword} onChange={e => setFormData({ ...formData, confirmPassword: e.target.value })} style={styles.input} required minLength={8} />
         </div>
 
-        <button type="submit" style={styles.button}>Sign up as {role === "applicant" ? "Applicant" : "Recruiter"}</button>
+        <button type="submit" style={styles.button}>Sign up as {formData.role === "applicant" ? "Applicant" : "Recruiter"}</button>
       </form>
       <div style={styles.linkContainer}>
         <Link to="/login" style={{ color: "#007BFF", textDecoration: "none" }}>Already have an account? Login</Link>

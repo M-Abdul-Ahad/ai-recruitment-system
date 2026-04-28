@@ -1,59 +1,66 @@
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { AuthProvider, AuthContext } from "./auth/AuthContext";
-import ProtectedRoute from "./auth/ProtectedRoute";
 import RoleRoute from "./auth/RoleRoute";
-import HRRoute from "./auth/HRRoute";
+import PublicRoute from "./auth/PublicRoute";
 import Login from "./auth/Login";
 import Signup from "./auth/Signup";
 
 import ApplicantDashboard from "./applicant/Dashboard";
-import ApplicantResume from "./applicant/Resume";
+import ResumeAnalysis from "./applicant/ResumeAnalysis";
+import ResumeBuilder from "./applicant/ResumeBuilder";
+import ApplicantJobs from "./applicant/Jobs";
+import Applications from "./applicant/Applications";
 
 import RecruiterDashboard from "./recruiter/RecruiterDashboard";
 import Company from "./recruiter/Company";
-import HRDashboard from "./recruiter/HRDashboard";
+import CandidateDetail from "./recruiter/CandidateDetail";
+import CreateJob from "./recruiter/CreateJob";
+import RecruiterJobs from "./recruiter/Jobs";
+import CandidateShortlisting from "./recruiter/CandidateShortlisting";
 
 import AdminDashboard from "./admin/AdminDashboard";
+import Users from "./admin/Users";
+import Companies from "./admin/Companies";
+import Jobs from "./admin/Jobs";
 
 import Unauthorized from "./pages/Unauthorized";
-import { useContext } from "react";
-
 import Home from "./pages/Home";
 
-function RootRedirect() {
-  const { user } = useContext(AuthContext);
-  console.log("RootRedirect user:", user);
+import { useContext } from "react";
 
-  if (!user) return <Home />;
-
-  const role = user?.role?.toLowerCase();
-  console.log("Redirecting based on role:", role);
-
-  if (role === "applicant") return <Navigate to="/applicant" replace />;
-  if (role === "recruiter") return <Navigate to="/recruiter" replace />;
-  if (role === "admin") return <Navigate to="/admin" replace />;
-  return <Navigate to="/unauthorized" replace />;
-}
+/* ---------------- FALLBACK ---------------- */
 
 function FallbackRoute() {
   const { user } = useContext(AuthContext);
+
   if (!user) return <Navigate to="/login" replace />;
   return <Navigate to="/unauthorized" replace />;
 }
+
+/* ---------------- APP ---------------- */
 
 export default function App() {
   return (
     <AuthProvider>
       <BrowserRouter>
         <Routes>
-          <Route path="/login" element={<Login />} />
-          <Route path="/signup" element={<Signup />} />
+          {/* Public */}
+          <Route path="/login" element={
+            <PublicRoute>
+              <Login />
+            </PublicRoute>
+          } />
+          <Route path="/signup" element={
+            <PublicRoute>
+              <Signup />
+            </PublicRoute>
+          } />
           <Route path="/unauthorized" element={<Unauthorized />} />
 
-          {/* Root Redirect based on role */}
-          <Route path="/" element={<RootRedirect />} />
+          {/* Root */}
+          <Route path="/" element={<Home />} />
 
-          {/* Applicant Routes */}
+          {/* ================= APPLICANT ================= */}
           <Route
             path="/applicant"
             element={
@@ -62,16 +69,44 @@ export default function App() {
               </RoleRoute>
             }
           />
+
           <Route
             path="/applicant/resume"
             element={
               <RoleRoute allowedRoles={["applicant"]}>
-                <ApplicantResume />
+                <ResumeAnalysis />
               </RoleRoute>
             }
           />
 
-          {/* Recruiter Routes */}
+          <Route
+            path="/applicant/builder"
+            element={
+              <RoleRoute allowedRoles={["applicant"]}>
+                <ResumeBuilder />
+              </RoleRoute>
+            }
+          />
+
+          <Route
+            path="/applicant/jobs"
+            element={
+              <RoleRoute allowedRoles={["applicant"]}>
+                <ApplicantJobs />
+              </RoleRoute>
+            }
+          />
+
+          <Route
+            path="/applicant/applications"
+            element={
+              <RoleRoute allowedRoles={["applicant"]}>
+                <Applications />
+              </RoleRoute>
+            }
+          />
+
+          {/* ================= RECRUITER (HR INCLUDED) ================= */}
           <Route
             path="/recruiter"
             element={
@@ -80,6 +115,7 @@ export default function App() {
               </RoleRoute>
             }
           />
+
           <Route
             path="/recruiter/company"
             element={
@@ -89,22 +125,75 @@ export default function App() {
             }
           />
 
-          {/* HR Routes */}
           <Route
-            path="/hr"
+            path="/recruiter/jobs"
             element={
-              <HRRoute>
-                <HRDashboard />
-              </HRRoute>
+              <RoleRoute allowedRoles={["recruiter"]}>
+                <RecruiterJobs />
+              </RoleRoute>
             }
           />
 
-          {/* Admin Routes */}
+          <Route
+            path="/recruiter/jobs/create"
+            element={
+              <RoleRoute allowedRoles={["recruiter"]}>
+                <CreateJob />
+              </RoleRoute>
+            }
+          />
+
+          <Route
+            path="/recruiter/shortlist/:jobId"
+            element={
+              <RoleRoute allowedRoles={["recruiter"]}>
+                <CandidateShortlisting />
+              </RoleRoute>
+            }
+          />
+
+          <Route
+            path="/recruiter/candidate/:id"
+            element={
+              <RoleRoute allowedRoles={["recruiter"]}>
+                <CandidateDetail />
+              </RoleRoute>
+            }
+          />
+
+          {/* ================= ADMIN ================= */}
           <Route
             path="/admin"
             element={
               <RoleRoute allowedRoles={["admin"]}>
                 <AdminDashboard />
+              </RoleRoute>
+            }
+          />
+
+          <Route
+            path="/admin/users"
+            element={
+              <RoleRoute allowedRoles={["admin"]}>
+                <Users />
+              </RoleRoute>
+            }
+          />
+
+          <Route
+            path="/admin/companies"
+            element={
+              <RoleRoute allowedRoles={["admin"]}>
+                <Companies />
+              </RoleRoute>
+            }
+          />
+
+          <Route
+            path="/admin/jobs"
+            element={
+              <RoleRoute allowedRoles={["admin"]}>
+                <Jobs />
               </RoleRoute>
             }
           />

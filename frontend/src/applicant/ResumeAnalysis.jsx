@@ -3,7 +3,7 @@ import React, { useState, useRef } from "react";
 
 const API_URL = import.meta.env.VITE_API_URL || "http://127.0.0.1:8000";
 
-const ResumeDashboard = () => {
+const ResumeAnalysis = () => {
   const [uploadedFile, setUploadedFile] = useState(null);
   const [isUploading, setIsUploading] = useState(false);
   const [uploadError, setUploadError] = useState(null);
@@ -47,45 +47,45 @@ const ResumeDashboard = () => {
     formData.append('file', file);
 
     try {
-  const response = await fetch(
-    `${API_URL}/api/resumes/upload/`,
-    {
-      method: 'POST',
-      body: formData,
+      const response = await fetch(
+        `${API_URL}/api/resumes/upload/`,
+        {
+          method: 'POST',
+          body: formData,
+        }
+      );
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Upload failed');
+      }
+
+      const result = await response.json();
+
+      setUploadedFile({
+        id: result.data.id,
+        name: file.name,
+        size: (file.size / 1024 / 1024).toFixed(2),
+        uploadDate: new Date().toLocaleDateString('en-US', {
+          year: 'numeric',
+          month: 'short',
+          day: 'numeric',
+        }),
+      });
+
+      // ⭐ STORE PARSED RESUME DATA
+      setResumeData(result.data);
+
+      // 🔥 AUTO-GENERATE AI FEEDBACK AFTER UPLOAD
+      await generateAIFeedback(result.data.id);
+
+    } catch (error) {
+      setUploadError(error.message || 'Failed to upload file');
+    } finally {
+      setIsUploading(false);
+      event.target.value = '';
     }
-  );
-
-  if (!response.ok) {
-    const errorData = await response.json();
-    throw new Error(errorData.error || 'Upload failed');
   }
-
-  const result = await response.json();
-
-  setUploadedFile({
-    id: result.data.id,
-    name: file.name,
-    size: (file.size / 1024 / 1024).toFixed(2),
-    uploadDate: new Date().toLocaleDateString('en-US', {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric',
-    }),
-  });
-
-  // ⭐ STORE PARSED RESUME DATA
-  setResumeData(result.data);
-
-  // 🔥 AUTO-GENERATE AI FEEDBACK AFTER UPLOAD
-  await generateAIFeedback(result.data.id);
-
-} catch (error) {
-  setUploadError(error.message || 'Failed to upload file');
-} finally {
-  setIsUploading(false);
-  event.target.value = '';
-}
-}
 
   const handleRemoveFile = () => {
     setUploadedFile(null);
@@ -95,7 +95,7 @@ const ResumeDashboard = () => {
 
   const generateAIFeedback = async (resumeId = null) => {
     const aiResumeId = resumeId || uploadedFile?.id;
-    
+
     if (!aiResumeId) {
       setAiError('Please upload a resume first');
       return;
@@ -132,7 +132,7 @@ const ResumeDashboard = () => {
 
   return (
     <div className="min-h-screen bg-[#f8fafc] dark:bg-[#0f172a] font-sans text-slate-900 dark:text-slate-100 transition-colors duration-300">
-      
+
       {/* HEADER */}
       <header className="bg-white/80 dark:bg-[#1e293b]/80 backdrop-blur-md border-b border-slate-200 dark:border-slate-800 sticky top-0 z-50">
         <div className="max-w-7xl mx-auto px-6 py-3 flex items-center justify-between">
@@ -161,7 +161,7 @@ const ResumeDashboard = () => {
                   <p className="text-[10px] text-slate-500 font-bold uppercase">Pro Plan</p>
                 </div>
                 <div className="size-10 rounded-xl bg-gradient-to-tr from-slate-200 to-slate-300 dark:from-slate-700 dark:to-slate-600 border-2 border-white dark:border-slate-800 shadow-sm overflow-hidden">
-                   <img src="https://api.dicebear.com/7.x/avataaars/svg?seed=Alex" alt="avatar" />
+                  <img src="https://api.dicebear.com/7.x/avataaars/svg?seed=Alex" alt="avatar" />
                 </div>
               </div>
             </div>
@@ -172,14 +172,14 @@ const ResumeDashboard = () => {
       {/* MAIN CONTENT */}
       <main className="max-w-7xl mx-auto p-6 lg:p-10">
         <div className="grid grid-cols-12 gap-8">
-          
+
           {/* LEFT COLUMN: SCORING */}
           <div className="col-span-12 lg:col-span-4 space-y-8">
             <section className="bg-white dark:bg-[#1e293b] p-8 rounded-[2rem] shadow-sm border border-slate-200 dark:border-slate-800 relative overflow-hidden">
               <div className="absolute top-0 right-0 p-6">
                 <span className="material-symbols-outlined text-slate-200 dark:text-slate-800 text-6xl"></span>
               </div>
-              
+
               <div className="relative flex flex-col items-center">
                 <div className="relative size-48">
                   {/* Progress Circle */}
@@ -221,18 +221,17 @@ const ResumeDashboard = () => {
                 <div className="text-center mt-8">
                   {aiFeedback ? (
                     <>
-                      <div className={`inline-block px-4 py-1 rounded-full text-xs font-bold mb-3 ${
-                        aiFeedback.score >= 80 ? 'bg-emerald-50 dark:bg-emerald-500/10 text-emerald-600 dark:text-emerald-400' :
+                      <div className={`inline-block px-4 py-1 rounded-full text-xs font-bold mb-3 ${aiFeedback.score >= 80 ? 'bg-emerald-50 dark:bg-emerald-500/10 text-emerald-600 dark:text-emerald-400' :
                         aiFeedback.score >= 60 ? 'bg-blue-50 dark:bg-blue-500/10 text-blue-600 dark:text-blue-400' :
-                        'bg-amber-50 dark:bg-amber-500/10 text-amber-600 dark:text-amber-400'
-                      }`}>
+                          'bg-amber-50 dark:bg-amber-500/10 text-amber-600 dark:text-amber-400'
+                        }`}>
                         {aiFeedback.score >= 80 ? 'Excellent' : aiFeedback.score >= 60 ? 'Good' : 'Needs Work'}
                       </div>
                       <h3 className="text-2xl font-bold tracking-tight">Resume Analysis Complete</h3>
                       <p className="text-sm text-slate-500 dark:text-slate-400 mt-2 leading-relaxed">
-                        {aiFeedback.score >= 80 ? 'Your resume is well-optimized and highly competitive.' : 
-                         aiFeedback.score >= 60 ? 'Your resume has good structure. Review suggestions to improve further.' :
-                         'Follow the AI suggestions below to strengthen your resume.'}
+                        {aiFeedback.score >= 80 ? 'Your resume is well-optimized and highly competitive.' :
+                          aiFeedback.score >= 60 ? 'Your resume has good structure. Review suggestions to improve further.' :
+                            'Follow the AI suggestions below to strengthen your resume.'}
                       </p>
                     </>
                   ) : (
@@ -252,7 +251,7 @@ const ResumeDashboard = () => {
 
             {/* QUICK ACTIONS */}
             <div className="grid grid-cols-2 gap-4">
-              <button 
+              <button
                 onClick={handleUploadClick}
                 disabled={isUploading}
                 className="flex flex-col items-center gap-3 p-6 bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed text-white rounded-[1.5rem] transition-all shadow-lg shadow-indigo-500/20"
@@ -260,7 +259,7 @@ const ResumeDashboard = () => {
                 <span className="material-symbols-outlined">{isUploading ? 'hourglass_top' : 'file_upload'}</span>
                 <span className="text-xs font-bold">{isUploading ? 'Uploading...' : 'New Scan'}</span>
               </button>
-              <button 
+              <button
                 onClick={generateAIFeedback}
                 disabled={aiLoading || !uploadedFile}
                 className="flex flex-col items-center gap-3 p-6 bg-white dark:bg-[#1e293b] border border-slate-200 dark:border-slate-800 hover:border-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed rounded-[1.5rem] transition-all"
@@ -282,7 +281,7 @@ const ResumeDashboard = () => {
 
           {/* RIGHT COLUMN: ANALYSIS */}
           <div className="col-span-12 lg:col-span-8 space-y-6">
-            
+
             {/* FILE STATUS */}
             <div className="bg-white dark:bg-[#1e293b] p-6 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm">
               {uploadError && (
@@ -293,7 +292,7 @@ const ResumeDashboard = () => {
                   </div>
                 </div>
               )}
-              
+
               {isUploading && (
                 <div className="flex flex-col items-center justify-center py-8 gap-4">
                   <div className="relative size-16">
@@ -310,7 +309,7 @@ const ResumeDashboard = () => {
               )}
 
               {!isUploading && !uploadedFile && (
-                <div 
+                <div
                   onClick={handleUploadClick}
                   className="flex flex-col items-center justify-center py-12 gap-4 cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-900/50 rounded-xl transition-colors"
                 >
@@ -340,13 +339,13 @@ const ResumeDashboard = () => {
                     </div>
                   </div>
                   <div className="flex items-center gap-2">
-                    <button 
+                    <button
                       onClick={handleUploadClick}
                       className="px-5 py-2 text-xs font-bold bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 rounded-xl transition"
                     >
                       Replace
                     </button>
-                    <button 
+                    <button
                       onClick={handleRemoveFile}
                       className="px-3 py-2 text-xs font-bold text-red-500 hover:bg-red-50 dark:hover:bg-red-500/10 rounded-xl transition"
                     >
@@ -369,7 +368,7 @@ const ResumeDashboard = () => {
 
             {/* ANALYSIS GRID */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              
+
               {/* SKILLS CARDS */}
               <div className="bg-white dark:bg-[#1e293b] p-6 rounded-[2rem] border border-slate-200 dark:border-slate-800">
                 <h4 className="flex items-center gap-2 text-sm font-black uppercase tracking-widest text-slate-400 mb-6">
@@ -580,8 +579,8 @@ const ResumeDashboard = () => {
                 <span className="text-sm font-black uppercase tracking-[0.2em] text-slate-300">{aiFeedback ? 'AI Feedback Output' : 'Parsed Entity Output'}</span>
                 <div className="flex gap-1.5">
                   <div className="size-2.5 rounded-full bg-red-500/40 animate-pulse"></div>
-                  <div className="size-2.5 rounded-full bg-amber-500/40 animate-pulse" style={{animationDelay: "0.1s"}}></div>
-                  <div className="size-2.5 rounded-full bg-emerald-500/40 animate-pulse" style={{animationDelay: "0.2s"}}></div>
+                  <div className="size-2.5 rounded-full bg-amber-500/40 animate-pulse" style={{ animationDelay: "0.1s" }}></div>
+                  <div className="size-2.5 rounded-full bg-emerald-500/40 animate-pulse" style={{ animationDelay: "0.2s" }}></div>
                 </div>
               </div>
               <div className="p-6 h-72 overflow-y-auto font-mono text-sm leading-relaxed text-slate-300" style={{
@@ -627,4 +626,4 @@ const ResumeDashboard = () => {
   );
 };
 
-export default ResumeDashboard;
+export default ResumeAnalysis;

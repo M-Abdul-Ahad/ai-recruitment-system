@@ -65,6 +65,7 @@ export const AuthProvider = ({ children }) => {
     localStorage.removeItem("refresh");
     localStorage.removeItem("user");
     setUser(null);
+    console.log("USER CLEARED FROM CONTEXT");
   };
 
   return (
