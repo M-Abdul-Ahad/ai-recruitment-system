@@ -3,6 +3,17 @@ import React, { useState, useRef } from "react";
 
 const API_URL = import.meta.env.VITE_API_URL || "http://127.0.0.1:8000";
 
+const parseErrorResponse = async (response, fallbackMessage) => {
+  const errorText = await response.text();
+
+  try {
+    const errorData = JSON.parse(errorText);
+    return errorData.error || fallbackMessage;
+  } catch {
+    return errorText || fallbackMessage;
+  }
+};
+
 const ResumeAnalysis = () => {
   const [uploadedFile, setUploadedFile] = useState(null);
   const [isUploading, setIsUploading] = useState(false);
@@ -56,8 +67,8 @@ const ResumeAnalysis = () => {
       );
 
       if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || 'Upload failed');
+        const errorMessage = await parseErrorResponse(response, 'Upload failed');
+        throw new Error(errorMessage);
       }
 
       const result = await response.json();
@@ -117,8 +128,8 @@ const ResumeAnalysis = () => {
       );
 
       if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || 'Failed to generate AI feedback');
+        const errorMessage = await parseErrorResponse(response, 'Failed to generate AI feedback');
+        throw new Error(errorMessage);
       }
 
       const result = await response.json();
