@@ -5,6 +5,7 @@ from .models import Job, JobApplication, Skill
 from .serializers import JobSerializer, JobApplicationSerializer, SkillSerializer
 from .permissions import IsRecruiter, IsJobOwner, IsApplicant
 from django.contrib.auth import get_user_model
+from .services.gemini_jd_service import generate_job_description
 
 
 User = get_user_model()
@@ -59,6 +60,14 @@ class JobViewSet(viewsets.ModelViewSet):
             created_by=self.request.user,
             company=self.request.user.company
         )
+
+    @action(detail=False, methods=["post"], url_path="generate-jd", permission_classes=[permissions.IsAuthenticated, IsRecruiter])
+    def generate_jd(self, request):
+        try:
+            generated_jd = generate_job_description(request.data)
+            return Response({"generated_jd": generated_jd}, status=status.HTTP_200_OK)
+        except Exception as e:
+            return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
     @action(detail=True, methods=["post"], permission_classes=[permissions.IsAuthenticated, IsRecruiter, IsJobOwner])
     def publish(self, request, pk=None):

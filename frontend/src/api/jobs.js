@@ -4,6 +4,8 @@ export const getJobs = () => api.get('/jobs/');
 
 export const createJob = (data) => api.post('/jobs/', data);
 
+export const generateJd = (data) => api.post('/jobs/generate-jd/', data);
+
 export const updateJob = (id, data) => api.patch(`/jobs/${id}/`, data);
 
 export const deleteJob = (id) => api.delete(`/jobs/${id}/`);
