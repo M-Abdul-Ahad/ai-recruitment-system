@@ -2,7 +2,10 @@ from rest_framework import viewsets, permissions, status
 from rest_framework.decorators import action
 from rest_framework.response import Response
 from .models import Job, JobApplication, Skill
-from .serializers import JobSerializer, JobApplicationSerializer, SkillSerializer
+from .serializers import (
+    JobSerializer, JobListSerializer, JobDetailSerializer,
+    JobApplicationSerializer, RecruiterApplicationSerializer, SkillSerializer,
+)
 from .permissions import IsRecruiter, IsJobOwner, IsApplicant
 from django.contrib.auth import get_user_model
 from .services.gemini_jd_service import generate_job_description
@@ -35,6 +38,16 @@ class JobViewSet(viewsets.ModelViewSet):
 
         # For Admin or other roles, return all jobs
         return Job.objects.all()
+
+    def get_serializer_class(self):
+        """Use applicant-specific serializers for list/retrieve when user is an applicant."""
+        user = self.request.user
+        if user.is_authenticated and user.role == User.Role.APPLICANT:
+            if self.action == 'list':
+                return JobListSerializer
+            if self.action == 'retrieve':
+                return JobDetailSerializer
+        return JobSerializer
 
     def get_permissions(self):
         """
@@ -117,17 +130,24 @@ class JobViewSet(viewsets.ModelViewSet):
         if JobApplication.objects.filter(job=job, applicant=request.user).exists():
             return Response({"error": "You have already applied to this job."}, status=status.HTTP_400_BAD_REQUEST)
 
-        application = JobApplication.objects.create(
-            job=job,
-            applicant=request.user
-        )
-        return Response(JobApplicationSerializer(application).data, status=status.HTTP_201_CREATED)
+        serializer = JobApplicationSerializer(data=request.data, context={'request': request})
+        serializer.is_valid(raise_exception=True)
+
+        serializer.save(job=job, applicant=request.user)
+        return Response(serializer.data, status=status.HTTP_201_CREATED)
+
+    @action(detail=False, methods=["get"], url_path="my-applications", permission_classes=[permissions.IsAuthenticated, IsApplicant])
+    def my_applications(self, request):
+        """GET /api/jobs/my-applications/ → logged-in applicant's applications."""
+        applications = JobApplication.objects.filter(applicant=request.user).select_related('job', 'job__company', 'resume')
+        serializer = JobApplicationSerializer(applications, many=True, context={'request': request})
+        return Response(serializer.data)
 
     @action(detail=True, methods=["get"], permission_classes=[permissions.IsAuthenticated, IsRecruiter, IsJobOwner])
     def applications(self, request, pk=None):
         job = self.get_object()
-        applications = job.applications.all()
-        return Response(JobApplicationSerializer(applications, many=True).data)
+        applications = job.applications.select_related('applicant', 'resume').all()
+        return Response(RecruiterApplicationSerializer(applications, many=True).data)
 
     @action(detail=True, methods=["patch"], url_path='applications/(?P<app_id>[^/.]+)', permission_classes=[permissions.IsAuthenticated, IsRecruiter, IsJobOwner])
     def update_application_status(self, request, pk=None, app_id=None):
@@ -143,5 +163,11 @@ class JobViewSet(viewsets.ModelViewSet):
             return Response({"error": f"Invalid status. Choose from {valid_statuses}."}, status=status.HTTP_400_BAD_REQUEST)
 
         application.status = new_status
+
+        # Allow recruiter to update notes alongside status
+        recruiter_notes = request.data.get("recruiter_notes")
+        if recruiter_notes is not None:
+            application.recruiter_notes = recruiter_notes
+
         application.save()
-        return Response(JobApplicationSerializer(application).data)
+        return Response(RecruiterApplicationSerializer(application).data)

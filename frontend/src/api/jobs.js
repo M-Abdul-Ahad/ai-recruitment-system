@@ -1,5 +1,6 @@
 import api from './axios';
 
+// ─── Recruiter APIs ───
 export const getJobs = () => api.get('/jobs/');
 
 export const createJob = (data) => api.post('/jobs/', data);
@@ -20,3 +21,21 @@ export const getApplicants = (jobId) => api.get(`/jobs/${jobId}/applications/`);
 
 export const updateApplicantStatus = (jobId, appId, status) => 
   api.patch(`/jobs/${jobId}/applications/${appId}/`, { status });
+
+/** PATCH /api/jobs/:id/applications/:appId/ → update status + recruiter_notes */
+export const updateApplicationDetails = (jobId, appId, data) =>
+  api.patch(`/jobs/${jobId}/applications/${appId}/`, data);
+
+// ─── Applicant APIs ───
+
+/** GET /api/jobs/:id/ → full job detail (applicant view) */
+export const getJobDetail = (id) => api.get(`/jobs/${id}/`);
+
+/** POST /api/jobs/:id/apply/ → apply with optional resume_id */
+export const applyToJob = (jobId, data = {}) => api.post(`/jobs/${jobId}/apply/`, data);
+
+/** GET /api/jobs/my-applications/ → applicant's applications list */
+export const getMyApplications = () => api.get('/jobs/my-applications/');
+
+/** GET /api/resumes/my-resumes/ → applicant's uploaded resumes */
+export const getMyResumes = () => api.get('/resumes/my-resumes/');

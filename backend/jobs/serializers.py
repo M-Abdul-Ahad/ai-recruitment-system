@@ -1,5 +1,6 @@
 from rest_framework import serializers
 from .models import Job, Skill, JobApplication
+from resumes.models import Resume
 
 
 class SkillSerializer(serializers.ModelSerializer):
@@ -30,8 +31,78 @@ class JobSerializer(serializers.ModelSerializer):
         read_only_fields = ['company', 'created_by', 'created_at', 'updated_at']
 
 
+# --- Applicant-facing serializers ---
+
+class JobListSerializer(serializers.ModelSerializer):
+    """Compact serializer for job listing (applicant browse view)."""
+    company_name = serializers.CharField(source='company.name', read_only=True)
+    skills_data = SkillSerializer(source='skills', many=True, read_only=True)
+
+    class Meta:
+        model = Job
+        fields = [
+            'id', 'title', 'company_name', 'location',
+            'experience_required', 'salary_min', 'salary_max',
+            'skills_data', 'created_at',
+        ]
+
+
+class JobDetailSerializer(serializers.ModelSerializer):
+    """Full detail serializer for a single job (applicant detail view)."""
+    company_name = serializers.CharField(source='company.name', read_only=True)
+    skills_data = SkillSerializer(source='skills', many=True, read_only=True)
+
+    class Meta:
+        model = Job
+        fields = [
+            'id', 'title', 'description', 'company_name', 'location',
+            'experience_required', 'salary_min', 'salary_max',
+            'skills_data', 'status', 'created_at', 'updated_at',
+        ]
+
+
 class JobApplicationSerializer(serializers.ModelSerializer):
+    """Serializer for applicant applying to a job."""
+    resume_id = serializers.PrimaryKeyRelatedField(
+        queryset=Resume.objects.all(),
+        source='resume',
+        required=False,
+        allow_null=True,
+    )
+    job_title = serializers.CharField(source='job.title', read_only=True)
+    company_name = serializers.CharField(source='job.company.name', read_only=True)
+
     class Meta:
         model = JobApplication
-        fields = ['id', 'job', 'applicant', 'status', 'applied_at']
-        read_only_fields = ['job', 'applicant', 'status', 'applied_at']
+        fields = [
+            'id', 'job', 'job_title', 'company_name',
+            'resume_id', 'status', 'applied_at',
+        ]
+        read_only_fields = ['id', 'job', 'status', 'applied_at']
+
+    def validate_resume_id(self, resume):
+        """Ensure the resume belongs to the requesting applicant."""
+        if resume is None:
+            return resume
+        request = self.context.get('request')
+        if request and resume.user != request.user:
+            raise serializers.ValidationError("You can only use your own resumes.")
+        return resume
+
+
+# --- Recruiter-facing serializers ---
+
+class RecruiterApplicationSerializer(serializers.ModelSerializer):
+    """Serializer for recruiter viewing applications on their jobs."""
+    applicant_email = serializers.EmailField(source='applicant.email', read_only=True)
+    applicant_name = serializers.CharField(source='applicant.username', read_only=True)
+    resume_file = serializers.FileField(source='resume.file', read_only=True)
+
+    class Meta:
+        model = JobApplication
+        fields = [
+            'id', 'applicant', 'applicant_email', 'applicant_name',
+            'resume_file', 'status', 'recruiter_notes', 'match_score',
+            'applied_at',
+        ]
+        read_only_fields = ['id', 'applicant', 'applied_at']

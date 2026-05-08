@@ -17,6 +17,7 @@ import CandidateDetail from "./recruiter/CandidateDetail";
 import CreateJob from "./recruiter/CreateJob";
 import RecruiterJobs from "./recruiter/Jobs";
 import CandidateShortlisting from "./recruiter/CandidateShortlisting";
+import CandidateManagement from "./recruiter/CandidateManagement";
 
 import AdminDashboard from "./admin/AdminDashboard";
 import Users from "./admin/Users";
@@ -139,6 +140,15 @@ export default function App() {
             element={
               <RoleRoute allowedRoles={["recruiter"]}>
                 <CreateJob />
+              </RoleRoute>
+            }
+          />
+
+          <Route
+            path="/recruiter/candidates"
+            element={
+              <RoleRoute allowedRoles={["recruiter"]}>
+                <CandidateManagement />
               </RoleRoute>
             }
           />

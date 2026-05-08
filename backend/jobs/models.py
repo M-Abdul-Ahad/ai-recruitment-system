@@ -59,15 +59,25 @@ class JobApplication(models.Model):
     class ApplicationStatus(models.TextChoices):
         APPLIED = "APPLIED", "Applied"
         SHORTLISTED = "SHORTLISTED", "Shortlisted"
+        INTERVIEW = "INTERVIEW", "Interview"
         REJECTED = "REJECTED", "Rejected"
 
     job = models.ForeignKey(Job, on_delete=models.CASCADE, related_name="applications")
     applicant = models.ForeignKey(User, on_delete=models.CASCADE, related_name="job_applications")
+    resume = models.ForeignKey(
+        "resumes.Resume",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="applications",
+    )
     status = models.CharField(
         max_length=20,
         choices=ApplicationStatus.choices,
         default=ApplicationStatus.APPLIED,
     )
+    recruiter_notes = models.TextField(blank=True, default="")
+    match_score = models.FloatField(null=True, blank=True, help_text="AI-generated match score")
     applied_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:

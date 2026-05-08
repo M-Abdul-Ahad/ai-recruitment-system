@@ -3,11 +3,11 @@ import os
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
-from rest_framework.permissions import AllowAny
+from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.decorators import api_view, permission_classes
 
 from .models import Resume
-from .serializers import ResumeDetailSerializer
+from .serializers import ResumeDetailSerializer, ResumeUploadSerializer
 from .utils import (
     extract_text_from_pdf,
     extract_text_from_docx,
@@ -130,3 +130,12 @@ def generate_ai_feedback(request, resume_id):
 
     except Exception as e:
         return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def my_resumes(request):
+    """GET /api/resumes/my-resumes/ → list current user's resumes."""
+    resumes = Resume.objects.filter(user=request.user).order_by('-uploaded_at')
+    serializer = ResumeUploadSerializer(resumes, many=True)
+    return Response(serializer.data)
