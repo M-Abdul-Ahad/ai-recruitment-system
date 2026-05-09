@@ -5,9 +5,9 @@ import PortalShell from "../components/PortalShell";
 
 const recruiterNav = [
   { label: "Overview", to: "/recruiter", end: true },
-  { label: "Company", to: "/recruiter/company" },
-  { label: "Jobs Library", to: "/recruiter/jobs" },
-  { label: "Create Job", to: "/recruiter/jobs/create", tag: "AI" },
+  { label: "Company", to: "/recruiter/company", end: true },
+  { label: "Jobs Library", to: "/recruiter/jobs", end: true },
+  { label: "Create Job", to: "/recruiter/jobs/create", end: true, tag: "AI" },
 ];
 
 export default function CandidateDetail() {

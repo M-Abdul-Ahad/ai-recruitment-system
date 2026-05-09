@@ -5,10 +5,10 @@ import PortalShell from "../components/PortalShell";
 
 const applicantNav = [
   { label: "Overview", to: "/applicant", end: true },
-  { label: "Resume Analysis", to: "/applicant/resume" },
-  { label: "Resume Builder", to: "/applicant/builder" },
-  { label: "Jobs", to: "/applicant/jobs" },
-  { label: "Applications", to: "/applicant/applications" },
+  { label: "Resume Analysis", to: "/applicant/resume", end: true },
+  { label: "Resume Builder", to: "/applicant/builder", end: true },
+  { label: "Jobs", to: "/applicant/jobs", end: true },
+  { label: "Applications", to: "/applicant/applications", end: true },
 ];
 
 const cards = [
