@@ -1,1 +1,44 @@
 @import "tailwindcss";
+
+:root {
+  color-scheme: dark;
+  font-family: Inter, ui-sans-serif, system-ui, sans-serif;
+  background: #090814;
+}
+
+html {
+  background: #090814;
+}
+
+body {
+  margin: 0;
+  background:
+    radial-gradient(circle at top left, rgba(120, 92, 255, 0.15), transparent 30%),
+    linear-gradient(180deg, #090814 0%, #0a0a16 100%);
+  color: #e5e7eb;
+}
+
+a {
+  color: inherit;
+}
+
+button:not(:disabled),
+[role="button"]:not([aria-disabled="true"]) {
+  cursor: pointer;
+}
+
+button:disabled,
+[aria-disabled="true"] {
+  cursor: not-allowed;
+}
+
+#root {
+  min-height: 100vh;
+}
+
+.marketing-grid {
+  background-image:
+    linear-gradient(rgba(255, 255, 255, 0.04) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.04) 1px, transparent 1px);
+  background-size: 32px 32px;
+}

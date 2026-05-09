@@ -58,6 +58,7 @@ export const AuthProvider = ({ children }) => {
     
     setUser(newUser);
     localStorage.setItem("user", JSON.stringify(newUser));
+    return newUser;
   };
 
   const logout = () => {
@@ -68,8 +69,18 @@ export const AuthProvider = ({ children }) => {
     console.log("USER CLEARED FROM CONTEXT");
   };
 
+  const updateUser = (patch) => {
+    setUser((current) => {
+      const next = current ? { ...current, ...patch } : current;
+      if (next) {
+        localStorage.setItem("user", JSON.stringify(next));
+      }
+      return next;
+    });
+  };
+
   return (
-    <AuthContext.Provider value={{ user, loading, signup, login, logout }}>
+    <AuthContext.Provider value={{ user, loading, signup, login, logout, updateUser }}>
       {children}
     </AuthContext.Provider>
   );

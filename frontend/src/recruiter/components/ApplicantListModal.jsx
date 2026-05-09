@@ -1,15 +1,13 @@
-import React, { useState, useEffect } from 'react';
-import { getApplicants, updateApplicantStatus } from '../../api/jobs';
+import React, { useEffect, useState } from "react";
+import { getApplicants, updateApplicantStatus } from "../../api/jobs";
 
-const ApplicantListModal = ({ isOpen, onClose, job }) => {
+export default function ApplicantListModal({ isOpen, onClose, job }) {
   const [applicants, setApplicants] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
   useEffect(() => {
-    if (isOpen && job) {
-      fetchApplicants();
-    }
+    if (isOpen && job) fetchApplicants();
   }, [isOpen, job]);
 
   const fetchApplicants = async () => {
@@ -29,8 +27,7 @@ const ApplicantListModal = ({ isOpen, onClose, job }) => {
   const handleUpdateStatus = async (appId, newStatus) => {
     try {
       await updateApplicantStatus(job.id, appId, newStatus);
-      // Update local state
-      setApplicants(prev => prev.map(app => app.id === appId ? { ...app, status: newStatus } : app));
+      setApplicants((prev) => prev.map((app) => (app.id === appId ? { ...app, status: newStatus } : app)));
     } catch (err) {
       console.error(err);
       alert("Failed to update status.");
@@ -40,75 +37,64 @@ const ApplicantListModal = ({ isOpen, onClose, job }) => {
   if (!isOpen || !job) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black bg-opacity-40 backdrop-blur-sm transition-opacity">
-      <div className="bg-white rounded-2xl w-full max-w-3xl max-h-[90vh] flex flex-col shadow-2xl animate-fade-in-up">
-        <div className="flex justify-between items-center p-6 border-b border-gray-100">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/55 p-4 backdrop-blur-sm transition-opacity">
+      <div className="flex max-h-[90vh] w-full max-w-3xl flex-col rounded-[30px] border border-white/10 bg-[#0f1021] shadow-2xl">
+        <div className="flex items-center justify-between border-b border-white/10 p-6">
           <div>
-            <h2 className="text-2xl font-bold text-gray-800">Applicants</h2>
-            <p className="text-sm text-gray-500 mt-1">{job.title}</p>
+            <h2 className="text-2xl font-bold text-white">Applicants</h2>
+            <p className="mt-1 text-sm text-slate-400">{job.title}</p>
           </div>
-          <button onClick={onClose} className="text-gray-400 hover:text-gray-600 transition-colors">
-            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+          <button onClick={onClose} className="text-slate-500 transition-colors hover:text-white">
+            <svg className="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12"></path></svg>
           </button>
         </div>
-        
-        <div className="p-6 overflow-y-auto flex-1 bg-gray-50">
+
+        <div className="flex-1 overflow-y-auto bg-[#0b0c1a] p-6">
           {loading ? (
             <div className="space-y-4">
-              {[1, 2, 3].map(i => (
-                <div key={i} className="animate-pulse flex space-x-4 bg-white p-4 rounded-xl">
+              {[1, 2, 3].map((item) => (
+                <div key={item} className="flex space-x-4 rounded-xl bg-white/[0.04] p-4 animate-pulse">
                   <div className="flex-1 space-y-4 py-1">
-                    <div className="h-4 bg-gray-200 rounded w-3/4"></div>
-                    <div className="space-y-2">
-                      <div className="h-4 bg-gray-200 rounded"></div>
-                    </div>
+                    <div className="h-4 w-3/4 rounded bg-white/10"></div>
+                    <div className="h-4 rounded bg-white/10"></div>
                   </div>
                 </div>
               ))}
             </div>
           ) : error ? (
-            <div className="text-center text-red-500 py-8">{error}</div>
+            <div className="py-8 text-center text-rose-200">{error}</div>
           ) : applicants.length === 0 ? (
-            <div className="text-center py-12">
-              <svg className="mx-auto h-12 w-12 text-gray-300" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
-              </svg>
-              <h3 className="mt-2 text-sm font-medium text-gray-900">No applicants yet</h3>
-              <p className="mt-1 text-sm text-gray-500">Wait for candidates to apply to this position.</p>
+            <div className="py-12 text-center">
+              <h3 className="text-sm font-medium text-white">No applicants yet</h3>
+              <p className="mt-1 text-sm text-slate-400">Wait for candidates to apply to this position.</p>
             </div>
           ) : (
             <div className="space-y-4">
-              {applicants.map(app => (
-                <div key={app.id} className="bg-white p-5 rounded-xl border border-gray-100 shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-4 transition-all hover:shadow-md">
+              {applicants.map((app) => (
+                <div key={app.id} className="flex flex-col justify-between gap-4 rounded-xl border border-white/8 bg-white/[0.04] p-5 sm:flex-row sm:items-center">
                   <div>
-                    <h4 className="text-lg font-semibold text-gray-800">Applicant ID: {app.applicant}</h4>
-                    <p className="text-sm text-gray-500">Applied on {new Date(app.applied_at).toLocaleDateString()}</p>
-                    <span className={`inline-block mt-2 px-2.5 py-1 rounded-full text-xs font-medium uppercase tracking-wider
-                      ${app.status === 'APPLIED' ? 'bg-blue-100 text-blue-700' : ''}
-                      ${app.status === 'SHORTLISTED' ? 'bg-green-100 text-green-700' : ''}
-                      ${app.status === 'REJECTED' ? 'bg-red-100 text-red-700' : ''}
-                    `}>
+                    <h4 className="text-lg font-semibold text-white">Applicant ID: {app.applicant}</h4>
+                    <p className="text-sm text-slate-400">Applied on {new Date(app.applied_at).toLocaleDateString()}</p>
+                    <span className={`mt-2 inline-block rounded-full px-2.5 py-1 text-xs font-medium uppercase tracking-wider ${
+                      app.status === "APPLIED" ? "bg-cyan-300/10 text-cyan-200" : ""
+                    } ${app.status === "SHORTLISTED" ? "bg-emerald-400/10 text-emerald-200" : ""} ${
+                      app.status === "REJECTED" ? "bg-rose-400/10 text-rose-200" : ""
+                    }`}>
                       {app.status}
                     </span>
                   </div>
-                  
+
                   <div className="flex gap-2">
-                    {app.status !== 'SHORTLISTED' && (
-                      <button 
-                        onClick={() => handleUpdateStatus(app.id, 'SHORTLISTED')}
-                        className="px-4 py-2 bg-green-50 text-green-700 hover:bg-green-100 rounded-lg text-sm font-medium transition-colors"
-                      >
+                    {app.status !== "SHORTLISTED" ? (
+                      <button onClick={() => handleUpdateStatus(app.id, "SHORTLISTED")} className="rounded-lg bg-emerald-400/10 px-4 py-2 text-sm font-medium text-emerald-200 transition hover:bg-emerald-400/16">
                         Shortlist
                       </button>
-                    )}
-                    {app.status !== 'REJECTED' && (
-                      <button 
-                        onClick={() => handleUpdateStatus(app.id, 'REJECTED')}
-                        className="px-4 py-2 bg-red-50 text-red-700 hover:bg-red-100 rounded-lg text-sm font-medium transition-colors"
-                      >
+                    ) : null}
+                    {app.status !== "REJECTED" ? (
+                      <button onClick={() => handleUpdateStatus(app.id, "REJECTED")} className="rounded-lg bg-rose-400/10 px-4 py-2 text-sm font-medium text-rose-200 transition hover:bg-rose-400/16">
                         Reject
                       </button>
-                    )}
+                    ) : null}
                   </div>
                 </div>
               ))}
@@ -118,6 +104,4 @@ const ApplicantListModal = ({ isOpen, onClose, job }) => {
       </div>
     </div>
   );
-};
-
-export default ApplicantListModal;
+}
