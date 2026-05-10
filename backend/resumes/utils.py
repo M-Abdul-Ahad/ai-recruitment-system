@@ -27,6 +27,8 @@ def extract_text_from_docx(file_path):
 
 import re
 
+DATE_PATTERN = r'(20\d{2})\s*[-–]\s*(20\d{2}|present)'
+
 def clean_resume_text(text):
     text = text.lower()
     text = re.sub(r'\n+', '\n', text)              # keep structure

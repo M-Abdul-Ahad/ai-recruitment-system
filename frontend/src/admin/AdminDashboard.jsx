@@ -1,101 +1,51 @@
 import { useContext } from "react";
-import { AuthContext } from "../auth/AuthContext";
 import { Link, useNavigate } from "react-router-dom";
+import { AuthContext } from "../auth/AuthContext";
+import PortalShell from "../components/PortalShell";
 
-const AdminDashboard = () => {
+const adminNav = [
+  { label: "Overview", to: "/admin", end: true },
+  { label: "Users", to: "/admin/users" },
+  { label: "Companies", to: "/admin/companies" },
+  { label: "Jobs", to: "/admin/jobs" },
+];
+
+export default function AdminDashboard() {
   const { user, logout } = useContext(AuthContext);
   const navigate = useNavigate();
 
-  console.log("ADMIN DASHBOARD LOADED");
-
   const handleLogout = () => {
-      console.log("LOGOUT CLICKED");
-      logout();
-      navigate("/login");
+    logout();
+    navigate("/login");
   };
 
   return (
-    <div style={styles.container}>
-      <div style={styles.header}>
-        <div>
-          <h1>Admin Dashboard</h1>
-          <p style={styles.subtitle}>System Control Panel</p>
-        </div>
-        <button onClick={handleLogout} style={styles.logoutBtn}>Logout</button>
+    <PortalShell
+      user={user}
+      onLogout={handleLogout}
+      badge="Admin control"
+      title="Operate the platform with a cleaner system-wide command view."
+      subtitle="Manage users, companies, and jobs from a unified desktop admin experience."
+      navItems={adminNav}
+      stats={[
+        { value: "128", label: "Registered users" },
+        { value: "12", label: "Companies" },
+        { value: "26", label: "Jobs under review" },
+        { value: "99.9%", label: "Platform health target" },
+      ]}
+    >
+      <div className="grid grid-cols-3 gap-6">
+        {[
+          ["/admin/users", "Users", "Manage applicants, recruiters, and admin identities."],
+          ["/admin/companies", "Companies", "Inspect employer profiles, ownership, and team assignments."],
+          ["/admin/jobs", "Jobs", "Monitor role inventory, platform activity, and operational quality."],
+        ].map(([to, title, text]) => (
+          <Link key={to} to={to} className="rounded-[30px] border border-white/10 bg-white/[0.04] p-7 transition hover:-translate-y-0.5 hover:border-violet-400/30">
+            <div className="text-2xl font-semibold text-white">{title}</div>
+            <p className="mt-4 text-sm leading-7 text-slate-400">{text}</p>
+          </Link>
+        ))}
       </div>
-
-      <div style={styles.grid}>
-        <Link to="/admin/users" style={styles.card}>
-          <h2>👤 Users</h2>
-          <p>Manage all users (Applicants, Recruiters, HR)</p>
-        </Link>
-
-        <Link to="/admin/companies" style={styles.card}>
-          <h2>🏢 Companies</h2>
-          <p>View and manage companies</p>
-        </Link>
-
-        <Link to="/admin/jobs" style={styles.card}>
-          <h2>💼 Jobs</h2>
-          <p>Monitor all job postings</p>
-        </Link>
-      </div>
-
-      <div style={styles.footer}>
-        <p>Admin controls the entire platform ⚙️</p>
-      </div>
-    </div>
+    </PortalShell>
   );
-};
-
-export default AdminDashboard;
-
-/* -------- STYLES -------- */
-
-const styles = {
-  container: {
-    padding: "30px",
-    fontFamily: "Arial, sans-serif",
-    background: "#f4f6f8",
-    minHeight: "100vh",
-  },
-  header: {
-    display: "flex",
-    justifyContent: "space-between",
-    alignItems: "flex-start",
-    marginBottom: "20px",
-  },
-  logoutBtn: {
-    padding: "8px 16px",
-    backgroundColor: "#ff4d4f",
-    color: "white",
-    border: "none",
-    borderRadius: "6px",
-    cursor: "pointer",
-    fontWeight: "bold",
-  },
-  subtitle: {
-    color: "#666",
-    marginBottom: "20px",
-  },
-  grid: {
-    display: "grid",
-    gridTemplateColumns: "repeat(auto-fit, minmax(240px, 1fr))",
-    gap: "20px",
-    marginTop: "20px",
-  },
-  card: {
-    textDecoration: "none",
-    background: "#fff",
-    padding: "25px",
-    borderRadius: "12px",
-    boxShadow: "0 4px 10px rgba(0,0,0,0.1)",
-    color: "#333",
-    transition: "0.2s",
-  },
-  footer: {
-    marginTop: "40px",
-    textAlign: "center",
-    color: "#888",
-  },
-};
+}

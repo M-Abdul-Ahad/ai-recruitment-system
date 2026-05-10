@@ -1,12 +1,42 @@
-import React, { useState, useEffect } from "react";
-import { useLocation, useNavigate, Link } from "react-router-dom";
-import { createJob, updateJob, getSkills, generateJd } from "../api/jobs";
+import { useContext, useEffect, useMemo, useState } from "react";
+import { useLocation, useNavigate } from "react-router-dom";
+import { AuthContext } from "../auth/AuthContext";
+import { getMyCompany } from "../api/companies";
+import { createJob, generateJd, getSkills, updateJob } from "../api/jobs";
+import PortalShell from "../components/PortalShell";
 
-const CreateJob = () => {
-  const location = useLocation();
+const recruiterNav = [
+  { label: "Overview", to: "/recruiter", end: true },
+  { label: "Company", to: "/recruiter/company", end: true },
+  { label: "Jobs Library", to: "/recruiter/jobs", end: true },
+  { label: "Create Job", to: "/recruiter/jobs/create", end: true, tag: "AI" },
+];
+
+const formatApiError = (data, fallback) => {
+  if (!data) return fallback;
+  if (typeof data === "string") return data;
+  if (typeof data.error === "string") return data.error;
+
+  const messages = Object.entries(data).flatMap(([field, value]) => {
+    if (Array.isArray(value)) return value.map((item) => `${field}: ${item}`);
+    if (typeof value === "string") return `${field}: ${value}`;
+    return [];
+  });
+
+  return messages.length ? messages.join(" ") : fallback;
+};
+
+export default function CreateJob() {
+  const { user, logout } = useContext(AuthContext);
   const navigate = useNavigate();
+  const location = useLocation();
   const jobToEdit = location.state?.jobToEdit;
-
+  const [hasCompany, setHasCompany] = useState(true);
+  const [availableSkills, setAvailableSkills] = useState([]);
+  const [copied, setCopied] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [isGeneratingJD, setIsGeneratingJD] = useState(false);
+  const [error, setError] = useState(null);
   const [formData, setFormData] = useState({
     title: "",
     description: "",
@@ -22,14 +52,9 @@ const CreateJob = () => {
     jd_prompt: "",
   });
 
-  const [availableSkills, setAvailableSkills] = useState([]);
-  const [copied, setCopied] = useState(false);
-  const [loading, setLoading] = useState(false);
-  const [isGeneratingJD, setIsGeneratingJD] = useState(false);
-  const [error, setError] = useState(null);
-
   useEffect(() => {
     fetchSkills();
+    fetchCompanyStatus();
     if (jobToEdit) {
       setFormData({
         title: jobToEdit.title || "",
@@ -48,6 +73,17 @@ const CreateJob = () => {
     }
   }, [jobToEdit]);
 
+  const fetchCompanyStatus = async () => {
+    try {
+      await getMyCompany();
+      setHasCompany(true);
+    } catch (err) {
+      if (err.response?.status === 404) {
+        setHasCompany(false);
+      }
+    }
+  };
+
   const fetchSkills = async () => {
     try {
       const response = await getSkills();
@@ -57,18 +93,23 @@ const CreateJob = () => {
     }
   };
 
-  const handleChange = (e) => {
-    const { name, value } = e.target;
-    setFormData((prev) => ({ ...prev, [name]: value }));
+  const handleLogout = () => {
+    logout();
+    navigate("/login");
+  };
+
+  const handleChange = (event) => {
+    const { name, value } = event.target;
+    setFormData((current) => ({ ...current, [name]: value }));
   };
 
   const handleSkillToggle = (skillId) => {
-    setFormData((prev) => {
-      const skills = prev.skills.includes(skillId)
-        ? prev.skills.filter((id) => id !== skillId)
-        : [...prev.skills, skillId];
-      return { ...prev, skills };
-    });
+    setFormData((current) => ({
+      ...current,
+      skills: current.skills.includes(skillId)
+        ? current.skills.filter((id) => id !== skillId)
+        : [...current.skills, skillId],
+    }));
   };
 
   const handleGenerateJD = async () => {
@@ -76,8 +117,8 @@ const CreateJob = () => {
     setError(null);
     try {
       const selectedSkillNames = availableSkills
-        .filter((s) => formData.skills.includes(s.id))
-        .map((s) => s.name);
+        .filter((skill) => formData.skills.includes(skill.id))
+        .map((skill) => skill.name);
 
       const payload = {
         title: formData.title,
@@ -92,36 +133,33 @@ const CreateJob = () => {
       };
 
       const response = await generateJd(payload);
-      setFormData((prev) => ({ ...prev, description: response.data.generated_jd }));
+      setFormData((current) => ({ ...current, description: response.data.generated_jd }));
     } catch (err) {
       console.error("JD Generation failed:", err);
-      setError(
-        err.response?.data?.error || "Failed to generate AI Job Description."
-      );
+      setError(err.response?.data?.error || "Failed to generate AI Job Description.");
     } finally {
       setIsGeneratingJD(false);
     }
   };
 
   const handleCopy = () => {
-    if (formData.description) {
-      navigator.clipboard.writeText(formData.description);
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
-    }
+    if (!formData.description) return;
+    navigator.clipboard.writeText(formData.description);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
   };
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
+  const handleSubmit = async (event) => {
+    event.preventDefault();
     setLoading(true);
     setError(null);
 
     try {
       const payload = {
         ...formData,
-        experience_required: parseInt(formData.experience_required) || 0,
-        salary_min: formData.salary_min ? parseInt(formData.salary_min) : null,
-        salary_max: formData.salary_max ? parseInt(formData.salary_max) : null,
+        experience_required: parseInt(formData.experience_required, 10) || 0,
+        salary_min: formData.salary_min ? parseInt(formData.salary_min, 10) : null,
+        salary_max: formData.salary_max ? parseInt(formData.salary_max, 10) : null,
       };
 
       if (jobToEdit) {
@@ -134,110 +172,187 @@ const CreateJob = () => {
     } catch (err) {
       console.error(err);
       setError(
-        err.response?.data?.error ||
+        formatApiError(
+          err.response?.data,
           `Failed to ${jobToEdit ? "update" : "create"} job. Please check the fields.`
+        )
       );
     } finally {
       setLoading(false);
     }
   };
 
-  const isEdit = !!jobToEdit;
+  const isEdit = Boolean(jobToEdit);
+  const selectedSkills = useMemo(
+    () => availableSkills.filter((skill) => formData.skills.includes(skill.id)),
+    [availableSkills, formData.skills]
+  );
 
   return (
-    <div className="min-h-screen bg-gray-50 py-8 px-4 sm:px-6 lg:px-8 font-sans selection:bg-blue-100 selection:text-blue-900 animate-fade-in-up">
-      <div className="max-w-4xl mx-auto">
-        <div className="mb-8 flex items-center justify-between">
-          <div>
-            <Link to="/recruiter/jobs" className="text-blue-600 hover:text-blue-800 font-medium text-sm flex items-center mb-2">
-              <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path></svg>
-              Back to Jobs
-            </Link>
-            <h1 className="text-3xl font-bold text-gray-900">{isEdit ? "Edit Job Posting" : "Create New Job Posting"}</h1>
-            <p className="text-gray-500 mt-1">Fill out the details below to {isEdit ? "update the" : "create a"} job.</p>
+    <PortalShell
+      user={user}
+      onLogout={handleLogout}
+      badge={isEdit ? "Edit job" : "Create job"}
+      title="Build a polished role brief before it enters the hiring pipeline."
+      subtitle="Shape the core job details, use AI to accelerate the first draft, and review the final posting in one recruiter workspace."
+      navItems={recruiterNav}
+      stats={[
+        { value: hasCompany ? "Ready" : "Setup", label: "Company profile status" },
+        { value: String(selectedSkills.length).padStart(2, "0"), label: "Skills attached to this role" },
+        { value: formData.description ? "Drafted" : "Pending", label: "Description progress" },
+        { value: isEdit ? "Edit" : "New", label: "Workflow mode" },
+      ]}
+    >
+      {!hasCompany ? (
+        <div className="mb-6 rounded-[30px] border border-amber-300/15 bg-amber-400/10 p-6">
+          <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+            <div>
+              <div className="text-lg font-semibold text-white">Company setup required</div>
+              <p className="mt-2 max-w-2xl text-sm leading-7 text-slate-300">
+                Create your recruiter company profile first. The backend will block job creation until your account is linked to a company.
+              </p>
+            </div>
+            <button
+              onClick={() => navigate("/recruiter/company")}
+              className="rounded-full bg-white px-6 py-3 text-sm font-semibold text-slate-950 transition hover:bg-slate-100"
+            >
+              Open Company Setup
+            </button>
           </div>
         </div>
+      ) : null}
 
-        <form onSubmit={handleSubmit} className="space-y-8">
-          {error && (
-            <div className="p-4 bg-red-50 border border-red-100 text-red-600 rounded-xl">
+      <form onSubmit={handleSubmit} className="grid grid-cols-12 gap-6">
+        <section className="col-span-12 space-y-6 xl:col-span-7">
+          {error ? (
+            <div className="rounded-[28px] border border-rose-400/20 bg-rose-500/10 p-5 text-sm leading-7 text-rose-200">
               {error}
             </div>
-          )}
+          ) : null}
 
-          {/* Section 1: Basic Info */}
-          <div className="bg-white rounded-2xl p-8 shadow-sm border border-gray-100">
-            <h2 className="text-xl font-bold text-gray-800 mb-6 flex items-center">
-              <span className="bg-blue-100 text-blue-600 w-8 h-8 rounded-lg inline-flex items-center justify-center mr-3 text-sm">1</span>
-              Basic Info
-            </h2>
+          <div className="rounded-[32px] border border-white/10 bg-white/[0.04] p-6 lg:p-8">
+            <div className="mb-6 flex items-center gap-3">
+              <div className="flex size-9 items-center justify-center rounded-2xl border border-white/10 bg-white/[0.04] text-sm font-semibold text-white">
+                1
+              </div>
+              <div>
+                <div className="text-lg font-semibold text-white">Role essentials</div>
+                <p className="text-sm text-slate-400">Set the job title, location, experience band, and salary range.</p>
+              </div>
+            </div>
+
             <div className="space-y-5">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Job Title *</label>
-                <input type="text" name="title" required value={formData.title} onChange={handleChange} className="w-full px-4 py-2.5 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all" placeholder="e.g. Senior Frontend Developer" />
+                <label className="mb-2 block text-sm font-medium text-slate-300">Job Title *</label>
+                <input
+                  type="text"
+                  name="title"
+                  required
+                  value={formData.title}
+                  onChange={handleChange}
+                  className="w-full rounded-2xl border border-white/10 bg-black/20 px-4 py-3 text-white outline-none transition placeholder:text-slate-500 focus:border-violet-400/60"
+                  placeholder="e.g. Senior Frontend Developer"
+                />
               </div>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+
+              <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Location</label>
-                  <input type="text" name="location" value={formData.location} onChange={handleChange} className="w-full px-4 py-2.5 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all" placeholder="e.g. New York, NY (or Remote)" />
+                  <label className="mb-2 block text-sm font-medium text-slate-300">Location</label>
+                  <input
+                    type="text"
+                    name="location"
+                    value={formData.location}
+                    onChange={handleChange}
+                    className="w-full rounded-2xl border border-white/10 bg-black/20 px-4 py-3 text-white outline-none transition placeholder:text-slate-500 focus:border-violet-400/60"
+                    placeholder="e.g. Remote or Karachi"
+                  />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Experience Required (Years) *</label>
-                  <input type="number" min="0" name="experience_required" required value={formData.experience_required} onChange={handleChange} className="w-full px-4 py-2.5 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all" />
+                  <label className="mb-2 block text-sm font-medium text-slate-300">Experience Required (Years) *</label>
+                  <input
+                    type="number"
+                    min="0"
+                    name="experience_required"
+                    required
+                    value={formData.experience_required}
+                    onChange={handleChange}
+                    className="w-full rounded-2xl border border-white/10 bg-black/20 px-4 py-3 text-white outline-none transition focus:border-violet-400/60"
+                  />
                 </div>
               </div>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+
+              <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Min Salary</label>
-                  <input type="number" name="salary_min" value={formData.salary_min} onChange={handleChange} className="w-full px-4 py-2.5 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all" placeholder="e.g. 80000" />
+                  <label className="mb-2 block text-sm font-medium text-slate-300">Min Salary</label>
+                  <input
+                    type="number"
+                    name="salary_min"
+                    value={formData.salary_min}
+                    onChange={handleChange}
+                    className="w-full rounded-2xl border border-white/10 bg-black/20 px-4 py-3 text-white outline-none transition placeholder:text-slate-500 focus:border-violet-400/60"
+                    placeholder="e.g. 80000"
+                  />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Max Salary</label>
-                  <input type="number" name="salary_max" value={formData.salary_max} onChange={handleChange} className="w-full px-4 py-2.5 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all" placeholder="e.g. 120000" />
+                  <label className="mb-2 block text-sm font-medium text-slate-300">Max Salary</label>
+                  <input
+                    type="number"
+                    name="salary_max"
+                    value={formData.salary_max}
+                    onChange={handleChange}
+                    className="w-full rounded-2xl border border-white/10 bg-black/20 px-4 py-3 text-white outline-none transition placeholder:text-slate-500 focus:border-violet-400/60"
+                    placeholder="e.g. 120000"
+                  />
                 </div>
               </div>
+
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Skills Required (Select at least one for publishing)</label>
+                <label className="mb-2 block text-sm font-medium text-slate-300">Skills Required</label>
                 <div className="flex flex-wrap gap-2">
                   {availableSkills.map((skill) => (
                     <button
                       key={skill.id}
                       type="button"
                       onClick={() => handleSkillToggle(skill.id)}
-                      className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors border ${
+                      className={`rounded-full border px-4 py-2 text-sm font-medium transition ${
                         formData.skills.includes(skill.id)
-                          ? "bg-blue-600 text-white border-blue-600"
-                          : "bg-gray-50 text-gray-600 border-gray-200 hover:bg-gray-100"
+                          ? "border-violet-400/30 bg-gradient-to-r from-violet-500 to-cyan-400 text-slate-950"
+                          : "border-white/10 bg-white/[0.04] text-slate-300 hover:bg-white/[0.08]"
                       }`}
                     >
                       {skill.name}
                     </button>
                   ))}
-                  {availableSkills.length === 0 && (
-                    <span className="text-gray-400 text-sm italic">No skills available.</span>
-                  )}
+                  {availableSkills.length === 0 ? (
+                    <span className="text-sm italic text-slate-500">No skills available. Please add them in the admin panel.</span>
+                  ) : null}
                 </div>
               </div>
             </div>
           </div>
 
-          {/* Section 2: Job Details */}
-          <div className="bg-white rounded-2xl p-8 shadow-sm border border-gray-100">
-            <h2 className="text-xl font-bold text-gray-800 mb-6 flex items-center">
-              <span className="bg-blue-100 text-blue-600 w-8 h-8 rounded-lg inline-flex items-center justify-center mr-3 text-sm">2</span>
-              Job Details
-            </h2>
+          <div className="rounded-[32px] border border-white/10 bg-white/[0.04] p-6 lg:p-8">
+            <div className="mb-6 flex items-center gap-3">
+              <div className="flex size-9 items-center justify-center rounded-2xl border border-white/10 bg-white/[0.04] text-sm font-semibold text-white">
+                2
+              </div>
+              <div>
+                <div className="text-lg font-semibold text-white">Role context</div>
+                <p className="text-sm text-slate-400">Add the job type, working hours, experience detail, and extra requirements.</p>
+              </div>
+            </div>
+
             <div className="space-y-5">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+              <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Job Type</label>
+                  <label className="mb-2 block text-sm font-medium text-slate-300">Job Type</label>
                   <select
                     name="job_type"
                     value={formData.job_type}
                     onChange={handleChange}
-                    className="w-full px-4 py-2.5 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all bg-white"
+                    className="w-full rounded-2xl border border-white/10 bg-black/20 px-4 py-3 text-white outline-none transition focus:border-violet-400/60"
                   >
-                    <option value="">Select Job Type</option>
+                    <option value="">Select job type</option>
                     <option value="Full-time">Full-time</option>
                     <option value="Part-time">Part-time</option>
                     <option value="Hybrid">Hybrid</option>
@@ -245,110 +360,177 @@ const CreateJob = () => {
                   </select>
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Timings</label>
-                  <input type="text" name="timings" value={formData.timings} onChange={handleChange} className="w-full px-4 py-2.5 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all" placeholder="e.g. 9 AM - 5 PM EST" />
+                  <label className="mb-2 block text-sm font-medium text-slate-300">Timings</label>
+                  <input
+                    type="text"
+                    name="timings"
+                    value={formData.timings}
+                    onChange={handleChange}
+                    className="w-full rounded-2xl border border-white/10 bg-black/20 px-4 py-3 text-white outline-none transition placeholder:text-slate-500 focus:border-violet-400/60"
+                    placeholder="e.g. 9 AM - 5 PM PST"
+                  />
                 </div>
               </div>
+
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Type of Experience Required</label>
-                <textarea name="experience_details" rows="2" value={formData.experience_details} onChange={handleChange} className="w-full px-4 py-2.5 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all resize-none" placeholder="e.g. Experience with high-traffic e-commerce systems..." />
+                <label className="mb-2 block text-sm font-medium text-slate-300">Experience Details</label>
+                <textarea
+                  name="experience_details"
+                  rows="3"
+                  value={formData.experience_details}
+                  onChange={handleChange}
+                  className="w-full rounded-[24px] border border-white/10 bg-black/20 px-4 py-4 text-white outline-none transition placeholder:text-slate-500 focus:border-violet-400/60"
+                  placeholder="e.g. Experience with production React systems, team collaboration, and shipping across the full sprint lifecycle."
+                />
+              </div>
+
+              <div>
+                <label className="mb-2 block text-sm font-medium text-slate-300">Additional Requirements</label>
+                <textarea
+                  name="additional_requirements"
+                  rows="4"
+                  value={formData.additional_requirements}
+                  onChange={handleChange}
+                  className="w-full rounded-[24px] border border-white/10 bg-black/20 px-4 py-4 text-white outline-none transition placeholder:text-slate-500 focus:border-violet-400/60"
+                  placeholder="Nice to have: Docker, Kubernetes, stakeholder communication, design systems, or domain-specific experience."
+                />
               </div>
             </div>
           </div>
 
-          {/* Section 3: Requirements */}
-          <div className="bg-white rounded-2xl p-8 shadow-sm border border-gray-100">
-            <h2 className="text-xl font-bold text-gray-800 mb-6 flex items-center">
-              <span className="bg-blue-100 text-blue-600 w-8 h-8 rounded-lg inline-flex items-center justify-center mr-3 text-sm">3</span>
-              Requirements
-            </h2>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Additional Skills / Technologies</label>
-              <textarea name="additional_requirements" rows="3" value={formData.additional_requirements} onChange={handleChange} className="w-full px-4 py-2.5 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all resize-none" placeholder="e.g. Nice to have: Docker, Kubernetes, AWS..." />
+          <div className="rounded-[32px] border border-cyan-300/12 bg-[linear-gradient(135deg,_rgba(22,24,46,0.96),_rgba(9,11,24,0.96))] p-6 lg:p-8">
+            <div className="mb-6 flex items-center gap-3">
+              <div className="flex size-9 items-center justify-center rounded-2xl border border-cyan-300/15 bg-cyan-300/10 text-sm font-semibold text-cyan-100">
+                AI
+              </div>
+              <div>
+                <div className="text-lg font-semibold text-white">AI job description generator</div>
+                <p className="text-sm text-slate-400">Generate a first-pass brief, then refine the final description before publishing.</p>
+              </div>
             </div>
-          </div>
 
-          {/* Section 4: AI JD Generator */}
-          <div className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-2xl p-8 shadow-sm border border-blue-100">
-            <h2 className="text-xl font-bold text-gray-800 mb-6 flex items-center">
-              <span className="bg-blue-600 text-white w-8 h-8 rounded-lg inline-flex items-center justify-center mr-3 text-sm">
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg>
-              </span>
-              AI Job Description Generator
-            </h2>
             <div className="space-y-5">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Additional Instructions for AI JD</label>
-                <textarea name="jd_prompt" rows="2" value={formData.jd_prompt} onChange={handleChange} className="w-full px-4 py-2.5 border border-blue-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all resize-none bg-white" placeholder="e.g. Emphasize teamwork, agile methodologies, and leadership potential." />
+                <label className="mb-2 block text-sm font-medium text-slate-300">Additional AI Instructions</label>
+                <textarea
+                  name="jd_prompt"
+                  rows="3"
+                  value={formData.jd_prompt}
+                  onChange={handleChange}
+                  className="w-full rounded-[24px] border border-white/10 bg-black/20 px-4 py-4 text-white outline-none transition placeholder:text-slate-500 focus:border-violet-400/60"
+                  placeholder="Emphasize collaboration, measurable outcomes, product thinking, or role-specific expectations."
+                />
               </div>
-              <div className="flex gap-3">
-                <button type="button" onClick={handleGenerateJD} disabled={isGeneratingJD} className="px-5 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl font-medium shadow-md shadow-indigo-200 transition-colors flex items-center disabled:opacity-50">
-                  {isGeneratingJD ? (
-                    <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
-                  ) : (
-                    <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z"></path></svg>
-                  )}
-                  {isGeneratingJD ? "Generating..." : "Generate AI JD"}
+
+              <div className="flex flex-wrap gap-3">
+                <button
+                  type="button"
+                  onClick={handleGenerateJD}
+                  disabled={isGeneratingJD}
+                  className="rounded-full border border-cyan-300/20 bg-cyan-300/10 px-5 py-3 text-sm font-semibold text-cyan-100 transition hover:bg-cyan-300/16 disabled:cursor-not-allowed disabled:opacity-50"
+                >
+                  {isGeneratingJD ? "Generating..." : "Generate JD with AI"}
                 </button>
-                <button type="button" onClick={handleGenerateJD} disabled={isGeneratingJD} className="px-5 py-2.5 bg-white text-indigo-600 border border-indigo-200 hover:bg-indigo-50 rounded-xl font-medium transition-colors flex items-center disabled:opacity-50">
-                  <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>
-                  Regenerate
+                <button
+                  type="button"
+                  onClick={handleCopy}
+                  disabled={!formData.description}
+                  className="rounded-full border border-white/10 bg-white/[0.04] px-5 py-3 text-sm font-medium text-slate-200 transition hover:bg-white/[0.08] disabled:cursor-not-allowed disabled:text-slate-500"
+                >
+                  {copied ? "Copied" : "Copy Draft"}
                 </button>
-              </div>
-              <div>
-                <div className="flex justify-between items-center mb-1">
-                  <label className="block text-sm font-medium text-gray-700">Final Job Description *</label>
-                  {formData.description && (
-                    <button type="button" onClick={handleCopy} className="text-sm text-indigo-600 hover:text-indigo-800 flex items-center font-medium transition-colors">
-                      {copied ? (
-                        <>
-                          <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7"></path></svg>
-                          Copied!
-                        </>
-                      ) : (
-                        <>
-                          <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"></path></svg>
-                          Copy
-                        </>
-                      )}
-                    </button>
-                  )}
-                </div>
-                <textarea name="description" required rows="10" value={formData.description} onChange={handleChange} className="w-full px-4 py-2.5 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all resize-y bg-white font-mono text-sm" placeholder="The generated description will appear here. You can manually edit this text before saving." />
               </div>
             </div>
           </div>
+        </section>
 
-          <div className="flex justify-end gap-4 border-t border-gray-100 pt-8 pb-12">
-            <Link to="/recruiter/jobs" className="px-6 py-3 text-gray-600 bg-white border border-gray-200 hover:bg-gray-50 rounded-xl font-medium transition-colors shadow-sm">
-              Cancel
-            </Link>
-            <button type="submit" disabled={loading} className="px-8 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-medium shadow-md shadow-blue-200 transition-colors disabled:opacity-50 flex items-center text-lg">
-              {loading ? (
-                <>
-                  <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
-                  {isEdit ? "Updating..." : "Creating..."}
-                </>
-              ) : (
-                isEdit ? "Update Job" : "Create Job"
-              )}
-            </button>
+        <aside className="col-span-12 xl:col-span-5">
+          <div className="xl:sticky xl:top-8 space-y-6">
+            <div className="rounded-[32px] border border-white/10 bg-[#111126] p-6 lg:p-8">
+              <div className="flex items-center justify-between gap-4">
+                <div>
+                  <div className="text-xs font-semibold uppercase tracking-[0.28em] text-violet-200/70">
+                    Final Description
+                  </div>
+                  <div className="mt-2 text-lg font-semibold text-white">
+                    {isEdit ? "Refine and update" : "Draft and publish"}
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => navigate("/recruiter/jobs")}
+                  className="rounded-full border border-white/10 bg-white/[0.04] px-4 py-2 text-xs font-semibold uppercase tracking-[0.22em] text-slate-300 transition hover:bg-white/[0.08]"
+                >
+                  Back
+                </button>
+              </div>
+
+              <div className="mt-6">
+                <label className="mb-2 block text-sm font-medium text-slate-300">Job Description *</label>
+                <textarea
+                  name="description"
+                  required
+                  rows="16"
+                  value={formData.description}
+                  onChange={handleChange}
+                  className="w-full rounded-[24px] border border-white/10 bg-black/20 px-4 py-4 font-mono text-sm leading-7 text-white outline-none transition placeholder:text-slate-500 focus:border-violet-400/60"
+                  placeholder="The final job description will appear here. You can edit the AI output before saving."
+                />
+              </div>
+
+              <div className="mt-6 space-y-3 rounded-[24px] border border-white/8 bg-black/20 p-4">
+                <div className="text-xs font-semibold uppercase tracking-[0.24em] text-slate-500">Draft Summary</div>
+                <div className="flex items-center justify-between text-sm text-slate-300">
+                  <span>Selected skills</span>
+                  <span>{String(selectedSkills.length).padStart(2, "0")}</span>
+                </div>
+                <div className="flex items-center justify-between text-sm text-slate-300">
+                  <span>Description ready</span>
+                  <span>{formData.description ? "Yes" : "No"}</span>
+                </div>
+                <div className="flex items-center justify-between text-sm text-slate-300">
+                  <span>Mode</span>
+                  <span>{isEdit ? "Editing" : "New role"}</span>
+                </div>
+              </div>
+
+              <div className="mt-6 flex flex-col gap-3">
+                <button
+                  type="submit"
+                  disabled={loading || !hasCompany}
+                  className="rounded-full bg-gradient-to-r from-violet-500 to-cyan-400 px-6 py-4 text-sm font-semibold text-slate-950 transition hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-50"
+                >
+                  {loading ? (isEdit ? "Updating..." : "Creating...") : isEdit ? "Update Job" : "Create Job"}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => navigate("/recruiter/jobs")}
+                  className="rounded-full border border-white/10 bg-white/[0.04] px-6 py-4 text-sm font-medium text-slate-200 transition hover:bg-white/[0.08]"
+                >
+                  Cancel
+                </button>
+              </div>
+            </div>
+
+            <div className="rounded-[32px] border border-white/10 bg-white/[0.04] p-6">
+              <div className="text-xs font-semibold uppercase tracking-[0.28em] text-cyan-200/70">
+                Selected Skills
+              </div>
+              <div className="mt-4 flex flex-wrap gap-2">
+                {selectedSkills.length ? (
+                  selectedSkills.map((skill) => (
+                    <span key={skill.id} className="rounded-full border border-cyan-300/15 bg-cyan-300/10 px-3 py-2 text-xs font-medium text-cyan-100">
+                      {skill.name}
+                    </span>
+                  ))
+                ) : (
+                  <span className="text-sm text-slate-500">No skills selected yet.</span>
+                )}
+              </div>
+            </div>
           </div>
-        </form>
-
-        <style dangerouslySetInnerHTML={{
-          __html: `
-          @keyframes fadeInUp {
-            from { opacity: 0; transform: translateY(10px); }
-            to { opacity: 1; transform: translateY(0); }
-          }
-          .animate-fade-in-up {
-            animation: fadeInUp 0.4s ease-out forwards;
-          }
-        `}} />
-      </div>
-    </div>
+        </aside>
+      </form>
+    </PortalShell>
   );
-};
-
-export default CreateJob;
+}

@@ -1,5 +1,6 @@
 from rest_framework import viewsets, permissions, status
 from rest_framework.decorators import action
+from rest_framework.exceptions import ValidationError
 from rest_framework.response import Response
 from .models import Job, JobApplication, Skill
 from .serializers import (
@@ -69,6 +70,11 @@ class JobViewSet(viewsets.ModelViewSet):
         Automatically assign created_by and company from the request user.
         Do NOT accept these fields from request body.
         """
+        if self.request.user.company is None:
+            raise ValidationError({
+                "company": "Your recruiter account is not linked to a company yet. Add or assign a company before creating jobs."
+            })
+
         serializer.save(
             created_by=self.request.user,
             company=self.request.user.company
