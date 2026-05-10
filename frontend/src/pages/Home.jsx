@@ -24,7 +24,7 @@ export default function Home() {
           <header className="flex items-center justify-between rounded-full border border-white/10 bg-white/[0.04] px-6 py-4 backdrop-blur-xl">
             <div className="flex items-center gap-5">
               <div className="text-xs font-semibold uppercase tracking-[0.35em] text-violet-200/80">
-                RecuroAI
+                Nominate AI
               </div>
               <div className="text-lg font-semibold tracking-tight text-white">
                 AI Recruitment System

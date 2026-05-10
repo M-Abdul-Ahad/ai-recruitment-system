@@ -33,6 +33,7 @@ const Applications = () => {
             badge="Applications"
             title="Track every application stage without losing momentum across active roles."
             subtitle="Use one applicant workspace to monitor hiring movement, understand what needs follow-up, and see where interviews may open next."
+            titleClass="text-2xl md:text-3xl xl:text-4xl"
             navItems={applicantNav}
             stats={[
                 { value: "03", label: "Active applications" },

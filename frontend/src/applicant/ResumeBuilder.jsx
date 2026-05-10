@@ -46,6 +46,7 @@ const ResumeBuilder = () => {
             badge="Resume builder"
             title="Draft stronger resume copy for the role you want next."
             subtitle="Use a cleaner desktop writing flow to shape profile summaries, skill framing, and role-specific positioning."
+            titleClass="text-2xl md:text-3xl xl:text-4xl"
             navItems={applicantNav}
             stats={[
                 { value: "04", label: "Draft sections" },

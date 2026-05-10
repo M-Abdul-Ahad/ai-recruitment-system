@@ -15,7 +15,7 @@ export default function AuthLayout({ title, subtitle, eyebrow, children, footer 
         >
           <div className="relative z-10 flex h-full min-h-[820px] flex-col justify-between gap-16">
             <Link to="/" className="inline-flex w-fit items-center rounded-full border border-white/12 bg-white/5 px-4 py-2 text-xs font-semibold uppercase tracking-[0.28em] text-violet-100 transition hover:bg-white/10">
-              RecuroAI
+              Nominate AI
             </Link>
             <div className="max-w-xl rounded-[32px] border border-white/10 bg-white/[0.03] p-7 backdrop-blur-sm">
               <div className="text-xs font-semibold uppercase tracking-[0.32em] text-violet-200/70">

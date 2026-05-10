@@ -70,11 +70,10 @@ export default function JobCard({ job, onPublish, onClose, onViewApplicants, onE
 
         <button
           onClick={() => onViewApplicants(job)}
-          className={`flex-1 rounded-xl border py-2 text-sm font-semibold transition-colors ${
-            isDraft
+          className={`flex-1 rounded-xl border py-2 text-sm font-semibold transition-colors ${isDraft
               ? "cursor-not-allowed border-white/8 bg-white/5 text-slate-500"
               : "border-white/10 bg-white/[0.03] text-slate-200 hover:bg-white/8"
-          }`}
+            }`}
           disabled={isDraft}
         >
           View Applicants

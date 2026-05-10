@@ -166,6 +166,7 @@ const ResumeAnalysis = () => {
       badge="Resume Analysis"
       title="Analyze your resume with AI and improve how you present your experience."
       subtitle="Upload your resume, review scoring and suggestions, and inspect the parsed output without leaving the applicant workspace."
+      titleClass="text-2xl md:text-3xl xl:text-4xl"
       navItems={applicantNav}
       stats={[
         { value: aiFeedback ? `${aiFeedback.score || 0}%` : "--", label: "Current AI score" },
@@ -179,9 +180,9 @@ const ResumeAnalysis = () => {
 
           {/* LEFT COLUMN: SCORING */}
           <div className="col-span-12 space-y-6 xl:col-span-4">
-            <section className="relative overflow-hidden rounded-[2rem] border border-slate-200 bg-white p-8 shadow-sm dark:border-slate-800 dark:bg-[#1e293b]">
+            <section className="relative overflow-hidden rounded-[2rem] border border-white/10 bg-white/[0.04] p-8 shadow-sm">
               <div className="absolute top-0 right-0 p-6">
-                <span className="material-symbols-outlined text-slate-200 dark:text-slate-800 text-6xl"></span>
+                <span className="material-symbols-outlined text-white/10 text-6xl"></span>
               </div>
 
               <div className="relative flex flex-col items-center text-center">
@@ -194,7 +195,7 @@ const ResumeAnalysis = () => {
                       r="16"
                       fill="none"
                       strokeWidth="2.5"
-                      className="stroke-slate-100 dark:stroke-slate-800"
+                      className="stroke-white/10"
                     />
                     <circle
                       cx="18"
@@ -206,7 +207,7 @@ const ResumeAnalysis = () => {
                       strokeLinecap="round"
                       className={aiFeedback
                         ? "stroke-indigo-500 drop-shadow-[0_0_8px_rgba(99,102,241,0.4)]"
-                        : "stroke-slate-300 drop-shadow-[0_0_8px_rgba(0,0,0,0.1)]"}
+                        : "stroke-white/20 drop-shadow-[0_0_8px_rgba(255,255,255,0.05)]"}
                     />
                   </svg>
                   <div className="absolute inset-0 flex flex-col items-center justify-center">
@@ -225,14 +226,14 @@ const ResumeAnalysis = () => {
                 <div className="mt-7 max-w-sm text-center">
                   {aiFeedback ? (
                     <>
-                      <div className={`inline-block px-4 py-1 rounded-full text-xs font-bold mb-3 ${aiFeedback.score >= 80 ? 'bg-emerald-50 dark:bg-emerald-500/10 text-emerald-600 dark:text-emerald-400' :
-                        aiFeedback.score >= 60 ? 'bg-blue-50 dark:bg-blue-500/10 text-blue-600 dark:text-blue-400' :
-                          'bg-amber-50 dark:bg-amber-500/10 text-amber-600 dark:text-amber-400'
+                      <div className={`inline-block px-4 py-1 rounded-full text-xs font-bold mb-3 ${aiFeedback.score >= 80 ? 'bg-emerald-500/10 text-emerald-400' :
+                        aiFeedback.score >= 60 ? 'bg-blue-500/10 text-blue-400' :
+                          'bg-amber-500/10 text-amber-400'
                         }`}>
                         {aiFeedback.score >= 80 ? 'Excellent' : aiFeedback.score >= 60 ? 'Good' : 'Needs Work'}
                       </div>
                       <h3 className="text-2xl font-bold tracking-tight">Resume Analysis Complete</h3>
-                      <p className="mt-3 text-sm leading-7 text-slate-500 dark:text-slate-400">
+                      <p className="mt-3 text-sm leading-7 text-slate-400">
                         {aiFeedback.score >= 80 ? 'Your resume is well-optimized and highly competitive.' :
                           aiFeedback.score >= 60 ? 'Your resume has good structure. Review suggestions to improve further.' :
                             'Follow the AI suggestions below to strengthen your resume.'}
@@ -240,11 +241,11 @@ const ResumeAnalysis = () => {
                     </>
                   ) : (
                     <>
-                      <div className="inline-block px-4 py-1 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 text-xs font-bold mb-3">
+                      <div className="inline-block px-4 py-1 rounded-full bg-white/10 text-slate-400 text-xs font-bold mb-3">
                         Ready for Analysis
                       </div>
                       <h3 className="text-2xl font-bold tracking-tight">Upload Your Resume</h3>
-                      <p className="mt-3 text-sm leading-7 text-slate-500 dark:text-slate-400">
+                      <p className="mt-3 text-sm leading-7 text-slate-400">
                         Upload and get instant AI-powered feedback on your resume quality and suggestions for improvement.
                       </p>
                     </>
@@ -266,7 +267,7 @@ const ResumeAnalysis = () => {
               <button
                 onClick={generateAIFeedback}
                 disabled={aiLoading || !uploadedFile}
-                className="flex min-h-[128px] flex-col items-center justify-center gap-3 rounded-[1.5rem] border border-slate-200 bg-white p-6 transition-all hover:border-indigo-500 disabled:cursor-not-allowed disabled:opacity-50 dark:border-slate-800 dark:bg-[#1e293b]"
+                className="flex min-h-[128px] flex-col items-center justify-center gap-3 rounded-[1.5rem] border border-white/10 bg-white/[0.04] p-6 transition-all hover:border-indigo-500 disabled:cursor-not-allowed disabled:opacity-50"
               >
                 <span className="material-symbols-outlined text-indigo-500">{aiLoading ? 'hourglass_top' : 'sparkles'}</span>
                 <span className="text-xs font-bold">{aiLoading ? 'Analyzing...' : 'AI Analysis'}</span>
@@ -287,12 +288,12 @@ const ResumeAnalysis = () => {
           <div className="col-span-12 space-y-6 xl:col-span-8">
 
             {/* FILE STATUS */}
-            <div className="rounded-[2rem] border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-[#1e293b]">
+            <div className="rounded-[2rem] border border-white/10 bg-white/[0.04] p-6 shadow-sm">
               {uploadError && (
-                <div className="mb-4 p-4 bg-red-50 dark:bg-red-500/10 border border-red-200 dark:border-red-500/20 rounded-xl">
+                <div className="mb-4 p-4 bg-red-500/10 border border-red-500/20 rounded-xl">
                   <div className="flex items-start gap-3">
                     <span className="material-symbols-outlined text-red-500 mt-0.5">error</span>
-                    <p className="text-sm text-red-700 dark:text-red-400">{uploadError}</p>
+                    <p className="text-sm text-red-400">{uploadError}</p>
                   </div>
                 </div>
               )}
@@ -301,13 +302,13 @@ const ResumeAnalysis = () => {
                 <div className="flex flex-col items-center justify-center py-8 gap-4">
                   <div className="relative size-16">
                     <svg className="size-full animate-spin" viewBox="0 0 36 36">
-                      <circle cx="18" cy="18" r="14" fill="none" strokeWidth="2" className="stroke-slate-200 dark:stroke-slate-800" />
+                      <circle cx="18" cy="18" r="14" fill="none" strokeWidth="2" className="stroke-white/10" />
                       <circle cx="18" cy="18" r="14" fill="none" strokeWidth="2" strokeDasharray="22, 88" strokeLinecap="round" className="stroke-indigo-500" />
                     </svg>
                   </div>
                   <div className="text-center">
-                    <p className="text-sm font-bold text-slate-700 dark:text-slate-300">Uploading resume...</p>
-                    <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">Please wait while we process your file</p>
+                    <p className="text-sm font-bold text-slate-300">Uploading resume...</p>
+                    <p className="text-xs text-slate-400 mt-1">Please wait while we process your file</p>
                   </div>
                 </div>
               )}
@@ -315,14 +316,11 @@ const ResumeAnalysis = () => {
               {!isUploading && !uploadedFile && (
                 <div
                   onClick={handleUploadClick}
-                  className="flex min-h-[248px] flex-col items-center justify-center gap-5 rounded-[1.5rem] py-12 text-center transition-colors hover:bg-slate-50 dark:hover:bg-slate-900/50"
+                  className="flex min-h-[248px] flex-col items-center justify-center gap-5 rounded-[1.5rem] py-12 text-center transition-colors hover:bg-white/5"
                 >
-                  <div className="flex size-16 items-center justify-center rounded-2xl bg-indigo-50 dark:bg-indigo-500/10">
-                    <span className="material-symbols-outlined text-indigo-500 text-3xl">cloud_upload</span>
-                  </div>
                   <div className="text-center">
-                    <p className="text-sm font-bold text-slate-700 dark:text-slate-300">No resume uploaded yet</p>
-                    <p className="mt-2 text-xs text-slate-500 dark:text-slate-400">Click to select PDF or DOCX file</p>
+                    <p className="text-sm font-bold text-slate-300">No resume uploaded yet</p>
+                    <p className="mt-2 text-xs text-slate-400">Click to select PDF or DOCX file</p>
                   </div>
                 </div>
               )}
@@ -330,7 +328,7 @@ const ResumeAnalysis = () => {
               {!isUploading && uploadedFile && (
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-4">
-                    <div className="size-12 bg-emerald-50 dark:bg-emerald-500/10 rounded-xl flex items-center justify-center">
+                    <div className="size-12 bg-emerald-500/10 rounded-xl flex items-center justify-center">
                       <span className="material-symbols-outlined text-emerald-500">
                         {uploadedFile.name.endsWith('.pdf') ? '' : 'description'}
                       </span>
@@ -345,13 +343,13 @@ const ResumeAnalysis = () => {
                   <div className="flex items-center gap-2">
                     <button
                       onClick={handleUploadClick}
-                      className="px-5 py-2 text-xs font-bold bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 rounded-xl transition"
+                      className="px-5 py-2 text-xs font-bold bg-white/10 hover:bg-white/20 rounded-xl transition"
                     >
                       Replace
                     </button>
                     <button
                       onClick={handleRemoveFile}
-                      className="px-3 py-2 text-xs font-bold text-red-500 hover:bg-red-50 dark:hover:bg-red-500/10 rounded-xl transition"
+                      className="px-3 py-2 text-xs font-bold text-red-500 hover:bg-red-500/10 rounded-xl transition"
                     >
                       <span className="material-symbols-outlined">delete</span>
                     </button>
@@ -362,10 +360,10 @@ const ResumeAnalysis = () => {
 
             {/* AI FEEDBACK ERROR */}
             {aiError && (
-              <div className="p-4 bg-red-50 dark:bg-red-500/10 border border-red-200 dark:border-red-500/20 rounded-xl">
+              <div className="p-4 bg-red-500/10 border border-red-500/20 rounded-xl">
                 <div className="flex items-start gap-3">
                   <span className="material-symbols-outlined text-red-500 mt-0.5">error</span>
-                  <p className="text-sm text-red-700 dark:text-red-400">{aiError}</p>
+                  <p className="text-sm text-red-400">{aiError}</p>
                 </div>
               </div>
             )}
@@ -374,7 +372,7 @@ const ResumeAnalysis = () => {
             <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
 
               {/* SKILLS CARDS */}
-              <div className="min-h-[320px] rounded-[2rem] border border-slate-200 bg-white p-6 dark:border-slate-800 dark:bg-[#1e293b]">
+              <div className="min-h-[320px] rounded-[2rem] border border-white/10 bg-white/[0.04] p-6">
                 <h4 className="flex items-center gap-2 text-sm font-black uppercase tracking-widest text-slate-400 mb-6">
                   <span className="size-2 bg-indigo-500 rounded-full"></span>
                   Key Skill Gaps
@@ -387,7 +385,7 @@ const ResumeAnalysis = () => {
                           <span className="capitalize">{skill.name || skill}</span>
                           <span className="text-indigo-500">✓</span>
                         </div>
-                        <div className="h-1.5 w-full bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
+                        <div className="h-1.5 w-full bg-white/10 rounded-full overflow-hidden">
                           <div className="h-full bg-indigo-500 rounded-full w-full"></div>
                         </div>
                       </div>
@@ -399,7 +397,7 @@ const ResumeAnalysis = () => {
               </div>
 
               {/* IMPROVEMENTS */}
-              <div className="min-h-[320px] rounded-[2rem] border border-slate-200 bg-white p-6 dark:border-slate-800 dark:bg-[#1e293b]">
+              <div className="min-h-[320px] rounded-[2rem] border border-white/10 bg-white/[0.04] p-6">
                 <h4 className="flex items-center gap-2 text-sm font-black uppercase tracking-widest text-slate-400 mb-6">
                   <span className="size-2 bg-amber-500 rounded-full"></span>
                   AI Suggestions
@@ -408,25 +406,25 @@ const ResumeAnalysis = () => {
                   <div className="space-y-3">
                     {Array.isArray(aiFeedback.suggestions) ? (
                       aiFeedback.suggestions.map((suggestion, index) => (
-                        <div key={index} className="flex gap-4 p-3 bg-amber-50 dark:bg-amber-500/5 rounded-lg border border-amber-100 dark:border-amber-500/20 hover:border-amber-200 dark:hover:border-amber-500/40 transition">
+                        <div key={index} className="flex gap-4 p-3 bg-amber-500/5 rounded-lg border border-amber-500/20 hover:border-amber-500/40 transition">
                           <div className="flex-shrink-0">
-                            <span className="flex items-center justify-center h-6 w-6 rounded-full bg-amber-100 dark:bg-amber-500/20 text-amber-600 dark:text-amber-400 text-sm font-bold">
+                            <span className="flex items-center justify-center h-6 w-6 rounded-full bg-amber-500/20 text-amber-400 text-sm font-bold">
                               {index + 1}
                             </span>
                           </div>
-                          <p className="text-sm leading-relaxed text-slate-700 dark:text-slate-300 pt-0.5">
+                          <p className="text-sm leading-relaxed text-slate-300 pt-0.5">
                             {suggestion}
                           </p>
                         </div>
                       ))
                     ) : (
-                      <div className="flex gap-4 p-3 bg-amber-50 dark:bg-amber-500/5 rounded-lg border border-amber-100 dark:border-amber-500/20">
+                      <div className="flex gap-4 p-3 bg-amber-500/5 rounded-lg border border-amber-500/20">
                         <div className="flex-shrink-0">
-                          <span className="flex items-center justify-center h-6 w-6 rounded-full bg-amber-100 dark:bg-amber-500/20 text-amber-600 dark:text-amber-400 text-sm font-bold">
+                          <span className="flex items-center justify-center h-6 w-6 rounded-full bg-amber-500/20 text-amber-400 text-sm font-bold">
                             1
                           </span>
                         </div>
-                        <p className="text-sm leading-relaxed text-slate-700 dark:text-slate-300 pt-0.5">
+                        <p className="text-sm leading-relaxed text-slate-300 pt-0.5">
                           {aiFeedback.suggestions}
                         </p>
                       </div>
@@ -434,23 +432,23 @@ const ResumeAnalysis = () => {
                   </div>
                 ) : (
                   <div className="space-y-3">
-                    <div className="flex gap-4 p-3 bg-amber-50 dark:bg-amber-500/5 rounded-lg border border-amber-100 dark:border-amber-500/20">
+                    <div className="flex gap-4 p-3 bg-amber-500/5 rounded-lg border border-amber-500/20">
                       <div className="flex-shrink-0">
-                        <span className="flex items-center justify-center h-6 w-6 rounded-full bg-amber-100 dark:bg-amber-500/20 text-amber-600 dark:text-amber-400 text-sm font-bold">
+                        <span className="flex items-center justify-center h-6 w-6 rounded-full bg-amber-500/20 text-amber-400 text-sm font-bold">
                           1
                         </span>
                       </div>
-                      <p className="text-sm leading-relaxed text-slate-700 dark:text-slate-300 pt-0.5">
+                      <p className="text-sm leading-relaxed text-slate-300 pt-0.5">
                         Use <strong>action verbs</strong> like "Architected" instead of "Worked on".
                       </p>
                     </div>
-                    <div className="flex gap-4 p-3 bg-amber-50 dark:bg-amber-500/5 rounded-lg border border-amber-100 dark:border-amber-500/20">
+                    <div className="flex gap-4 p-3 bg-amber-500/5 rounded-lg border border-amber-500/20">
                       <div className="flex-shrink-0">
-                        <span className="flex items-center justify-center h-6 w-6 rounded-full bg-amber-100 dark:bg-amber-500/20 text-amber-600 dark:text-amber-400 text-sm font-bold">
+                        <span className="flex items-center justify-center h-6 w-6 rounded-full bg-amber-500/20 text-amber-400 text-sm font-bold">
                           2
                         </span>
                       </div>
-                      <p className="text-sm leading-relaxed text-slate-700 dark:text-slate-300 pt-0.5">
+                      <p className="text-sm leading-relaxed text-slate-300 pt-0.5">
                         Add a dedicated "Certifications" section for Cloud credentials.
                       </p>
                     </div>
@@ -465,38 +463,38 @@ const ResumeAnalysis = () => {
 
                 {/* STRENGTHS */}
                 {aiFeedback.strengths && (
-                  <div className="bg-emerald-50 dark:bg-emerald-500/10 border border-emerald-200 dark:border-emerald-500/30 p-6 rounded-2xl">
-                    <h4 className="flex items-center gap-2 text-sm font-black uppercase tracking-widest text-emerald-700 dark:text-emerald-400 mb-4">
+                  <div className="bg-emerald-500/10 border border-emerald-500/30 p-6 rounded-2xl">
+                    <h4 className="flex items-center gap-2 text-sm font-black uppercase tracking-widest text-emerald-400 mb-4">
                       <span className="material-symbols-outlined">check_circle</span>
                       Strengths
                     </h4>
                     {Array.isArray(aiFeedback.strengths) ? (
                       <div className="space-y-3">
                         {aiFeedback.strengths.map((strength, index) => (
-                          <div key={index} className="flex gap-4 p-4 bg-white dark:bg-slate-800/50 rounded-lg border border-emerald-100 dark:border-emerald-500/20 hover:border-emerald-300 dark:hover:border-emerald-500/40 transition">
+                          <div key={index} className="flex gap-4 p-4 bg-white/[0.04] rounded-lg border border-emerald-500/20 hover:border-emerald-500/40 transition">
                             <div className="flex-shrink-0">
-                              <span className="flex items-center justify-center h-7 w-7 rounded-full bg-emerald-100 dark:bg-emerald-500/20 text-emerald-600 dark:text-emerald-400">
+                              <span className="flex items-center justify-center h-7 w-7 rounded-full bg-emerald-500/20 text-emerald-400">
                                 <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
                                   <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
                                 </svg>
                               </span>
                             </div>
-                            <p className="text-sm leading-relaxed text-slate-700 dark:text-slate-300 pt-0.5">
+                            <p className="text-sm leading-relaxed text-slate-300 pt-0.5">
                               {strength}
                             </p>
                           </div>
                         ))}
                       </div>
                     ) : (
-                      <div className="flex gap-4 p-4 bg-white dark:bg-slate-800/50 rounded-lg border border-emerald-100 dark:border-emerald-500/20">
+                      <div className="flex gap-4 p-4 bg-white/[0.04] rounded-lg border border-emerald-500/20">
                         <div className="flex-shrink-0">
-                          <span className="flex items-center justify-center h-7 w-7 rounded-full bg-emerald-100 dark:bg-emerald-500/20 text-emerald-600 dark:text-emerald-400">
+                          <span className="flex items-center justify-center h-7 w-7 rounded-full bg-emerald-500/20 text-emerald-400">
                             <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
                               <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
                             </svg>
                           </span>
                         </div>
-                        <p className="text-sm leading-relaxed text-slate-700 dark:text-slate-300 pt-0.5">
+                        <p className="text-sm leading-relaxed text-slate-300 pt-0.5">
                           {aiFeedback.strengths}
                         </p>
                       </div>
@@ -506,34 +504,34 @@ const ResumeAnalysis = () => {
 
                 {/* WEAKNESSES */}
                 {aiFeedback.weaknesses && (
-                  <div className="bg-amber-50 dark:bg-amber-500/10 border border-amber-200 dark:border-amber-500/30 p-6 rounded-2xl">
-                    <h4 className="flex items-center gap-2 text-sm font-black uppercase tracking-widest text-amber-700 dark:text-amber-400 mb-4">
+                  <div className="bg-amber-500/10 border border-amber-500/30 p-6 rounded-2xl">
+                    <h4 className="flex items-center gap-2 text-sm font-black uppercase tracking-widest text-amber-400 mb-4">
                       <span className="material-symbols-outlined">warning</span>
                       Areas to Improve
                     </h4>
                     {Array.isArray(aiFeedback.weaknesses) ? (
                       <div className="space-y-3">
                         {aiFeedback.weaknesses.map((weakness, index) => (
-                          <div key={index} className="flex gap-4 p-4 bg-white dark:bg-slate-800/50 rounded-lg border border-amber-100 dark:border-amber-500/20 hover:border-amber-300 dark:hover:border-amber-500/40 transition">
+                          <div key={index} className="flex gap-4 p-4 bg-white/[0.04] rounded-lg border border-amber-500/20 hover:border-amber-500/40 transition">
                             <div className="flex-shrink-0">
-                              <span className="flex items-center justify-center h-7 w-7 rounded-full bg-amber-100 dark:bg-amber-500/20 text-amber-600 dark:text-amber-400 text-sm font-bold">
+                              <span className="flex items-center justify-center h-7 w-7 rounded-full bg-amber-500/20 text-amber-400 text-sm font-bold">
                                 {index + 1}
                               </span>
                             </div>
-                            <p className="text-sm leading-relaxed text-slate-700 dark:text-slate-300 pt-0.5">
+                            <p className="text-sm leading-relaxed text-slate-300 pt-0.5">
                               {weakness}
                             </p>
                           </div>
                         ))}
                       </div>
                     ) : (
-                      <div className="flex gap-4 p-4 bg-white dark:bg-slate-800/50 rounded-lg border border-amber-100 dark:border-amber-500/20">
+                      <div className="flex gap-4 p-4 bg-white/[0.04] rounded-lg border border-amber-500/20">
                         <div className="flex-shrink-0">
-                          <span className="flex items-center justify-center h-7 w-7 rounded-full bg-amber-100 dark:bg-amber-500/20 text-amber-600 dark:text-amber-400 text-sm font-bold">
+                          <span className="flex items-center justify-center h-7 w-7 rounded-full bg-amber-500/20 text-amber-400 text-sm font-bold">
                             1
                           </span>
                         </div>
-                        <p className="text-sm leading-relaxed text-slate-700 dark:text-slate-300 pt-0.5">
+                        <p className="text-sm leading-relaxed text-slate-300 pt-0.5">
                           {aiFeedback.weaknesses}
                         </p>
                       </div>
@@ -543,29 +541,29 @@ const ResumeAnalysis = () => {
 
                 {/* RECOMMENDED CERTIFICATIONS */}
                 {aiFeedback.recommended_certifications && (
-                  <div className="bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-blue-500/10 dark:to-indigo-500/10 border border-blue-200 dark:border-blue-500/30 p-6 rounded-2xl">
-                    <h4 className="flex items-center gap-2 text-sm font-black uppercase tracking-widest text-blue-700 dark:text-blue-400 mb-4">
+                  <div className="bg-gradient-to-br from-blue-500/10 to-indigo-500/10 border border-blue-500/30 p-6 rounded-2xl">
+                    <h4 className="flex items-center gap-2 text-sm font-black uppercase tracking-widest text-blue-400 mb-4">
                       <span className="material-symbols-outlined"></span>
                       Recommended Certifications
                     </h4>
                     {Array.isArray(aiFeedback.recommended_certifications) ? (
                       <div className="space-y-3">
                         {aiFeedback.recommended_certifications.map((cert, index) => (
-                          <div key={index} className="flex gap-4 p-4 bg-white dark:bg-slate-800/50 rounded-lg border border-blue-100 dark:border-blue-500/20 hover:border-blue-300 dark:hover:border-blue-500/40 transition">
+                          <div key={index} className="flex gap-4 p-4 bg-white/[0.04] rounded-lg border border-blue-500/20 hover:border-blue-500/40 transition">
                             <div className="flex-shrink-0">
-                              <span className="flex items-center justify-center h-7 w-7 rounded-full bg-blue-100 dark:bg-blue-500/20 text-blue-600 dark:text-blue-400">
+                              <span className="flex items-center justify-center h-7 w-7 rounded-full bg-blue-500/20 text-blue-400">
                                 <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
                                   <path d="M10.894 2.553a1 1 0 00-1.788 0l-7 14a1 1 0 001.169 1.409l5.951-1.429 5.951 1.429a1 1 0 001.169-1.409l-7-14z" />
                                 </svg>
                               </span>
                             </div>
                             <div className="flex-1">
-                              <h5 className="text-sm font-bold text-slate-800 dark:text-slate-200">{cert.name}</h5>
-                              <p className="text-xs text-slate-600 dark:text-slate-400 mt-1">{cert.reason}</p>
-                              <div className="flex gap-3 mt-2 text-[11px] text-slate-500 dark:text-slate-400">
-                                {cert.platform && <span className="bg-slate-100 dark:bg-slate-700 px-2 py-1 rounded">{cert.platform}</span>}
-                                {cert.estimated_duration && <span className="bg-slate-100 dark:bg-slate-700 px-2 py-1 rounded">{cert.estimated_duration}</span>}
-                                {cert.difficulty && <span className="bg-slate-100 dark:bg-slate-700 px-2 py-1 rounded">{cert.difficulty}</span>}
+                              <h5 className="text-sm font-bold text-slate-200">{cert.name}</h5>
+                              <p className="text-xs text-slate-400 mt-1">{cert.reason}</p>
+                              <div className="flex gap-3 mt-2 text-[11px] text-slate-400">
+                                {cert.platform && <span className="bg-white/10 px-2 py-1 rounded">{cert.platform}</span>}
+                                {cert.estimated_duration && <span className="bg-white/10 px-2 py-1 rounded">{cert.estimated_duration}</span>}
+                                {cert.difficulty && <span className="bg-white/10 px-2 py-1 rounded">{cert.difficulty}</span>}
                               </div>
                             </div>
                           </div>

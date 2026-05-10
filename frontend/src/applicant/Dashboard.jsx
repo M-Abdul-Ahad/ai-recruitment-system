@@ -34,6 +34,7 @@ export default function Dashboard() {
       badge="Applicant workspace"
       title="Track your applications, strengthen your resume, and stay ready for every opportunity."
       subtitle="Your candidate desktop brings together AI review, resume creation, open jobs, and application status in one place."
+      titleClass="text-2xl md:text-3xl xl:text-4xl"
       navItems={applicantNav}
       stats={[
         { value: "12", label: "Open roles matched to your profile" },

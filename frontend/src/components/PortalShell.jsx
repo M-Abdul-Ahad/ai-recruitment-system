@@ -18,57 +18,57 @@ export default function PortalShell({
       <div className="mx-auto grid min-h-screen max-w-[1440px] grid-cols-1 gap-6 px-4 py-4 md:px-6 md:py-6 lg:grid-cols-[360px_minmax(0,1fr)] lg:gap-8 lg:px-8 lg:py-8">
         <aside className="w-full overflow-hidden rounded-[32px] border border-white/10 bg-white/5 px-5 py-6 shadow-[0_20px_80px_rgba(3,2,10,0.45)] backdrop-blur-xl lg:sticky lg:top-8 lg:flex lg:h-[calc(100vh-4rem)] lg:flex-col lg:px-6 lg:py-7">
           <div className="lg:flex lg:h-full lg:flex-col lg:overflow-y-auto lg:pr-1">
-          <div>
-            <div className="text-xs font-semibold uppercase tracking-[0.35em] text-violet-200/70">
-              RecuroAI
+            <div>
+              <div className="text-xs font-semibold uppercase tracking-[0.35em] text-violet-200/70">
+                Nominate AI
+              </div>
+              <div className="mt-3 text-2xl font-semibold tracking-tight text-white">
+                AI Recruitment System
+              </div>
+              <p className="mt-2 text-sm leading-6 text-slate-400">
+                Structured hiring workflows, AI screening, and decision-ready dashboards.
+              </p>
             </div>
-            <div className="mt-3 text-2xl font-semibold tracking-tight text-white">
-              Talent OS
+
+            <div className="mt-8 rounded-full border border-white/10 bg-white/[0.03] px-4 py-2 text-[10px] font-semibold uppercase tracking-[0.2em] text-violet-200 w-fit">
+              Navigation
             </div>
-            <p className="mt-2 text-sm leading-6 text-slate-400">
-              Structured hiring workflows, AI screening, and decision-ready dashboards.
-            </p>
-          </div>
 
-          <div className="mt-8 rounded-full border border-white/10 bg-white/[0.03] px-4 py-2 text-[10px] font-semibold uppercase tracking-[0.2em] text-violet-200 w-fit">
-            Navigation
-          </div>
+            <nav className="mt-4 grid grid-cols-2 gap-2 md:grid-cols-3 lg:grid-cols-1">
+              {navItems.map((item) => (
+                <NavLink
+                  key={item.to}
+                  to={item.to}
+                  end={item.end}
+                  className={({ isActive }) =>
+                    `${baseNav} min-h-[56px] ${isActive
+                      ? "bg-gradient-to-r from-violet-500/25 to-cyan-400/20 text-white shadow-[inset_0_0_0_1px_rgba(255,255,255,0.08)]"
+                      : "text-slate-300 hover:bg-white/6 hover:text-white"}`
+                  }
+                >
+                  <div className="flex items-center justify-between gap-3">
+                    <span className="truncate">{item.label}</span>
+                    {item.tag ? (
+                      <span className="rounded-full border border-white/10 bg-white/6 px-2 py-1 text-[10px] uppercase tracking-[0.2em] text-violet-200">
+                        {item.tag}
+                      </span>
+                    ) : null}
+                  </div>
+                </NavLink>
+              ))}
+            </nav>
 
-          <nav className="mt-4 grid grid-cols-2 gap-2 md:grid-cols-3 lg:grid-cols-1">
-            {navItems.map((item) => (
-              <NavLink
-                key={item.to}
-                to={item.to}
-                end={item.end}
-                className={({ isActive }) =>
-                  `${baseNav} min-h-[56px] ${isActive
-                    ? "bg-gradient-to-r from-violet-500/25 to-cyan-400/20 text-white shadow-[inset_0_0_0_1px_rgba(255,255,255,0.08)]"
-                    : "text-slate-300 hover:bg-white/6 hover:text-white"}`
-                }
+            <div className="mt-5 rounded-[28px] border border-white/10 bg-black/20 p-5 lg:mt-8 lg:p-6">
+              <div className="text-xs uppercase tracking-[0.28em] text-slate-500">Signed In</div>
+              <div className="mt-5 truncate text-[1.05rem] font-semibold text-white">{user?.email || "Guest session"}</div>
+              <div className="mt-3 text-sm capitalize text-slate-400">{user?.role || "Unknown role"}</div>
+              <button
+                onClick={onLogout}
+                className="mt-6 inline-flex w-full items-center justify-center rounded-2xl border border-rose-400/30 bg-rose-500/10 px-4 py-3 text-sm font-medium text-rose-200 transition hover:bg-rose-500/18"
               >
-                <div className="flex items-center justify-between gap-3">
-                  <span className="truncate">{item.label}</span>
-                  {item.tag ? (
-                    <span className="rounded-full border border-white/10 bg-white/6 px-2 py-1 text-[10px] uppercase tracking-[0.2em] text-violet-200">
-                      {item.tag}
-                    </span>
-                  ) : null}
-                </div>
-              </NavLink>
-            ))}
-          </nav>
-
-          <div className="mt-5 rounded-[28px] border border-white/10 bg-black/20 p-5 lg:mt-8 lg:p-6">
-            <div className="text-xs uppercase tracking-[0.28em] text-slate-500">Signed In</div>
-            <div className="mt-5 truncate text-[1.05rem] font-semibold text-white">{user?.email || "Guest session"}</div>
-            <div className="mt-3 text-sm capitalize text-slate-400">{user?.role || "Unknown role"}</div>
-            <button
-              onClick={onLogout}
-              className="mt-6 inline-flex w-full items-center justify-center rounded-2xl border border-rose-400/30 bg-rose-500/10 px-4 py-3 text-sm font-medium text-rose-200 transition hover:bg-rose-500/18"
-            >
-              Log out
-            </button>
-          </div>
+                Log out
+              </button>
+            </div>
           </div>
         </aside>
 
