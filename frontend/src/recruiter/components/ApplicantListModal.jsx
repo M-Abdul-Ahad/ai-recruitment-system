@@ -73,15 +73,32 @@ export default function ApplicantListModal({ isOpen, onClose, job }) {
               {applicants.map((app) => (
                 <div key={app.id} className="flex flex-col justify-between gap-4 rounded-xl border border-white/8 bg-white/[0.04] p-5 sm:flex-row sm:items-center">
                   <div>
-                    <h4 className="text-lg font-semibold text-white">Applicant ID: {app.applicant}</h4>
+                    <h4 className="text-lg font-semibold text-white">{app.applicant_name || `Applicant ID: ${app.applicant}`}</h4>
                     <p className="text-sm text-slate-400">Applied on {new Date(app.applied_at).toLocaleDateString()}</p>
-                    <span className={`mt-2 inline-block rounded-full px-2.5 py-1 text-xs font-medium uppercase tracking-wider ${
-                      app.status === "APPLIED" ? "bg-cyan-300/10 text-cyan-200" : ""
-                    } ${app.status === "SHORTLISTED" ? "bg-emerald-400/10 text-emerald-200" : ""} ${
-                      app.status === "REJECTED" ? "bg-rose-400/10 text-rose-200" : ""
-                    }`}>
-                      {app.status}
-                    </span>
+                    <div className="flex items-center gap-2 mt-2">
+                      <span className={`inline-block rounded-full px-2.5 py-1 text-xs font-medium uppercase tracking-wider ${
+                        app.status === "APPLIED" ? "bg-cyan-300/10 text-cyan-200" : ""
+                      } ${app.status === "SHORTLISTED" ? "bg-emerald-400/10 text-emerald-200" : ""} ${
+                        app.status === "REJECTED" ? "bg-rose-400/10 text-rose-200" : ""
+                      }`}>
+                        {app.status}
+                      </span>
+                      {app.resume_file ? (
+                        <a
+                          href={app.resume_file.startsWith("http") ? app.resume_file : `http://localhost:8000${app.resume_file}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="inline-flex items-center gap-1 rounded-full bg-violet-400/10 px-2.5 py-1 text-xs font-medium text-violet-200 transition hover:bg-violet-400/20"
+                        >
+                          <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                          </svg>
+                          Resume
+                        </a>
+                      ) : (
+                        <span className="text-xs text-slate-600 italic">No resume</span>
+                      )}
+                    </div>
                   </div>
 
                   <div className="flex gap-2">
