@@ -121,8 +121,7 @@ export default function RecruiterDashboard() {
               navigate("/recruiter/company");
               return;
             }
-            setJobToEdit(null);
-            setIsJobModalOpen(true);
+            navigate("/recruiter/jobs/create");
           }}
           className="rounded-full bg-gradient-to-r from-violet-500 to-cyan-400 px-6 py-3 text-sm font-semibold text-slate-950 transition hover:brightness-110"
         >
@@ -174,8 +173,7 @@ export default function RecruiterDashboard() {
           </p>
           <button
             onClick={() => {
-              setJobToEdit(null);
-              setIsJobModalOpen(true);
+              navigate(hasCompany ? "/recruiter/jobs/create" : "/recruiter/company");
             }}
             className="mt-8 rounded-full bg-gradient-to-r from-violet-500 to-cyan-400 px-6 py-3 text-sm font-semibold text-slate-950 transition hover:brightness-110"
           >
