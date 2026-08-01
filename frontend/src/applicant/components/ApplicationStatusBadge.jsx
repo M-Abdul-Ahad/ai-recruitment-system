@@ -1,79 +1,54 @@
 import React from "react";
 
-/* ─── status → { label, bg, text, ring } ─── */
+/**
+ * Status tag mapping aligned with DESIGN.md Section 4:
+ * Applied -> Info (#3E7285)
+ * Shortlisted -> Success (#4E7A33)
+ * Interview / In review -> Warning (#C99A3E)
+ * Rejected -> Danger (#B4453D)
+ * Hired / Accepted -> Dark Anchor (#3D4127)
+ */
 const STATUS_MAP = {
   APPLIED: {
     label: "Applied",
-    bg: "bg-blue-50 dark:bg-blue-500/10",
-    text: "text-blue-700 dark:text-blue-400",
-    ring: "ring-blue-200 dark:ring-blue-500/30",
-    icon: (
-      <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
-        <path d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z" />
-      </svg>
-    ),
+    pillClass: "apl-pill-info",
+    icon: "📩"
   },
   SHORTLISTED: {
     label: "Shortlisted",
-    bg: "bg-amber-50 dark:bg-amber-500/10",
-    text: "text-amber-700 dark:text-amber-400",
-    ring: "ring-amber-200 dark:ring-amber-500/30",
-    icon: (
-      <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
-        <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
-      </svg>
-    ),
+    pillClass: "apl-pill-success",
+    icon: "⭐"
   },
   INTERVIEW: {
     label: "Interview",
-    bg: "bg-purple-50 dark:bg-purple-500/10",
-    text: "text-purple-700 dark:text-purple-400",
-    ring: "ring-purple-200 dark:ring-purple-500/30",
-    icon: (
-      <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
-        <path fillRule="evenodd" d="M6 2a1 1 0 00-1 1v1H4a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V6a2 2 0 00-2-2h-1V3a1 1 0 10-2 0v1H7V3a1 1 0 00-1-1zm0 5a1 1 0 000 2h8a1 1 0 100-2H6z" clipRule="evenodd" />
-      </svg>
-    ),
+    pillClass: "apl-pill-warning",
+    icon: "📅"
   },
   REJECTED: {
     label: "Rejected",
-    bg: "bg-red-50 dark:bg-red-500/10",
-    text: "text-red-700 dark:text-red-400",
-    ring: "ring-red-200 dark:ring-red-500/30",
-    icon: (
-      <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
-        <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
-      </svg>
-    ),
+    pillClass: "apl-pill-danger",
+    icon: "✕"
   },
+  HIRED: {
+    label: "Hired",
+    pillClass: "apl-pill-accent",
+    icon: "🎉"
+  }
 };
 
 const FALLBACK = {
-  label: "Unknown",
-  bg: "bg-gray-50 dark:bg-gray-500/10",
-  text: "text-gray-700 dark:text-gray-400",
-  ring: "ring-gray-200 dark:ring-gray-500/30",
-  icon: null,
+  label: "In Review",
+  pillClass: "apl-pill-warning",
+  icon: "⏳"
 };
 
-/**
- * Renders a styled status badge for a job application status.
- *
- * @param {{ status: string }} props
- */
 const ApplicationStatusBadge = ({ status }) => {
   const cfg = STATUS_MAP[status] || FALLBACK;
 
   return (
-    <span
-      className={`
-        inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold
-        ring-1 ring-inset transition-all
-        ${cfg.bg} ${cfg.text} ${cfg.ring}
-      `}
-    >
-      {cfg.icon}
-      {cfg.label}
+    <span className={`apl-pill ${cfg.pillClass} font-bold text-xs`}>
+      <span className="text-[11px]">{cfg.icon}</span>
+      <span>{cfg.label}</span>
     </span>
   );
 };

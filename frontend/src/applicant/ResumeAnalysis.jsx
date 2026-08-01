@@ -1,6 +1,5 @@
 import React, { useState, useRef } from "react";
 
-
 const API_URL = import.meta.env.VITE_API_URL || "http://127.0.0.1:8000";
 
 const ResumeAnalysis = () => {
@@ -34,7 +33,7 @@ const ResumeAnalysis = () => {
       return;
     }
 
-    // Validate file size (e.g., max 10MB)
+    // Validate file size (max 10MB)
     if (file.size > 10 * 1024 * 1024) {
       setUploadError('File size must be less than 10MB');
       return;
@@ -73,10 +72,7 @@ const ResumeAnalysis = () => {
         }),
       });
 
-      // ⭐ STORE PARSED RESUME DATA
       setResumeData(result.data);
-
-      // 🔥 AUTO-GENERATE AI FEEDBACK AFTER UPLOAD
       await generateAIFeedback(result.data.id);
 
     } catch (error) {
@@ -85,12 +81,13 @@ const ResumeAnalysis = () => {
       setIsUploading(false);
       event.target.value = '';
     }
-  }
+  };
 
   const handleRemoveFile = () => {
     setUploadedFile(null);
     setAiFeedback(null);
     setAiError(null);
+    setResumeData(null);
   };
 
   const generateAIFeedback = async (resumeId = null) => {
@@ -111,7 +108,6 @@ const ResumeAnalysis = () => {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json'
-            // ❌ NO AUTH HEADER
           }
         }
       );
@@ -130,498 +126,345 @@ const ResumeAnalysis = () => {
     }
   };
 
+  const score = aiFeedback?.score || 0;
+
   return (
-    <div className="min-h-screen bg-[#f8fafc] dark:bg-[#0f172a] font-sans text-slate-900 dark:text-slate-100 transition-colors duration-300">
-
-      {/* HEADER */}
-      <header className="bg-white/80 dark:bg-[#1e293b]/80 backdrop-blur-md border-b border-slate-200 dark:border-slate-800 sticky top-0 z-50">
-        <div className="max-w-7xl mx-auto px-6 py-3 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="size-10 bg-gradient-to-br from-indigo-600 to-violet-600 rounded-xl flex items-center justify-center shadow-lg shadow-indigo-500/20">
-            </div>
-            <div>
-              <h2 className="text-lg font-bold tracking-tight leading-tight">Resume Feedback</h2>
-              <p className="text-[10px] text-slate-500 font-medium uppercase tracking-widest">AI Analytics</p>
-            </div>
-          </div>
-
-          <div className="flex items-center gap-6">
-            <div className="hidden md:flex items-center gap-1 bg-slate-100 dark:bg-slate-800 p-1 rounded-lg">
-              <button className="px-3 py-1.5 text-xs font-bold rounded-md bg-white dark:bg-slate-700 shadow-sm">Dashboard</button>
-              <button className="px-3 py-1.5 text-xs font-bold text-slate-500 hover:text-slate-700 transition">History</button>
-            </div>
-
-            <div className="flex items-center gap-4 border-l border-slate-200 dark:border-slate-800 pl-6">
-              <button className="relative size-10 flex items-center justify-center rounded-full hover:bg-slate-100 dark:hover:bg-slate-800 transition">
-                <span className="absolute top-2 right-2 size-2 bg-red-500 rounded-full border-2 border-white dark:border-[#1e293b]"></span>
-              </button>
-              <div className="flex items-center gap-3 cursor-pointer group">
-                <div className="text-right hidden sm:block">
-                  <p className="text-sm font-bold group-hover:text-indigo-600 transition">Alex Rivera</p>
-                  <p className="text-[10px] text-slate-500 font-bold uppercase">Pro Plan</p>
-                </div>
-                <div className="size-10 rounded-xl bg-gradient-to-tr from-slate-200 to-slate-300 dark:from-slate-700 dark:to-slate-600 border-2 border-white dark:border-slate-800 shadow-sm overflow-hidden">
-                  <img src="https://api.dicebear.com/7.x/avataaars/svg?seed=Alex" alt="avatar" />
-                </div>
-              </div>
-            </div>
-          </div>
+    <div className="apl-animate-fade space-y-8">
+      {/* PAGE HEADER */}
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 border-b border-[#D3D6C4] dark:border-[#383D28] pb-5">
+        <div>
+          <span className="text-xs font-bold uppercase tracking-widest text-[#8A8F76] dark:text-[#9CA485]">
+            AI Analytics & Feedback
+          </span>
+          <h1 className="text-2xl sm:text-3xl font-extrabold text-[#22241B] dark:text-[#EBF0DA] tracking-tight mt-1">
+            Resume Analysis
+          </h1>
         </div>
-      </header>
 
-      {/* MAIN CONTENT */}
-      <main className="max-w-7xl mx-auto p-6 lg:p-10">
-        <div className="grid grid-cols-12 gap-8">
+        <div className="flex items-center gap-3">
+          <button
+            onClick={handleUploadClick}
+            disabled={isUploading}
+            className="apl-btn apl-btn-primary shadow-sm"
+          >
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+              <polyline points="17 8 12 3 7 8"/>
+              <line x1="12" y1="3" x2="12" y2="15"/>
+            </svg>
+            <span>{isUploading ? 'Uploading...' : 'Upload Resume'}</span>
+          </button>
+          {uploadedFile && (
+            <button
+              onClick={() => generateAIFeedback()}
+              disabled={aiLoading}
+              className="apl-btn apl-btn-dark shadow-sm"
+            >
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
+              </svg>
+              <span>{aiLoading ? 'Analyzing...' : 'Re-Scan AI'}</span>
+            </button>
+          )}
+        </div>
+      </div>
 
-          {/* LEFT COLUMN: SCORING */}
-          <div className="col-span-12 lg:col-span-4 space-y-8">
-            <section className="bg-white dark:bg-[#1e293b] p-8 rounded-[2rem] shadow-sm border border-slate-200 dark:border-slate-800 relative overflow-hidden">
-              <div className="absolute top-0 right-0 p-6">
-                <span className="material-symbols-outlined text-slate-200 dark:text-slate-800 text-6xl"></span>
+      {/* HIDDEN FILE INPUT */}
+      <input
+        ref={fileInputRef}
+        type="file"
+        accept=".pdf,.docx"
+        onChange={handleFileSelect}
+        className="hidden"
+      />
+
+      {/* MAIN GRID */}
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
+
+        {/* LEFT COLUMN: SCORE & UPLOAD CARD */}
+        <div className="lg:col-span-4 space-y-6">
+          {/* AI SCORE GAUGE CARD */}
+          <div className="apl-card flex flex-col items-center text-center relative overflow-hidden">
+            <span className="text-xs font-bold uppercase tracking-widest text-[#8A8F76] dark:text-[#9CA485] mb-6">
+              AI Resume Match Score
+            </span>
+
+            {/* CIRCULAR SCORE BAR - DESIGN.md (#D4DE95 fill stroke with #3D4127 percentage label) */}
+            <div className="relative w-44 h-44 my-2">
+              <svg className="w-full h-full -rotate-90" viewBox="0 0 36 36">
+                <circle
+                  cx="18"
+                  cy="18"
+                  r="15.5"
+                  fill="none"
+                  strokeWidth="3"
+                  className="stroke-[#ECEEDF] dark:stroke-[#2A2E1E]"
+                />
+                <circle
+                  cx="18"
+                  cy="18"
+                  r="15.5"
+                  fill="none"
+                  strokeWidth="3.2"
+                  strokeDasharray={aiFeedback ? `${Math.min(score, 100)}, 100` : "0, 100"}
+                  strokeLinecap="round"
+                  className={aiFeedback ? "stroke-[#D4DE95] transition-all duration-1000" : "stroke-[#D3D6C4]"}
+                />
+              </svg>
+              <div className="absolute inset-0 flex flex-col items-center justify-center">
+                <span className="text-4xl font-extrabold apl-font-mono text-[#3D4127] dark:text-[#EBF0DA] tracking-tight">
+                  {aiFeedback ? score : '--'}
+                  <span className="text-xl text-[#8A8F76]">
+                    {aiFeedback ? '%' : ''}
+                  </span>
+                </span>
+                <span className="text-[10px] font-extrabold uppercase tracking-widest text-[#8A8F76] mt-1">
+                  Score
+                </span>
               </div>
-
-              <div className="relative flex flex-col items-center">
-                <div className="relative size-48">
-                  {/* Progress Circle */}
-                  <svg className="size-full rotate-90" viewBox="0 0 36 36">
-                    <circle
-                      cx="18"
-                      cy="18"
-                      r="16"
-                      fill="none"
-                      strokeWidth="2.5"
-                      className="stroke-slate-100 dark:stroke-slate-800"
-                    />
-                    <circle
-                      cx="18"
-                      cy="18"
-                      r="16"
-                      fill="none"
-                      strokeWidth="2.5"
-                      strokeDasharray={aiFeedback ? `${Math.min(aiFeedback.score || 0, 100)}, 100` : "0, 100"}
-                      strokeLinecap="round"
-                      className={aiFeedback
-                        ? "stroke-indigo-500 drop-shadow-[0_0_8px_rgba(99,102,241,0.4)]"
-                        : "stroke-slate-300 drop-shadow-[0_0_8px_rgba(0,0,0,0.1)]"}
-                    />
-                  </svg>
-                  <div className="absolute inset-0 flex flex-col items-center justify-center">
-                    <span className="text-5xl font-black tracking-tighter">
-                      {aiFeedback ? aiFeedback.score || 0 : '--'}
-                      <span className="text-xl text-slate-400">
-                        {aiFeedback ? '%' : ''}
-                      </span>
-                    </span>
-                    <span className="text-[10px] text-slate-400 font-black uppercase tracking-[0.2em]">
-                      AI Score
-                    </span>
-                  </div>
-                </div>
-
-                <div className="text-center mt-8">
-                  {aiFeedback ? (
-                    <>
-                      <div className={`inline-block px-4 py-1 rounded-full text-xs font-bold mb-3 ${aiFeedback.score >= 80 ? 'bg-emerald-50 dark:bg-emerald-500/10 text-emerald-600 dark:text-emerald-400' :
-                        aiFeedback.score >= 60 ? 'bg-blue-50 dark:bg-blue-500/10 text-blue-600 dark:text-blue-400' :
-                          'bg-amber-50 dark:bg-amber-500/10 text-amber-600 dark:text-amber-400'
-                        }`}>
-                        {aiFeedback.score >= 80 ? 'Excellent' : aiFeedback.score >= 60 ? 'Good' : 'Needs Work'}
-                      </div>
-                      <h3 className="text-2xl font-bold tracking-tight">Resume Analysis Complete</h3>
-                      <p className="text-sm text-slate-500 dark:text-slate-400 mt-2 leading-relaxed">
-                        {aiFeedback.score >= 80 ? 'Your resume is well-optimized and highly competitive.' :
-                          aiFeedback.score >= 60 ? 'Your resume has good structure. Review suggestions to improve further.' :
-                            'Follow the AI suggestions below to strengthen your resume.'}
-                      </p>
-                    </>
-                  ) : (
-                    <>
-                      <div className="inline-block px-4 py-1 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 text-xs font-bold mb-3">
-                        Ready for Analysis
-                      </div>
-                      <h3 className="text-2xl font-bold tracking-tight">Upload Your Resume</h3>
-                      <p className="text-sm text-slate-500 dark:text-slate-400 mt-2 leading-relaxed">
-                        Upload and get instant AI-powered feedback on your resume quality and suggestions for improvement.
-                      </p>
-                    </>
-                  )}
-                </div>
-              </div>
-            </section>
-
-            {/* QUICK ACTIONS */}
-            <div className="grid grid-cols-2 gap-4">
-              <button
-                onClick={handleUploadClick}
-                disabled={isUploading}
-                className="flex flex-col items-center gap-3 p-6 bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed text-white rounded-[1.5rem] transition-all shadow-lg shadow-indigo-500/20"
-              >
-                <span className="material-symbols-outlined">{isUploading ? 'hourglass_top' : 'file_upload'}</span>
-                <span className="text-xs font-bold">{isUploading ? 'Uploading...' : 'New Scan'}</span>
-              </button>
-              <button
-                onClick={generateAIFeedback}
-                disabled={aiLoading || !uploadedFile}
-                className="flex flex-col items-center gap-3 p-6 bg-white dark:bg-[#1e293b] border border-slate-200 dark:border-slate-800 hover:border-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed rounded-[1.5rem] transition-all"
-              >
-                <span className="material-symbols-outlined text-indigo-500">{aiLoading ? 'hourglass_top' : 'sparkles'}</span>
-                <span className="text-xs font-bold">{aiLoading ? 'Analyzing...' : 'AI Analysis'}</span>
-              </button>
             </div>
 
-            {/* Hidden file input */}
-            <input
-              ref={fileInputRef}
-              type="file"
-              accept=".pdf,.docx"
-              onChange={handleFileSelect}
-              className="hidden"
-            />
+            {/* STATUS BADGE */}
+            <div className="mt-4">
+              {aiFeedback ? (
+                <>
+                  <span className={`apl-pill text-xs ${
+                    score >= 80
+                      ? 'apl-pill-success'
+                      : score >= 60
+                      ? 'apl-pill-warning'
+                      : 'apl-pill-danger'
+                  }`}>
+                    {score >= 80 ? 'Strong Match' : score >= 60 ? 'Moderate Match' : 'Weak Match'}
+                  </span>
+                  <p className="text-xs text-[#52564A] dark:text-[#9CA485] mt-3 leading-relaxed">
+                    {score >= 80
+                      ? 'Your resume is highly optimized and competitive for target roles.'
+                      : score >= 60
+                      ? 'Solid foundation. Review the AI suggestions to boost keywords.'
+                      : 'Follow the recommendations below to strengthen core skills and formatting.'}
+                  </p>
+                </>
+              ) : (
+                <>
+                  <span className="apl-pill apl-pill-accent">Ready for Scan</span>
+                  <p className="text-xs text-[#52564A] dark:text-[#9CA485] mt-3 leading-relaxed">
+                    Upload your PDF or DOCX resume to extract data and trigger instant AI analytics.
+                  </p>
+                </>
+              )}
+            </div>
           </div>
 
-          {/* RIGHT COLUMN: ANALYSIS */}
-          <div className="col-span-12 lg:col-span-8 space-y-6">
-
-            {/* FILE STATUS */}
-            <div className="bg-white dark:bg-[#1e293b] p-6 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm">
-              {uploadError && (
-                <div className="mb-4 p-4 bg-red-50 dark:bg-red-500/10 border border-red-200 dark:border-red-500/20 rounded-xl">
-                  <div className="flex items-start gap-3">
-                    <span className="material-symbols-outlined text-red-500 mt-0.5">error</span>
-                    <p className="text-sm text-red-700 dark:text-red-400">{uploadError}</p>
-                  </div>
-                </div>
-              )}
-
-              {isUploading && (
-                <div className="flex flex-col items-center justify-center py-8 gap-4">
-                  <div className="relative size-16">
-                    <svg className="size-full animate-spin" viewBox="0 0 36 36">
-                      <circle cx="18" cy="18" r="14" fill="none" strokeWidth="2" className="stroke-slate-200 dark:stroke-slate-800" />
-                      <circle cx="18" cy="18" r="14" fill="none" strokeWidth="2" strokeDasharray="22, 88" strokeLinecap="round" className="stroke-indigo-500" />
-                    </svg>
-                  </div>
-                  <div className="text-center">
-                    <p className="text-sm font-bold text-slate-700 dark:text-slate-300">Uploading resume...</p>
-                    <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">Please wait while we process your file</p>
-                  </div>
-                </div>
-              )}
-
-              {!isUploading && !uploadedFile && (
-                <div
-                  onClick={handleUploadClick}
-                  className="flex flex-col items-center justify-center py-12 gap-4 cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-900/50 rounded-xl transition-colors"
-                >
-                  <div className="size-16 bg-indigo-50 dark:bg-indigo-500/10 rounded-2xl flex items-center justify-center">
-                    <span className="material-symbols-outlined text-indigo-500 text-3xl">cloud_upload</span>
-                  </div>
-                  <div className="text-center">
-                    <p className="text-sm font-bold text-slate-700 dark:text-slate-300">No resume uploaded yet</p>
-                    <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">Click to select PDF or DOCX file</p>
-                  </div>
-                </div>
-              )}
-
-              {!isUploading && uploadedFile && (
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-4">
-                    <div className="size-12 bg-emerald-50 dark:bg-emerald-500/10 rounded-xl flex items-center justify-center">
-                      <span className="material-symbols-outlined text-emerald-500">
-                        {uploadedFile.name.endsWith('.pdf') ? '' : 'description'}
-                      </span>
-                    </div>
-                    <div>
-                      <p className="text-sm font-bold tracking-tight line-clamp-1">{uploadedFile.name}</p>
-                      <p className="text-[11px] text-slate-500 font-medium">
-                        Uploaded {uploadedFile.uploadDate} • {uploadedFile.size} MB
-                      </p>
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <button
-                      onClick={handleUploadClick}
-                      className="px-5 py-2 text-xs font-bold bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 rounded-xl transition"
-                    >
-                      Replace
-                    </button>
-                    <button
-                      onClick={handleRemoveFile}
-                      className="px-3 py-2 text-xs font-bold text-red-500 hover:bg-red-50 dark:hover:bg-red-500/10 rounded-xl transition"
-                    >
-                      <span className="material-symbols-outlined">delete</span>
-                    </button>
-                  </div>
-                </div>
-              )}
-            </div>
-
-            {/* AI FEEDBACK ERROR */}
-            {aiError && (
-              <div className="p-4 bg-red-50 dark:bg-red-500/10 border border-red-200 dark:border-red-500/20 rounded-xl">
-                <div className="flex items-start gap-3">
-                  <span className="material-symbols-outlined text-red-500 mt-0.5">error</span>
-                  <p className="text-sm text-red-700 dark:text-red-400">{aiError}</p>
-                </div>
+          {/* FILE SELECTION STATUS CARD */}
+          <div className="apl-card">
+            {uploadError && (
+              <div className="p-4 mb-4 rounded-lg bg-[#B4453D]/10 border border-[#B4453D]/30 text-[#B4453D] text-xs font-semibold flex items-center gap-2">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+                <span>{uploadError}</span>
               </div>
             )}
 
-            {/* ANALYSIS GRID */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {isUploading ? (
+              <div className="py-8 text-center space-y-3">
+                <div className="w-10 h-10 border-3 border-[#D4DE95] border-t-transparent rounded-full animate-spin mx-auto" />
+                <p className="text-xs font-bold text-[#22241B] dark:text-[#EBF0DA]">Processing file & running AI parsing...</p>
+              </div>
+            ) : !uploadedFile ? (
+              <div
+                onClick={handleUploadClick}
+                className="border-2 border-dashed border-[#D3D6C4] dark:border-[#383D28] hover:border-[#636B2F] dark:hover:border-[#D4DE95] rounded-xl p-8 text-center cursor-pointer transition-colors bg-[#F8F9F1]/50 dark:bg-[#171911]/50 group"
+              >
+                <div className="w-12 h-12 rounded-full bg-[#D4DE95] text-[#3D4127] flex items-center justify-center mx-auto mb-3 group-hover:scale-110 transition-transform">
+                  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+                </div>
+                <p className="text-sm font-bold text-[#22241B] dark:text-[#EBF0DA]">Click to upload resume</p>
+                <p className="text-xs text-[#8A8F76] mt-1">Supports PDF or DOCX (Max 10MB)</p>
+              </div>
+            ) : (
+              <div className="space-y-4">
+                <div className="flex items-center justify-between p-3 rounded-lg bg-[#F8F9F1] dark:bg-[#2A2E1E] border border-[#D3D6C4] dark:border-[#383D28]">
+                  <div className="flex items-center gap-3 overflow-hidden">
+                    <div className="w-9 h-9 rounded-lg bg-[#D4DE95] text-[#3D4127] flex items-center justify-center flex-shrink-0 font-bold text-xs">
+                      {uploadedFile.name.endsWith('.pdf') ? 'PDF' : 'DOC'}
+                    </div>
+                    <div className="truncate">
+                      <p className="text-xs font-bold text-[#22241B] dark:text-[#EBF0DA] truncate">{uploadedFile.name}</p>
+                      <p className="text-[10px] text-[#8A8F76]">Uploaded {uploadedFile.uploadDate} • {uploadedFile.size} MB</p>
+                    </div>
+                  </div>
+                  <button
+                    onClick={handleRemoveFile}
+                    className="p-1.5 rounded text-[#B4453D] hover:bg-[#B4453D]/10 transition"
+                    title="Remove File"
+                  >
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+                  </button>
+                </div>
 
-              {/* SKILLS CARDS */}
-              <div className="bg-white dark:bg-[#1e293b] p-6 rounded-[2rem] border border-slate-200 dark:border-slate-800">
-                <h4 className="flex items-center gap-2 text-sm font-black uppercase tracking-widest text-slate-400 mb-6">
-                  <span className="size-2 bg-indigo-500 rounded-full"></span>
-                  Key Skill Gaps
-                </h4>
-                <div className="space-y-3">
-                  {resumeData?.skills?.length ? (
-                    resumeData.skills.map((skill, index) => (
-                      <div key={index} className="group">
-                        <div className="flex justify-between text-xs font-bold mb-1.5">
-                          <span className="capitalize">{skill.name || skill}</span>
-                          <span className="text-indigo-500">✓</span>
-                        </div>
-                        <div className="h-1.5 w-full bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
-                          <div className="h-full bg-indigo-500 rounded-full w-full"></div>
-                        </div>
+                <div className="flex gap-2">
+                  <button
+                    onClick={handleUploadClick}
+                    className="apl-btn apl-btn-secondary text-xs flex-1"
+                  >
+                    Replace
+                  </button>
+                  <button
+                    onClick={() => generateAIFeedback()}
+                    disabled={aiLoading}
+                    className="apl-btn apl-btn-primary text-xs flex-1"
+                  >
+                    {aiLoading ? 'Scanning...' : 'Scan Now'}
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* RIGHT COLUMN: AI FEEDBACK DETAILS */}
+        <div className="lg:col-span-8 space-y-6">
+
+          {/* AI ERROR NOTIFICATION */}
+          {aiError && (
+            <div className="p-4 rounded-xl bg-[#B4453D]/10 border border-[#B4453D]/30 text-[#B4453D] text-xs font-semibold flex items-center gap-2">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+              <span>{aiError}</span>
+            </div>
+          )}
+
+          {/* SKILLS & SUGGESTIONS DUAL CARDS */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+
+            {/* KEY SKILLS DETECTED */}
+            <div className="apl-card">
+              <h3 className="text-xs font-bold uppercase tracking-widest text-[#8A8F76] dark:text-[#9CA485] mb-4 flex items-center gap-2">
+                <span className="w-2 h-2 rounded-full bg-[#636B2F]" />
+                Detected Skills & Gaps
+              </h3>
+
+              <div className="space-y-3">
+                {resumeData?.skills?.length ? (
+                  resumeData.skills.map((skill, index) => (
+                    <div key={index} className="space-y-1">
+                      <div className="flex justify-between text-xs font-bold text-[#22241B] dark:text-[#EBF0DA]">
+                        <span className="capitalize">{skill.name || skill}</span>
+                        <span className="text-[#4E7A33]">✓</span>
+                      </div>
+                      <div className="h-1.5 w-full bg-[#ECEEDF] dark:bg-[#2A2E1E] rounded-full overflow-hidden">
+                        <div className="h-full bg-[#D4DE95] rounded-full w-full" />
+                      </div>
+                    </div>
+                  ))
+                ) : (
+                  <p className="text-xs text-[#8A8F76] italic">No skill tags extracted yet</p>
+                )}
+              </div>
+            </div>
+
+            {/* AI SUGGESTIONS */}
+            <div className="apl-card">
+              <h3 className="text-xs font-bold uppercase tracking-widest text-[#8A8F76] dark:text-[#9CA485] mb-4 flex items-center gap-2">
+                <span className="w-2 h-2 rounded-full bg-[#C99A3E]" />
+                AI Optimization Suggestions
+              </h3>
+
+              <div className="space-y-3">
+                {aiFeedback?.suggestions ? (
+                  Array.isArray(aiFeedback.suggestions) ? (
+                    aiFeedback.suggestions.map((item, idx) => (
+                      <div key={idx} className="flex gap-3 p-3 rounded-lg bg-[#C99A3E]/10 border border-[#C99A3E]/20 text-xs">
+                        <span className="font-extrabold text-[#C99A3E]">{idx + 1}.</span>
+                        <span className="text-[#22241B] dark:text-[#EBF0DA] leading-relaxed">{item}</span>
                       </div>
                     ))
                   ) : (
-                    <p className="text-xs text-slate-400">No skills detected</p>
+                    <div className="flex gap-3 p-3 rounded-lg bg-[#C99A3E]/10 border border-[#C99A3E]/20 text-xs">
+                      <span className="font-extrabold text-[#C99A3E]">1.</span>
+                      <span className="text-[#22241B] dark:text-[#EBF0DA] leading-relaxed">{aiFeedback.suggestions}</span>
+                    </div>
+                  )
+                ) : (
+                  <div className="space-y-2">
+                    <div className="p-3 rounded-lg bg-[#F8F9F1] dark:bg-[#2A2E1E] text-xs text-[#52564A] dark:text-[#9CA485]">
+                      Use metric-driven action verbs (e.g. "Increased throughput by 40%").
+                    </div>
+                    <div className="p-3 rounded-lg bg-[#F8F9F1] dark:bg-[#2A2E1E] text-xs text-[#52564A] dark:text-[#9CA485]">
+                      Ensure contact info and LinkedIn profile links are clearly formatted.
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+
+          {/* STRENGTHS & WEAKNESSES */}
+          {aiFeedback && (
+            <div className="space-y-6">
+              {aiFeedback.strengths && (
+                <div className="apl-card border-l-4 border-l-[#4E7A33]">
+                  <h4 className="text-xs font-bold uppercase tracking-widest text-[#4E7A33] mb-3 flex items-center gap-2">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+                    Core Strengths
+                  </h4>
+                  {Array.isArray(aiFeedback.strengths) ? (
+                    <div className="space-y-2">
+                      {aiFeedback.strengths.map((str, i) => (
+                        <div key={i} className="text-xs text-[#22241B] dark:text-[#EBF0DA] p-2.5 rounded bg-[#4E7A33]/10">
+                          {str}
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <p className="text-xs text-[#22241B] dark:text-[#EBF0DA] p-2.5 rounded bg-[#4E7A33]/10">{aiFeedback.strengths}</p>
                   )}
                 </div>
-              </div>
+              )}
 
-              {/* IMPROVEMENTS */}
-              <div className="bg-white dark:bg-[#1e293b] p-6 rounded-[2rem] border border-slate-200 dark:border-slate-800">
-                <h4 className="flex items-center gap-2 text-sm font-black uppercase tracking-widest text-slate-400 mb-6">
-                  <span className="size-2 bg-amber-500 rounded-full"></span>
-                  AI Suggestions
-                </h4>
-                {aiFeedback?.suggestions ? (
-                  <div className="space-y-3">
-                    {Array.isArray(aiFeedback.suggestions) ? (
-                      aiFeedback.suggestions.map((suggestion, index) => (
-                        <div key={index} className="flex gap-4 p-3 bg-amber-50 dark:bg-amber-500/5 rounded-lg border border-amber-100 dark:border-amber-500/20 hover:border-amber-200 dark:hover:border-amber-500/40 transition">
-                          <div className="flex-shrink-0">
-                            <span className="flex items-center justify-center h-6 w-6 rounded-full bg-amber-100 dark:bg-amber-500/20 text-amber-600 dark:text-amber-400 text-sm font-bold">
-                              {index + 1}
-                            </span>
-                          </div>
-                          <p className="text-sm leading-relaxed text-slate-700 dark:text-slate-300 pt-0.5">
-                            {suggestion}
-                          </p>
+              {aiFeedback.weaknesses && (
+                <div className="apl-card border-l-4 border-l-[#C99A3E]">
+                  <h4 className="text-xs font-bold uppercase tracking-widest text-[#C99A3E] mb-3 flex items-center gap-2">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+                    Areas for Improvement
+                  </h4>
+                  {Array.isArray(aiFeedback.weaknesses) ? (
+                    <div className="space-y-2">
+                      {aiFeedback.weaknesses.map((wk, i) => (
+                        <div key={i} className="text-xs text-[#22241B] dark:text-[#EBF0DA] p-2.5 rounded bg-[#C99A3E]/10">
+                          {wk}
                         </div>
-                      ))
-                    ) : (
-                      <div className="flex gap-4 p-3 bg-amber-50 dark:bg-amber-500/5 rounded-lg border border-amber-100 dark:border-amber-500/20">
-                        <div className="flex-shrink-0">
-                          <span className="flex items-center justify-center h-6 w-6 rounded-full bg-amber-100 dark:bg-amber-500/20 text-amber-600 dark:text-amber-400 text-sm font-bold">
-                            1
-                          </span>
-                        </div>
-                        <p className="text-sm leading-relaxed text-slate-700 dark:text-slate-300 pt-0.5">
-                          {aiFeedback.suggestions}
-                        </p>
-                      </div>
-                    )}
-                  </div>
-                ) : (
-                  <div className="space-y-3">
-                    <div className="flex gap-4 p-3 bg-amber-50 dark:bg-amber-500/5 rounded-lg border border-amber-100 dark:border-amber-500/20">
-                      <div className="flex-shrink-0">
-                        <span className="flex items-center justify-center h-6 w-6 rounded-full bg-amber-100 dark:bg-amber-500/20 text-amber-600 dark:text-amber-400 text-sm font-bold">
-                          1
-                        </span>
-                      </div>
-                      <p className="text-sm leading-relaxed text-slate-700 dark:text-slate-300 pt-0.5">
-                        Use <strong>action verbs</strong> like "Architected" instead of "Worked on".
-                      </p>
+                      ))}
                     </div>
-                    <div className="flex gap-4 p-3 bg-amber-50 dark:bg-amber-500/5 rounded-lg border border-amber-100 dark:border-amber-500/20">
-                      <div className="flex-shrink-0">
-                        <span className="flex items-center justify-center h-6 w-6 rounded-full bg-amber-100 dark:bg-amber-500/20 text-amber-600 dark:text-amber-400 text-sm font-bold">
-                          2
-                        </span>
-                      </div>
-                      <p className="text-sm leading-relaxed text-slate-700 dark:text-slate-300 pt-0.5">
-                        Add a dedicated "Certifications" section for Cloud credentials.
-                      </p>
-                    </div>
-                  </div>
-                )}
-              </div>
-            </div>
-
-            {/* AI FEEDBACK RESULTS */}
-            {aiFeedback && (
-              <div className="space-y-6">
-
-                {/* STRENGTHS */}
-                {aiFeedback.strengths && (
-                  <div className="bg-emerald-50 dark:bg-emerald-500/10 border border-emerald-200 dark:border-emerald-500/30 p-6 rounded-2xl">
-                    <h4 className="flex items-center gap-2 text-sm font-black uppercase tracking-widest text-emerald-700 dark:text-emerald-400 mb-4">
-                      <span className="material-symbols-outlined">check_circle</span>
-                      Strengths
-                    </h4>
-                    {Array.isArray(aiFeedback.strengths) ? (
-                      <div className="space-y-3">
-                        {aiFeedback.strengths.map((strength, index) => (
-                          <div key={index} className="flex gap-4 p-4 bg-white dark:bg-slate-800/50 rounded-lg border border-emerald-100 dark:border-emerald-500/20 hover:border-emerald-300 dark:hover:border-emerald-500/40 transition">
-                            <div className="flex-shrink-0">
-                              <span className="flex items-center justify-center h-7 w-7 rounded-full bg-emerald-100 dark:bg-emerald-500/20 text-emerald-600 dark:text-emerald-400">
-                                <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
-                                  <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                                </svg>
-                              </span>
-                            </div>
-                            <p className="text-sm leading-relaxed text-slate-700 dark:text-slate-300 pt-0.5">
-                              {strength}
-                            </p>
-                          </div>
-                        ))}
-                      </div>
-                    ) : (
-                      <div className="flex gap-4 p-4 bg-white dark:bg-slate-800/50 rounded-lg border border-emerald-100 dark:border-emerald-500/20">
-                        <div className="flex-shrink-0">
-                          <span className="flex items-center justify-center h-7 w-7 rounded-full bg-emerald-100 dark:bg-emerald-500/20 text-emerald-600 dark:text-emerald-400">
-                            <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
-                              <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                            </svg>
-                          </span>
-                        </div>
-                        <p className="text-sm leading-relaxed text-slate-700 dark:text-slate-300 pt-0.5">
-                          {aiFeedback.strengths}
-                        </p>
-                      </div>
-                    )}
-                  </div>
-                )}
-
-                {/* WEAKNESSES */}
-                {aiFeedback.weaknesses && (
-                  <div className="bg-amber-50 dark:bg-amber-500/10 border border-amber-200 dark:border-amber-500/30 p-6 rounded-2xl">
-                    <h4 className="flex items-center gap-2 text-sm font-black uppercase tracking-widest text-amber-700 dark:text-amber-400 mb-4">
-                      <span className="material-symbols-outlined">warning</span>
-                      Areas to Improve
-                    </h4>
-                    {Array.isArray(aiFeedback.weaknesses) ? (
-                      <div className="space-y-3">
-                        {aiFeedback.weaknesses.map((weakness, index) => (
-                          <div key={index} className="flex gap-4 p-4 bg-white dark:bg-slate-800/50 rounded-lg border border-amber-100 dark:border-amber-500/20 hover:border-amber-300 dark:hover:border-amber-500/40 transition">
-                            <div className="flex-shrink-0">
-                              <span className="flex items-center justify-center h-7 w-7 rounded-full bg-amber-100 dark:bg-amber-500/20 text-amber-600 dark:text-amber-400 text-sm font-bold">
-                                {index + 1}
-                              </span>
-                            </div>
-                            <p className="text-sm leading-relaxed text-slate-700 dark:text-slate-300 pt-0.5">
-                              {weakness}
-                            </p>
-                          </div>
-                        ))}
-                      </div>
-                    ) : (
-                      <div className="flex gap-4 p-4 bg-white dark:bg-slate-800/50 rounded-lg border border-amber-100 dark:border-amber-500/20">
-                        <div className="flex-shrink-0">
-                          <span className="flex items-center justify-center h-7 w-7 rounded-full bg-amber-100 dark:bg-amber-500/20 text-amber-600 dark:text-amber-400 text-sm font-bold">
-                            1
-                          </span>
-                        </div>
-                        <p className="text-sm leading-relaxed text-slate-700 dark:text-slate-300 pt-0.5">
-                          {aiFeedback.weaknesses}
-                        </p>
-                      </div>
-                    )}
-                  </div>
-                )}
-
-                {/* RECOMMENDED CERTIFICATIONS */}
-                {aiFeedback.recommended_certifications && (
-                  <div className="bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-blue-500/10 dark:to-indigo-500/10 border border-blue-200 dark:border-blue-500/30 p-6 rounded-2xl">
-                    <h4 className="flex items-center gap-2 text-sm font-black uppercase tracking-widest text-blue-700 dark:text-blue-400 mb-4">
-                      <span className="material-symbols-outlined"></span>
-                      Recommended Certifications
-                    </h4>
-                    {Array.isArray(aiFeedback.recommended_certifications) ? (
-                      <div className="space-y-3">
-                        {aiFeedback.recommended_certifications.map((cert, index) => (
-                          <div key={index} className="flex gap-4 p-4 bg-white dark:bg-slate-800/50 rounded-lg border border-blue-100 dark:border-blue-500/20 hover:border-blue-300 dark:hover:border-blue-500/40 transition">
-                            <div className="flex-shrink-0">
-                              <span className="flex items-center justify-center h-7 w-7 rounded-full bg-blue-100 dark:bg-blue-500/20 text-blue-600 dark:text-blue-400">
-                                <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
-                                  <path d="M10.894 2.553a1 1 0 00-1.788 0l-7 14a1 1 0 001.169 1.409l5.951-1.429 5.951 1.429a1 1 0 001.169-1.409l-7-14z" />
-                                </svg>
-                              </span>
-                            </div>
-                            <div className="flex-1">
-                              <h5 className="text-sm font-bold text-slate-800 dark:text-slate-200">{cert.name}</h5>
-                              <p className="text-xs text-slate-600 dark:text-slate-400 mt-1">{cert.reason}</p>
-                              <div className="flex gap-3 mt-2 text-[11px] text-slate-500 dark:text-slate-400">
-                                {cert.platform && <span className="bg-slate-100 dark:bg-slate-700 px-2 py-1 rounded">{cert.platform}</span>}
-                                {cert.estimated_duration && <span className="bg-slate-100 dark:bg-slate-700 px-2 py-1 rounded">{cert.estimated_duration}</span>}
-                                {cert.difficulty && <span className="bg-slate-100 dark:bg-slate-700 px-2 py-1 rounded">{cert.difficulty}</span>}
-                              </div>
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    ) : null}
-                  </div>
-                )}
-              </div>
-            )}
-
-            {/* RAW DATA PREVIEW */}
-            <div className="bg-gradient-to-br from-slate-900 via-slate-900 to-slate-800 rounded-[2rem] overflow-hidden border border-slate-700 shadow-xl">
-              <div className="px-6 py-4 border-b border-slate-700 flex justify-between items-center bg-slate-950/50 backdrop-blur">
-                <span className="text-sm font-black uppercase tracking-[0.2em] text-slate-300">{aiFeedback ? 'AI Feedback Output' : 'Parsed Entity Output'}</span>
-                <div className="flex gap-1.5">
-                  <div className="size-2.5 rounded-full bg-red-500/40 animate-pulse"></div>
-                  <div className="size-2.5 rounded-full bg-amber-500/40 animate-pulse" style={{ animationDelay: "0.1s" }}></div>
-                  <div className="size-2.5 rounded-full bg-emerald-500/40 animate-pulse" style={{ animationDelay: "0.2s" }}></div>
+                  ) : (
+                    <p className="text-xs text-[#22241B] dark:text-[#EBF0DA] p-2.5 rounded bg-[#C99A3E]/10">{aiFeedback.weaknesses}</p>
+                  )}
                 </div>
-              </div>
-              <div className="p-6 h-72 overflow-y-auto font-mono text-sm leading-relaxed text-slate-300" style={{
-                scrollbarWidth: 'thin',
-                scrollbarColor: '#475569 #1e293b'
-              }}>
-                {aiFeedback || resumeData ? (
-                  <pre className="whitespace-pre-wrap text-sm font-light tracking-wide">
-                    {JSON.stringify(aiFeedback || resumeData, null, 2)}
-                  </pre>
-                ) : (
-                  <div className="text-slate-500 italic flex items-center gap-2">
-                    <span className="material-symbols-outlined">info</span>
-                    No resume data available yet
-                  </div>
-                )}
-              </div>
+              )}
+            </div>
+          )}
+
+          {/* RAW ENTITY PREVIEW */}
+          <div className="apl-card bg-[#22241B] text-[#EBF0DA] overflow-hidden">
+            <div className="flex justify-between items-center pb-3 border-b border-[#383D28] mb-3">
+              <span className="text-xs font-bold uppercase tracking-widest text-[#BAC095] apl-font-mono">
+                {aiFeedback ? 'AI Output Stream' : 'Extracted Resume Schema'}
+              </span>
+              <span className="w-2.5 h-2.5 rounded-full bg-[#D4DE95] animate-pulse" />
             </div>
 
-            <style>{`
-              .black-scrollbar::-webkit-scrollbar {
-                width: 8px;
-              }
-
-              .black-scrollbar::-webkit-scrollbar-track {
-                background: #0f172a;
-              }
-
-              .black-scrollbar::-webkit-scrollbar-thumb {
-                background-color: #000;
-                border-radius: 10px;
-              }
-
-              .black-scrollbar::-webkit-scrollbar-thumb:hover {
-                background-color: #111;
-              }
-            `}</style>
-
+            <div className="max-h-64 overflow-y-auto apl-font-mono text-xs leading-relaxed">
+              {aiFeedback || resumeData ? (
+                <pre className="whitespace-pre-wrap text-[#D4DE95]">
+                  {JSON.stringify(aiFeedback || resumeData, null, 2)}
+                </pre>
+              ) : (
+                <span className="text-[#8A8F76] italic">No active telemetry payload yet. Upload resume to inspect structured data.</span>
+              )}
+            </div>
           </div>
+
         </div>
-      </main>
+      </div>
     </div>
   );
 };

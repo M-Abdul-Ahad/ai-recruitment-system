@@ -92,7 +92,6 @@ export default function ApplicantHeader({ onToggleSidebar, isDark, onToggleTheme
         className="apl-hdr-toggle"
         onClick={onToggleSidebar}
         aria-label="Toggle sidebar"
-        aria-expanded={undefined}
       >
         <MenuIcon />
       </button>
@@ -111,7 +110,7 @@ export default function ApplicantHeader({ onToggleSidebar, isDark, onToggleTheme
           id="apl-header-search"
           className="apl-hdr-search-input"
           type="search"
-          placeholder="Search jobs, applications…"
+          placeholder="Search jobs, applications..."
           aria-label="Search"
         />
       </div>
@@ -121,7 +120,7 @@ export default function ApplicantHeader({ onToggleSidebar, isDark, onToggleTheme
         <button
           id="apl-notifications-btn"
           className="apl-hdr-btn"
-          aria-label="Notifications (3 unread)"
+          aria-label="Notifications"
           title="Notifications"
         >
           <BellIcon />
