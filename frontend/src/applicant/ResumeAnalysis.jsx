@@ -133,7 +133,7 @@ const ResumeAnalysis = () => {
       {/* PAGE HEADER */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 border-b border-[#D3D6C4] dark:border-[#383D28] pb-5">
         <div>
-          <span className="text-xs font-bold uppercase tracking-widest text-[#8A8F76] dark:text-[#9CA485]">
+          <span className="text-xs font-bold uppercase tracking-widest text-[#52564A] dark:text-[#9CA485]">
             AI Analytics & Feedback
           </span>
           <h1 className="text-2xl sm:text-3xl font-extrabold text-[#22241B] dark:text-[#EBF0DA] tracking-tight mt-1">
@@ -185,11 +185,11 @@ const ResumeAnalysis = () => {
         <div className="lg:col-span-4 space-y-6">
           {/* AI SCORE GAUGE CARD */}
           <div className="apl-card flex flex-col items-center text-center relative overflow-hidden">
-            <span className="text-xs font-bold uppercase tracking-widest text-[#8A8F76] dark:text-[#9CA485] mb-6">
+            <span className="text-xs font-bold uppercase tracking-widest text-[#52564A] dark:text-[#9CA485] mb-6">
               AI Resume Match Score
             </span>
 
-            {/* CIRCULAR SCORE BAR - DESIGN.md (#D4DE95 fill stroke with #3D4127 percentage label) */}
+            {/* CIRCULAR SCORE BAR */}
             <div className="relative w-44 h-44 my-2">
               <svg className="w-full h-full -rotate-90" viewBox="0 0 36 36">
                 <circle
@@ -212,13 +212,13 @@ const ResumeAnalysis = () => {
                 />
               </svg>
               <div className="absolute inset-0 flex flex-col items-center justify-center">
-                <span className="text-4xl font-extrabold apl-font-mono text-[#3D4127] dark:text-[#EBF0DA] tracking-tight">
+                <span className="text-4xl font-extrabold apl-font-mono text-[#22241B] dark:text-[#EBF0DA] tracking-tight">
                   {aiFeedback ? score : '--'}
-                  <span className="text-xl text-[#8A8F76]">
+                  <span className="text-xl text-[#52564A] dark:text-[#9CA485]">
                     {aiFeedback ? '%' : ''}
                   </span>
                 </span>
-                <span className="text-[10px] font-extrabold uppercase tracking-widest text-[#8A8F76] mt-1">
+                <span className="text-[10px] font-extrabold uppercase tracking-widest text-[#52564A] dark:text-[#9CA485] mt-1">
                   Score
                 </span>
               </div>
@@ -237,7 +237,7 @@ const ResumeAnalysis = () => {
                   }`}>
                     {score >= 80 ? 'Strong Match' : score >= 60 ? 'Moderate Match' : 'Weak Match'}
                   </span>
-                  <p className="text-xs text-[#52564A] dark:text-[#9CA485] mt-3 leading-relaxed">
+                  <p className="text-xs text-[#22241B] dark:text-[#EBF0DA] font-medium mt-3 leading-relaxed">
                     {score >= 80
                       ? 'Your resume is highly optimized and competitive for target roles.'
                       : score >= 60
@@ -248,7 +248,7 @@ const ResumeAnalysis = () => {
               ) : (
                 <>
                   <span className="apl-pill apl-pill-accent">Ready for Scan</span>
-                  <p className="text-xs text-[#52564A] dark:text-[#9CA485] mt-3 leading-relaxed">
+                  <p className="text-xs text-[#22241B] dark:text-[#EBF0DA] font-medium mt-3 leading-relaxed">
                     Upload your PDF or DOCX resume to extract data and trigger instant AI analytics.
                   </p>
                 </>
@@ -279,7 +279,7 @@ const ResumeAnalysis = () => {
                   <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
                 </div>
                 <p className="text-sm font-bold text-[#22241B] dark:text-[#EBF0DA]">Click to upload resume</p>
-                <p className="text-xs text-[#8A8F76] mt-1">Supports PDF or DOCX (Max 10MB)</p>
+                <p className="text-xs text-[#52564A] dark:text-[#9CA485] mt-1 font-medium">Supports PDF or DOCX (Max 10MB)</p>
               </div>
             ) : (
               <div className="space-y-4">
@@ -290,7 +290,7 @@ const ResumeAnalysis = () => {
                     </div>
                     <div className="truncate">
                       <p className="text-xs font-bold text-[#22241B] dark:text-[#EBF0DA] truncate">{uploadedFile.name}</p>
-                      <p className="text-[10px] text-[#8A8F76]">Uploaded {uploadedFile.uploadDate} • {uploadedFile.size} MB</p>
+                      <p className="text-[10px] text-[#52564A] dark:text-[#9CA485] font-medium">Uploaded {uploadedFile.uploadDate} • {uploadedFile.size} MB</p>
                     </div>
                   </div>
                   <button
@@ -338,7 +338,7 @@ const ResumeAnalysis = () => {
 
             {/* KEY SKILLS DETECTED */}
             <div className="apl-card">
-              <h3 className="text-xs font-bold uppercase tracking-widest text-[#8A8F76] dark:text-[#9CA485] mb-4 flex items-center gap-2">
+              <h3 className="text-xs font-bold uppercase tracking-widest text-[#52564A] dark:text-[#9CA485] mb-4 flex items-center gap-2">
                 <span className="w-2 h-2 rounded-full bg-[#636B2F]" />
                 Detected Skills & Gaps
               </h3>
@@ -357,14 +357,14 @@ const ResumeAnalysis = () => {
                     </div>
                   ))
                 ) : (
-                  <p className="text-xs text-[#8A8F76] italic">No skill tags extracted yet</p>
+                  <p className="text-xs text-[#52564A] dark:text-[#9CA485] font-medium italic">No skill tags extracted yet</p>
                 )}
               </div>
             </div>
 
             {/* AI SUGGESTIONS */}
             <div className="apl-card">
-              <h3 className="text-xs font-bold uppercase tracking-widest text-[#8A8F76] dark:text-[#9CA485] mb-4 flex items-center gap-2">
+              <h3 className="text-xs font-bold uppercase tracking-widest text-[#52564A] dark:text-[#9CA485] mb-4 flex items-center gap-2">
                 <span className="w-2 h-2 rounded-full bg-[#C99A3E]" />
                 AI Optimization Suggestions
               </h3>
@@ -373,23 +373,23 @@ const ResumeAnalysis = () => {
                 {aiFeedback?.suggestions ? (
                   Array.isArray(aiFeedback.suggestions) ? (
                     aiFeedback.suggestions.map((item, idx) => (
-                      <div key={idx} className="flex gap-3 p-3 rounded-lg bg-[#C99A3E]/10 border border-[#C99A3E]/20 text-xs">
-                        <span className="font-extrabold text-[#C99A3E]">{idx + 1}.</span>
-                        <span className="text-[#22241B] dark:text-[#EBF0DA] leading-relaxed">{item}</span>
+                      <div key={idx} className="flex gap-3 p-3 rounded-lg bg-[#C99A3E]/10 border border-[#C99A3E]/30 text-xs">
+                        <span className="font-extrabold text-[#22241B] dark:text-[#EBF0DA]">{idx + 1}.</span>
+                        <span className="text-[#22241B] dark:text-[#EBF0DA] font-semibold leading-relaxed">{item}</span>
                       </div>
                     ))
                   ) : (
-                    <div className="flex gap-3 p-3 rounded-lg bg-[#C99A3E]/10 border border-[#C99A3E]/20 text-xs">
-                      <span className="font-extrabold text-[#C99A3E]">1.</span>
-                      <span className="text-[#22241B] dark:text-[#EBF0DA] leading-relaxed">{aiFeedback.suggestions}</span>
+                    <div className="flex gap-3 p-3 rounded-lg bg-[#C99A3E]/10 border border-[#C99A3E]/30 text-xs">
+                      <span className="font-extrabold text-[#22241B] dark:text-[#EBF0DA]">1.</span>
+                      <span className="text-[#22241B] dark:text-[#EBF0DA] font-semibold leading-relaxed">{aiFeedback.suggestions}</span>
                     </div>
                   )
                 ) : (
                   <div className="space-y-2">
-                    <div className="p-3 rounded-lg bg-[#F8F9F1] dark:bg-[#2A2E1E] text-xs text-[#52564A] dark:text-[#9CA485]">
+                    <div className="p-3 rounded-lg bg-[#F8F9F1] dark:bg-[#2A2E1E] border border-[#D3D6C4] dark:border-[#383D28] text-xs text-[#22241B] dark:text-[#EBF0DA] font-medium">
                       Use metric-driven action verbs (e.g. "Increased throughput by 40%").
                     </div>
-                    <div className="p-3 rounded-lg bg-[#F8F9F1] dark:bg-[#2A2E1E] text-xs text-[#52564A] dark:text-[#9CA485]">
+                    <div className="p-3 rounded-lg bg-[#F8F9F1] dark:bg-[#2A2E1E] border border-[#D3D6C4] dark:border-[#383D28] text-xs text-[#22241B] dark:text-[#EBF0DA] font-medium">
                       Ensure contact info and LinkedIn profile links are clearly formatted.
                     </div>
                   </div>
@@ -403,62 +403,62 @@ const ResumeAnalysis = () => {
             <div className="space-y-6">
               {aiFeedback.strengths && (
                 <div className="apl-card border-l-4 border-l-[#4E7A33]">
-                  <h4 className="text-xs font-bold uppercase tracking-widest text-[#4E7A33] mb-3 flex items-center gap-2">
+                  <h4 className="text-xs font-extrabold uppercase tracking-widest text-[#4E7A33] mb-3 flex items-center gap-2">
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><polyline points="20 6 9 17 4 12"/></svg>
                     Core Strengths
                   </h4>
                   {Array.isArray(aiFeedback.strengths) ? (
                     <div className="space-y-2">
                       {aiFeedback.strengths.map((str, i) => (
-                        <div key={i} className="text-xs text-[#22241B] dark:text-[#EBF0DA] p-2.5 rounded bg-[#4E7A33]/10">
+                        <div key={i} className="text-xs font-semibold text-[#22241B] dark:text-[#EBF0DA] p-2.5 rounded bg-[#4E7A33]/15">
                           {str}
                         </div>
                       ))}
                     </div>
                   ) : (
-                    <p className="text-xs text-[#22241B] dark:text-[#EBF0DA] p-2.5 rounded bg-[#4E7A33]/10">{aiFeedback.strengths}</p>
+                    <p className="text-xs font-semibold text-[#22241B] dark:text-[#EBF0DA] p-2.5 rounded bg-[#4E7A33]/15">{aiFeedback.strengths}</p>
                   )}
                 </div>
               )}
 
               {aiFeedback.weaknesses && (
                 <div className="apl-card border-l-4 border-l-[#C99A3E]">
-                  <h4 className="text-xs font-bold uppercase tracking-widest text-[#C99A3E] mb-3 flex items-center gap-2">
+                  <h4 className="text-xs font-extrabold uppercase tracking-widest text-[#C99A3E] mb-3 flex items-center gap-2">
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
                     Areas for Improvement
                   </h4>
                   {Array.isArray(aiFeedback.weaknesses) ? (
                     <div className="space-y-2">
                       {aiFeedback.weaknesses.map((wk, i) => (
-                        <div key={i} className="text-xs text-[#22241B] dark:text-[#EBF0DA] p-2.5 rounded bg-[#C99A3E]/10">
+                        <div key={i} className="text-xs font-semibold text-[#22241B] dark:text-[#EBF0DA] p-2.5 rounded bg-[#C99A3E]/15">
                           {wk}
                         </div>
                       ))}
                     </div>
                   ) : (
-                    <p className="text-xs text-[#22241B] dark:text-[#EBF0DA] p-2.5 rounded bg-[#C99A3E]/10">{aiFeedback.weaknesses}</p>
+                    <p className="text-xs font-semibold text-[#22241B] dark:text-[#EBF0DA] p-2.5 rounded bg-[#C99A3E]/15">{aiFeedback.weaknesses}</p>
                   )}
                 </div>
               )}
             </div>
           )}
 
-          {/* RAW ENTITY PREVIEW */}
-          <div className="apl-card bg-[#22241B] text-[#EBF0DA] overflow-hidden">
-            <div className="flex justify-between items-center pb-3 border-b border-[#383D28] mb-3">
-              <span className="text-xs font-bold uppercase tracking-widest text-[#BAC095] apl-font-mono">
+          {/* RAW ENTITY PREVIEW - AI OUTPUT STREAM (HIGH CONTRAST DARK TEXT) */}
+          <div className="apl-card bg-[#F8F9F1] dark:bg-[#171911] border border-[#D3D6C4] dark:border-[#383D28] overflow-hidden">
+            <div className="flex justify-between items-center pb-3 border-b border-[#D3D6C4] dark:border-[#383D28] mb-3">
+              <span className="text-xs font-extrabold uppercase tracking-widest text-[#22241B] dark:text-[#EBF0DA] apl-font-mono">
                 {aiFeedback ? 'AI Output Stream' : 'Extracted Resume Schema'}
               </span>
-              <span className="w-2.5 h-2.5 rounded-full bg-[#D4DE95] animate-pulse" />
+              <span className="w-2.5 h-2.5 rounded-full bg-[#636B2F] dark:bg-[#D4DE95] animate-pulse" />
             </div>
 
             <div className="max-h-64 overflow-y-auto apl-font-mono text-xs leading-relaxed">
               {aiFeedback || resumeData ? (
-                <pre className="whitespace-pre-wrap text-[#D4DE95]">
+                <pre className="whitespace-pre-wrap text-[#22241B] dark:text-[#EBF0DA] font-bold">
                   {JSON.stringify(aiFeedback || resumeData, null, 2)}
                 </pre>
               ) : (
-                <span className="text-[#8A8F76] italic">No active telemetry payload yet. Upload resume to inspect structured data.</span>
+                <span className="text-[#52564A] dark:text-[#9CA485] font-semibold italic">No active telemetry payload yet. Upload resume to inspect structured data.</span>
               )}
             </div>
           </div>
