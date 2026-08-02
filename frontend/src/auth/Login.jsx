@@ -1,5 +1,6 @@
 import { useState, useContext } from "react";
 import { useNavigate, Link } from "react-router-dom";
+import "./auth.css";
 import { AuthContext } from "./AuthContext";
 
 /* ── Inline icon helper ──────────────────────────────────────── */

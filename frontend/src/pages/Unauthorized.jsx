@@ -1,6 +1,7 @@
 import { Link, useNavigate } from "react-router-dom";
 import { useContext } from "react";
 import { AuthContext } from "../auth/AuthContext";
+import "../auth/auth.css";
 
 export default function Unauthorized() {
   const navigate = useNavigate();

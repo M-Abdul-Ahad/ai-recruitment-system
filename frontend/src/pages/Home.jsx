@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { Link } from "react-router-dom";
+import "./home.css";
 
 /* ── Icon helpers (inline SVGs — no extra dependency) ─────────── */
 const Icon = ({ children, size = 20 }) => (
