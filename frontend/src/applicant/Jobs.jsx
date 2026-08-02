@@ -153,7 +153,7 @@ const Jobs = () => {
               className="apl-input pl-10 pr-10 text-xs sm:text-sm"
             />
             <svg className="w-4 h-4 text-[#8A8F76] absolute left-3.5 top-1/2 -translate-y-1/2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+              <circle cx="11" cy="11" r="8" /><line x1="21" y1="21" x2="16.65" y2="16.65" />
             </svg>
             {searchTerm && (
               <button
@@ -189,7 +189,7 @@ const Jobs = () => {
         /* ────────────── ERROR STATE ────────────── */
         <div className="apl-card text-center py-12 space-y-4">
           <div className="w-12 h-12 rounded-full bg-[#B4453D]/10 text-[#B4453D] flex items-center justify-center mx-auto">
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10" /><line x1="12" y1="8" x2="12" y2="12" /><line x1="12" y1="16" x2="12.01" y2="16" /></svg>
           </div>
           <h3 className="text-base font-bold text-[#22241B] dark:text-[#EBF0DA]">{error}</h3>
           <button
