@@ -91,14 +91,12 @@ export default function Signup() {
 
   /* ── Company form state ──────────────────────────────────── */
   const [companyForm, setCompanyForm] = useState({
-    // Company details (UI fields — for display and future backend extension)
     companyName: "",
     companyEmail: "",
     website: "",
     industry: "",
     address: "",
     phone: "",
-    // Owner details
     ownerName: "",
     ownerEmail: "",
     password: "",
@@ -160,7 +158,6 @@ export default function Signup() {
       return;
     }
 
-    // Send only fields the existing backend accepts; role = "recruiter" for company owner
     const payload = {
       username: companyForm.ownerName,
       email: companyForm.ownerEmail,
@@ -189,12 +186,25 @@ export default function Signup() {
     </button>
   );
 
+  const features = activeTab === "applicant" ? [
+    { title: "AI Resume Builder", desc: "Build tailored bullet points designed for ATS screening" },
+    { title: "One-Click Application", desc: "Apply directly with your stored AI resume profile" },
+    { title: "Real-Time Tracking", desc: "Track application statuses & HR reviews instantly" },
+    { title: "AI Skill Gap Score", desc: "Get metric feedback to boost candidate ranking" },
+  ] : [
+    { title: "AI Candidate Ranking", desc: "Rank applicants automatically with explainable match scores" },
+    { title: "Bulk Resume Parsing", desc: "Parse PDF and DOCX files instantly at any scale" },
+    { title: "Recruiter Management", desc: "Invite your hiring team with role-based access" },
+    { title: "Pipeline Workflow", desc: "Shortlist, schedule interviews, and track status" },
+  ];
+
   return (
     <div className="auth-page">
-      {/* ── Left brand panel ── */}
+      {/* ── Left brand panel (50% Split) ── */}
       <aside className="auth-brand-panel" aria-hidden="true">
         <div className="auth-brand-orb auth-brand-orb-1" />
         <div className="auth-brand-orb auth-brand-orb-2" />
+        <div className="auth-brand-orb auth-brand-orb-3" />
 
         <Link to="/" className="auth-brand-logo">
           <span className="auth-brand-logo-icon"><BrainIcon /></span>
@@ -202,32 +212,65 @@ export default function Signup() {
         </Link>
 
         <div className="auth-brand-content">
+          <div className="auth-brand-badge">
+            <span className="w-2 h-2 rounded-full bg-[#D4DE95] animate-pulse" />
+            {activeTab === "applicant" ? "Job Seeker Career Platform" : "Enterprise Hiring Intelligence"}
+          </div>
+
           <h1 className="auth-brand-headline">
-            Start Hiring<br /><span>Intelligently</span>
+            {activeTab === "applicant" ? (
+              <>Land Your Next<br /><span>Dream Career</span></>
+            ) : (
+              <>Start Hiring<br /><span>Intelligently</span></>
+            )}
           </h1>
           <p className="auth-brand-desc">
-            Create your free account and unlock AI-powered tools that transform how you hire — or land your next great role.
+            {activeTab === "applicant"
+              ? "Create your applicant account to build AI-optimized resumes, receive match scores, and track your applications."
+              : "Create your company account to automate candidate ranking, manage recruiter pipelines, and hire faster."}
           </p>
 
+          {/* AI ATS Glassmorphism Graphic Card */}
+          <div className="auth-graphic-card">
+            <div className="auth-gc-header">
+              <div className="auth-gc-user">
+                <div className="auth-gc-avatar">
+                  {activeTab === "applicant" ? "JS" : "HR"}
+                </div>
+                <div>
+                  <div className="auth-gc-title">
+                    {activeTab === "applicant" ? "AI Resume Builder Active" : "AI Candidate Screening Active"}
+                  </div>
+                  <div className="auth-gc-sub">
+                    {activeTab === "applicant" ? "Automated Skill Benchmark" : "Bulk Resume Parsing Engine"}
+                  </div>
+                </div>
+              </div>
+              <div className="auth-gc-score">95% Score</div>
+            </div>
+
+            <div className="auth-gc-progress-bar">
+              <div className="auth-gc-progress-fill" style={{ width: "95%" }} />
+            </div>
+
+            <div className="auth-gc-skills">
+              <span>Resume Analysis</span>
+              <span>Explainable AI</span>
+              <span>Match Scoring</span>
+            </div>
+          </div>
+
+          {/* 4 Feature Highlights */}
           <ul className="auth-feature-list">
-            {activeTab === "applicant" ? [
-              "AI Resume Builder & Templates",
-              "One-Click Apply to any job",
-              "Real-time application tracking",
-              "HR feedback on your applications",
-              "Skill assessment badges",
-            ] : [
-              "AI resume ranking for every applicant",
-              "Bulk upload & parse any resume format",
-              "Invite your full recruiter team",
-              "Explainable AI match scores",
-              "Managed company job pipeline",
-            ].map((f) => (
-              <li key={f} className="auth-feature-item">
+            {features.map((f) => (
+              <li key={f.title} className="auth-feature-item">
                 <span className="auth-feature-check">
                   <Icon size={12} d={I.check} />
                 </span>
-                {f}
+                <div>
+                  <div className="auth-feature-title">{f.title}</div>
+                  <div className="auth-feature-desc">{f.desc}</div>
+                </div>
               </li>
             ))}
           </ul>

@@ -51,12 +51,20 @@ export default function Login() {
     }
   };
 
+  const featureHighlights = [
+    { title: "AI Resume Screening", desc: "Explainable candidate scores & skill telemetry" },
+    { title: "Smart Job Matching", desc: "Algorithmic alignment connecting talent to roles" },
+    { title: "AI Resume Builder", desc: "Tailored bullet points calibrated for tracking" },
+    { title: "One-Click Applications", desc: "Seamless pipeline for recruiters and job seekers" },
+  ];
+
   return (
     <div className="auth-page">
-      {/* ── Left brand panel ── */}
+      {/* ── Left brand panel (50% Split) ── */}
       <aside className="auth-brand-panel" aria-hidden="true">
         <div className="auth-brand-orb auth-brand-orb-1" />
         <div className="auth-brand-orb auth-brand-orb-2" />
+        <div className="auth-brand-orb auth-brand-orb-3" />
 
         <Link to="/" className="auth-brand-logo">
           <span className="auth-brand-logo-icon"><BrainIcon /></span>
@@ -64,25 +72,54 @@ export default function Login() {
         </Link>
 
         <div className="auth-brand-content">
+          <div className="auth-brand-badge">
+            <span className="w-2 h-2 rounded-full bg-[#D4DE95] animate-pulse" />
+            AI Recruitment Intelligence Platform
+          </div>
+
           <h1 className="auth-brand-headline">
             The Future of<br /><span>Intelligent Hiring</span>
           </h1>
           <p className="auth-brand-desc">
-            Welcome back. Your AI-powered recruitment dashboard is waiting — with ranked candidates, live applications, and smart insights.
+            Welcome back. Access your AI-powered recruitment dashboard to evaluate candidates with explainable match scores and accelerate pipeline velocity.
           </p>
 
+          {/* AI ATS Glassmorphism Graphic Card */}
+          <div className="auth-graphic-card">
+            <div className="auth-gc-header">
+              <div className="auth-gc-user">
+                <div className="auth-gc-avatar">AI</div>
+                <div>
+                  <div className="auth-gc-title">Senior Fullstack Engineer</div>
+                  <div className="auth-gc-sub">Live Telemetry Analysis</div>
+                </div>
+              </div>
+              <div className="auth-gc-score">98% Match</div>
+            </div>
+
+            <div className="auth-gc-progress-bar">
+              <div className="auth-gc-progress-fill" style={{ width: "98%" }} />
+            </div>
+
+            <div className="auth-gc-skills">
+              <span>React</span>
+              <span>Python</span>
+              <span>TypeScript</span>
+              <span>AI / ML</span>
+            </div>
+          </div>
+
+          {/* 4 Feature Highlights */}
           <ul className="auth-feature-list">
-            {[
-              "AI resume ranking & explainable scores",
-              "Bulk parsing — any format, any scale",
-              "One-click candidate shortlisting",
-              "Full applicant tracking pipeline",
-            ].map((f) => (
-              <li key={f} className="auth-feature-item">
+            {featureHighlights.map((f) => (
+              <li key={f.title} className="auth-feature-item">
                 <span className="auth-feature-check">
                   <Icon size={12} d={<polyline points="20 6 9 17 4 12" />} />
                 </span>
-                {f}
+                <div>
+                  <div className="auth-feature-title">{f.title}</div>
+                  <div className="auth-feature-desc">{f.desc}</div>
+                </div>
               </li>
             ))}
           </ul>
