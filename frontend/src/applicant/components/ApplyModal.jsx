@@ -1,26 +1,34 @@
-import React, { useState, useEffect } from "react";
-import { getMyResumes, applyToJob } from "../../api/jobs";
+import React, { useState, useEffect, useRef } from "react";
+import { getMyResumes, applyToJob, uploadResume } from "../../api/jobs";
 
 /**
  * Modal for applying to a job.
- * - Fetches applicant resumes
- * - Lets applicant pick one
+ * - Fetches applicant's stored resumes
+ * - Selects latest stored resume by default
+ * - Allows uploading a new resume (PDF/DOCX) directly inside the modal
  * - Submits via POST /api/jobs/:id/apply/
  *
- * @param {{ isOpen, onClose, job, onApplied }} props
+ * @param {{ isOpen: boolean, onClose: () => void, job: object, onApplied: (jobId: number) => void }} props
  */
 const ApplyModal = ({ isOpen, onClose, job, onApplied }) => {
   const [resumes, setResumes] = useState([]);
   const [selectedResumeId, setSelectedResumeId] = useState(null);
   const [loading, setLoading] = useState(false);
   const [resumeLoading, setResumeLoading] = useState(false);
+  const [fileUploading, setFileUploading] = useState(false);
   const [error, setError] = useState(null);
+  const [uploadError, setUploadError] = useState(null);
+  const [uploadSuccess, setUploadSuccess] = useState(null);
   const [success, setSuccess] = useState(false);
+
+  const fileInputRef = useRef(null);
 
   /* ── fetch resumes when modal opens ── */
   useEffect(() => {
     if (!isOpen) return;
     setError(null);
+    setUploadError(null);
+    setUploadSuccess(null);
     setSuccess(false);
     setSelectedResumeId(null);
     fetchResumes();
@@ -30,12 +38,65 @@ const ApplyModal = ({ isOpen, onClose, job, onApplied }) => {
     setResumeLoading(true);
     try {
       const res = await getMyResumes();
-      setResumes(res.data);
-      if (res.data.length === 1) setSelectedResumeId(res.data[0].id);
+      const list = res.data || [];
+      setResumes(list);
+      if (list.length > 0) {
+        setSelectedResumeId(list[0].id);
+      }
     } catch {
-      setError("Failed to load resumes. Please try again.");
+      setError("Failed to load stored resumes.");
     } finally {
       setResumeLoading(false);
+    }
+  };
+
+  /* ── direct file upload handler ── */
+  const handleFileSelect = async (event) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    // Validate file extension
+    const fileName = file.name.toLowerCase();
+    const validExtensions = ['.pdf', '.docx', '.doc'];
+    const isValidExtension = validExtensions.some(ext => fileName.endsWith(ext));
+
+    if (!isValidExtension) {
+      setUploadError('Only PDF and DOCX files are allowed.');
+      event.target.value = '';
+      return;
+    }
+
+    // Validate file size (max 10MB)
+    if (file.size > 10 * 1024 * 1024) {
+      setUploadError('File size must be less than 10MB.');
+      event.target.value = '';
+      return;
+    }
+
+    setUploadError(null);
+    setUploadSuccess(null);
+    setFileUploading(true);
+
+    const formData = new FormData();
+    formData.append('file', file);
+
+    try {
+      const res = await uploadResume(formData);
+      const newResume = res.data?.data || res.data;
+
+      if (newResume && newResume.id) {
+        setResumes(prev => [newResume, ...prev]);
+        setSelectedResumeId(newResume.id);
+        setUploadSuccess(`"${file.name}" uploaded and selected!`);
+      } else {
+        await fetchResumes();
+      }
+    } catch (err) {
+      const msg = err.response?.data?.error || err.response?.data?.detail || 'Failed to upload resume file.';
+      setUploadError(msg);
+    } finally {
+      setFileUploading(false);
+      event.target.value = '';
     }
   };
 
@@ -82,6 +143,15 @@ const ApplyModal = ({ isOpen, onClose, job, onApplied }) => {
 
   return (
     <>
+      {/* Hidden File Input */}
+      <input
+        ref={fileInputRef}
+        type="file"
+        accept=".pdf,.docx,.doc"
+        onChange={handleFileSelect}
+        className="hidden"
+      />
+
       {/* Backdrop */}
       <div
         className="fixed inset-0 z-50 bg-[#22241B]/50 backdrop-blur-sm flex items-center justify-center p-4"
@@ -108,6 +178,7 @@ const ApplyModal = ({ isOpen, onClose, job, onApplied }) => {
             <button
               onClick={onClose}
               className="p-1.5 rounded-lg text-[#8A8F76] hover:bg-[#ECEEDF] dark:hover:bg-[#2A2E1E] transition"
+              title="Close modal"
             >
               ✕
             </button>
@@ -135,27 +206,54 @@ const ApplyModal = ({ isOpen, onClose, job, onApplied }) => {
               </div>
             )}
 
-            {/* Resume Selection */}
+            {/* Upload Error / Success Banners */}
+            {uploadError && !success && (
+              <div className="p-3 rounded-lg bg-[#B4453D]/10 border border-[#B4453D]/30 text-[#B4453D] text-xs font-semibold flex items-center gap-2">
+                <span>⚠️ {uploadError}</span>
+              </div>
+            )}
+
+            {uploadSuccess && !success && (
+              <div className="p-3 rounded-lg bg-[#4E7A33]/10 border border-[#4E7A33]/30 text-[#4E7A33] text-xs font-semibold flex items-center gap-2">
+                <span>✓ {uploadSuccess}</span>
+              </div>
+            )}
+
+            {/* Resume Selection & Upload Section */}
             {!success && (
-              <div className="space-y-3">
-                <label className="block text-xs font-bold uppercase tracking-widest text-[#52564A] dark:text-[#9CA485]">
-                  Select Resume for Application
-                </label>
+              <div className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <label className="block text-xs font-bold uppercase tracking-widest text-[#52564A] dark:text-[#9CA485]">
+                    Select or Upload Resume
+                  </label>
+                  <button
+                    type="button"
+                    onClick={() => fileInputRef.current?.click()}
+                    disabled={fileUploading}
+                    className="text-xs font-bold text-[#636B2F] dark:text-[#D4DE95] hover:underline flex items-center gap-1"
+                  >
+                    <span>+ Upload New File</span>
+                  </button>
+                </div>
+
+                {/* Upload Status Loading */}
+                {fileUploading && (
+                  <div className="p-4 rounded-xl bg-[#D4DE95]/15 border border-[#D4DE95]/40 text-center space-y-2">
+                    <div className="w-5 h-5 border-2 border-[#3D4127] dark:border-[#D4DE95] border-t-transparent rounded-full animate-spin mx-auto" />
+                    <p className="text-xs font-bold text-[#22241B] dark:text-[#EBF0DA]">
+                      Uploading & parsing resume file...
+                    </p>
+                  </div>
+                )}
 
                 {resumeLoading ? (
                   <div className="py-8 text-center text-xs text-[#8A8F76] space-y-2">
                     <div className="w-6 h-6 border-2 border-[#D4DE95] border-t-transparent rounded-full animate-spin mx-auto" />
                     <span>Loading uploaded resumes...</span>
                   </div>
-                ) : resumes.length === 0 ? (
-                  <div className="p-6 rounded-xl bg-[#F8F9F1] dark:bg-[#171911] border border-[#D3D6C4] dark:border-[#383D28] text-center space-y-2">
-                    <p className="text-xs font-bold text-[#22241B] dark:text-[#EBF0DA]">No resume on file</p>
-                    <p className="text-[11px] text-[#8A8F76]">
-                      Please upload a resume on the Resume Analysis page first, then return to submit your application.
-                    </p>
-                  </div>
                 ) : (
                   <div className="space-y-2">
+                    {/* Stored Resumes List */}
                     {resumes.map((r) => {
                       const isSelected = selectedResumeId === r.id;
                       return (
@@ -187,12 +285,30 @@ const ApplyModal = ({ isOpen, onClose, job, onApplied }) => {
                               📄 {extractName(r.file)}
                             </p>
                             <p className="text-[10px] text-[#8A8F76] mt-0.5">
-                              Uploaded {new Date(r.uploaded_at).toLocaleDateString("en-US", { year: "numeric", month: "short", day: "numeric" })}
+                              Uploaded {r.uploaded_at ? new Date(r.uploaded_at).toLocaleDateString("en-US", { year: "numeric", month: "short", day: "numeric" }) : "Recently"}
                             </p>
                           </div>
+                          {isSelected && (
+                            <span className="text-[10px] font-bold uppercase tracking-wider text-[#4E7A33] dark:text-[#D4DE95] bg-[#4E7A33]/10 px-2 py-0.5 rounded">
+                              Selected
+                            </span>
+                          )}
                         </label>
                       );
                     })}
+
+                    {/* Direct Upload Dropzone Button */}
+                    <div
+                      onClick={() => fileInputRef.current?.click()}
+                      className="border-2 border-dashed border-[#D3D6C4] dark:border-[#383D28] hover:border-[#636B2F] dark:hover:border-[#D4DE95] rounded-xl p-4 text-center cursor-pointer transition-colors bg-[#F8F9F1]/50 dark:bg-[#171911]/50 group mt-3"
+                    >
+                      <p className="text-xs font-bold text-[#22241B] dark:text-[#EBF0DA]">
+                        📎 Upload a new PDF or DOCX resume
+                      </p>
+                      <p className="text-[11px] text-[#8A8F76] mt-0.5">
+                        Supports .pdf, .docx (Max 10MB)
+                      </p>
+                    </div>
                   </div>
                 )}
               </div>
@@ -210,7 +326,7 @@ const ApplyModal = ({ isOpen, onClose, job, onApplied }) => {
               </button>
               <button
                 onClick={handleApply}
-                disabled={loading || (resumes.length > 0 && !selectedResumeId)}
+                disabled={loading || fileUploading || (resumes.length > 0 && !selectedResumeId)}
                 className="apl-btn apl-btn-primary text-xs shadow-md"
               >
                 {loading ? "Submitting..." : "Submit Application"}
