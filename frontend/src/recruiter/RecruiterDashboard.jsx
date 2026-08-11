@@ -1,218 +1,170 @@
-import React, { useContext, useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import React, { useContext } from "react";
 import { AuthContext } from "../auth/AuthContext";
-import PortalShell from "../components/PortalShell";
-import { closeJob, deleteJob, getJobs, publishJob } from "../api/jobs";
-import { getMyCompany } from "../api/companies";
-import ApplicantListModal from "./components/ApplicantListModal";
-import JobCard from "./components/JobCard";
-import JobFormModal from "./components/JobFormModal";
+import { useNavigate, Link } from "react-router-dom";
 
-const recruiterNav = [
-  { label: "Overview", to: "/recruiter", end: true },
-  { label: "Company", to: "/recruiter/company", end: true },
-  { label: "Jobs Library", to: "/recruiter/jobs", end: true },
-  { label: "Create Job", to: "/recruiter/jobs/create", end: true, tag: "AI" },
-];
-
-export default function RecruiterDashboard() {
+const RecruiterDashboard = () => {
   const { user, logout } = useContext(AuthContext);
   const navigate = useNavigate();
-
-  const [jobs, setJobs] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
-  const [hasCompany, setHasCompany] = useState(true);
-  const [isJobModalOpen, setIsJobModalOpen] = useState(false);
-  const [jobToEdit, setJobToEdit] = useState(null);
-  const [selectedJobForApplicants, setSelectedJobForApplicants] = useState(null);
-
-  useEffect(() => {
-    fetchJobs();
-    fetchCompanyStatus();
-  }, []);
-
-  const fetchCompanyStatus = async () => {
-    try {
-      await getMyCompany();
-      setHasCompany(true);
-    } catch (err) {
-      if (err.response?.status === 404) {
-        setHasCompany(false);
-      }
-    }
-  };
-
-  const fetchJobs = async () => {
-    setLoading(true);
-    try {
-      const response = await getJobs();
-      setJobs(response.data);
-      setError(null);
-    } catch (err) {
-      console.error(err);
-      setError("Failed to fetch jobs. Please try again.");
-    } finally {
-      setLoading(false);
-    }
-  };
 
   const handleLogout = () => {
     logout();
     navigate("/login");
   };
 
-  const handleJobSaved = (savedJob, isEdit) => {
-    if (isEdit) {
-      setJobs(jobs.map((job) => (job.id === savedJob.id ? savedJob : job)));
-    } else {
-      setJobs([savedJob, ...jobs]);
-    }
-  };
+  // Dummy stats
+  const stats = [
+    { name: 'Total Jobs', value: '12', change: '+2 this month', icon: 'M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 002-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10' },
+    { name: 'Active Jobs', value: '4', change: '1 closing soon', icon: 'M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z' },
+    { name: 'Closed Jobs', value: '8', change: 'Matched 45 candidates', icon: 'M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z' },
+    { name: 'New Applicants', value: '128', change: '+14% from last week', icon: 'M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z' },
+  ];
 
-  const handlePublish = async (jobId) => {
-    try {
-      const response = await publishJob(jobId);
-      setJobs(jobs.map((job) => (job.id === jobId ? response.data : job)));
-    } catch (err) {
-      console.error(err);
-      alert(err.response?.data?.error || "Failed to publish job.");
-    }
-  };
-
-  const handleCloseJob = async (jobId) => {
-    try {
-      const response = await closeJob(jobId);
-      setJobs(jobs.map((job) => (job.id === jobId ? response.data : job)));
-    } catch (err) {
-      console.error(err);
-      alert("Failed to close job.");
-    }
-  };
-
-  const handleDeleteJob = async (jobId) => {
-    try {
-      await deleteJob(jobId);
-      setJobs(jobs.filter((job) => job.id !== jobId));
-    } catch (err) {
-      console.error(err);
-      alert("Failed to delete job.");
-    }
-  };
+  // Dummy recent jobs
+  const recentJobs = [
+    { id: 1, title: 'Senior Frontend Developer', location: 'Remote', status: 'Active', applicants: 45, date: '2 days ago' },
+    { id: 2, title: 'Backend Engineer (Python)', location: 'New York, NY', status: 'Active', applicants: 32, date: '5 days ago' },
+    { id: 3, title: 'Product Manager', location: 'San Francisco, CA', status: 'Closed', applicants: 89, date: '2 weeks ago' },
+  ];
 
   return (
-    <PortalShell
-      user={user}
-      onLogout={handleLogout}
-      badge="Recruiter workspace"
-      title="Manage your hiring pipeline from one structured desktop dashboard."
-      subtitle="Create jobs, publish openings, review applicants, and keep your recruiting operation moving with less manual coordination."
-      navItems={recruiterNav}
-      stats={[
-        { value: String(jobs.length).padStart(2, "0"), label: "Jobs in your workspace" },
-        { value: String(jobs.filter((job) => job.status === "ACTIVE").length).padStart(2, "0"), label: "Active openings" },
-        { value: String(jobs.filter((job) => job.status === "DRAFT").length).padStart(2, "0"), label: "Draft roles" },
-        { value: "24h", label: "Target turnaround for first review" },
-      ]}
-      actions={
-        <button
-          onClick={() => {
-            if (!hasCompany) {
-              navigate("/recruiter/company");
-              return;
-            }
-            setJobToEdit(null);
-            setIsJobModalOpen(true);
-          }}
-          className="rounded-full bg-gradient-to-r from-violet-500 to-cyan-400 px-6 py-3 text-sm font-semibold text-slate-950 transition hover:brightness-110"
-        >
-          {hasCompany ? "Create New Job" : "Set Up Company"}
-        </button>
-      }
-    >
-      {!hasCompany ? (
-        <div className="mb-6 rounded-[30px] border border-white/10 bg-white/[0.04] p-6 lg:p-7">
-          <div className="flex flex-col gap-5 lg:flex-row lg:items-center lg:justify-between">
-            <div>
-              <div className="text-lg font-semibold text-white">Company setup required</div>
-              <p className="mt-2 max-w-2xl text-sm leading-7 text-slate-400">
-                Your recruiter account is not linked to a company yet. Create your company profile first, then you can post jobs immediately.
-              </p>
-            </div>
-            <button
-              onClick={() => navigate("/recruiter/company")}
-              className="rounded-full bg-gradient-to-r from-violet-500 to-cyan-400 px-6 py-3 text-sm font-semibold text-slate-950 transition hover:brightness-110"
-            >
-              Create Company
-            </button>
-          </div>
-        </div>
-      ) : null}
+    <div className="min-h-screen bg-gray-50 font-sans selection:bg-blue-100 selection:text-blue-900">
+      {/* Navigation Bar */}
+      <nav className="bg-white border-b border-gray-100 sticky top-0 z-30 shadow-sm">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex justify-between h-16 items-center">
+            <div className="flex items-center gap-3">
+              <Link to="/recruiter" className="flex items-center gap-3 mr-6">
+                <div className="bg-blue-600 text-white p-2 rounded-lg">
+                  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path></svg>
+                </div>
+                <span className="text-xl font-bold text-gray-900 tracking-tight">AI Recruiter</span>
+              </Link>
 
-      {loading ? (
-        <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
-          {[1, 2, 3].map((item) => (
-            <div key={item} className="min-h-[250px] rounded-[30px] border border-white/10 bg-white/[0.04] p-6 animate-pulse">
-              <div className="mb-4 h-6 w-3/4 rounded bg-white/10"></div>
-              <div className="mb-6 h-4 w-1/2 rounded bg-white/10"></div>
-              <div className="space-y-2">
-                <div className="h-4 rounded bg-white/8"></div>
-                <div className="h-4 w-5/6 rounded bg-white/8"></div>
+              <div className="hidden md:flex items-center gap-6">
+                <Link to="/recruiter" className="text-blue-600 font-medium transition-colors border-b-2 border-blue-600 py-5">
+                  Dashboard
+                </Link>
+                <Link to="/recruiter/jobs" className="text-gray-500 font-medium hover:text-blue-600 transition-colors">
+                  Jobs
+                </Link>
+                <Link to="/recruiter/company" className="text-gray-500 font-medium hover:text-blue-600 transition-colors">
+                  Company
+                </Link>
               </div>
             </div>
-          ))}
+
+            <div className="flex items-center gap-6">
+              <div className="hidden md:block text-right">
+                <p className="text-sm font-medium text-gray-900">{user?.email}</p>
+                <p className="text-xs text-gray-500 capitalize">{user?.role}</p>
+              </div>
+              <button
+                onClick={handleLogout}
+                className="text-sm font-medium text-gray-500 hover:text-red-600 transition-colors px-3 py-2 rounded-lg hover:bg-red-50"
+              >
+                Logout
+              </button>
+            </div>
+          </div>
         </div>
-      ) : error ? (
-        <div className="rounded-[30px] border border-rose-400/20 bg-rose-500/10 p-6 text-center text-rose-200">
-          {error}
-        </div>
-      ) : jobs.length === 0 ? (
-        <div className="mx-auto flex min-h-[300px] w-full max-w-[760px] flex-col items-center justify-center rounded-[32px] border border-white/10 bg-white/[0.04] p-10 text-center lg:p-12">
-          <h3 className="text-2xl font-semibold text-white">No jobs posted yet</h3>
-          <p className="mx-auto mt-3 max-w-xl text-sm leading-7 text-slate-400">
-            Create your first job posting to start building a cleaner recruiting pipeline.
-          </p>
-          <button
-            onClick={() => {
-              setJobToEdit(null);
-              setIsJobModalOpen(true);
-            }}
-            className="mt-8 rounded-full bg-gradient-to-r from-violet-500 to-cyan-400 px-6 py-3 text-sm font-semibold text-slate-950 transition hover:brightness-110"
+      </nav>
+
+      {/* Main Content */}
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 animate-fade-in-up">
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-8 gap-4">
+          <div>
+            <h1 className="text-3xl font-bold text-gray-900">Dashboard Overview</h1>
+            <p className="text-gray-500 mt-1">Welcome back! Here's a quick summary of your recruitment activities.</p>
+          </div>
+          <Link
+            to="/recruiter/jobs/create"
+            className="inline-flex items-center justify-center px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-medium shadow-sm shadow-blue-200 transition-all transform hover:-translate-y-0.5"
           >
-            Create your first job
-          </button>
+            <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4v16m8-8H4"></path></svg>
+            Create New Job
+          </Link>
         </div>
-      ) : (
-        <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
-          {jobs.map((job) => (
-            <JobCard
-              key={job.id}
-              job={job}
-              onPublish={handlePublish}
-              onClose={handleCloseJob}
-              onViewApplicants={setSelectedJobForApplicants}
-              onEdit={(selectedJob) => {
-                setJobToEdit(selectedJob);
-                setIsJobModalOpen(true);
-              }}
-              onDelete={handleDeleteJob}
-            />
+
+        {/* Stats Grid */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+          {stats.map((stat, idx) => (
+            <div key={idx} className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100 hover:shadow-md transition-shadow">
+              <div className="flex items-center justify-between mb-4">
+                <div className="w-12 h-12 bg-blue-50 text-blue-600 rounded-xl flex items-center justify-center">
+                  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d={stat.icon}></path>
+                  </svg>
+                </div>
+              </div>
+              <h3 className="text-3xl font-bold text-gray-900 mb-1">{stat.value}</h3>
+              <p className="text-gray-500 font-medium mb-1">{stat.name}</p>
+              <p className="text-sm text-gray-400">{stat.change}</p>
+            </div>
           ))}
         </div>
-      )}
 
-      <JobFormModal
-        isOpen={isJobModalOpen}
-        onClose={() => setIsJobModalOpen(false)}
-        onJobSaved={handleJobSaved}
-        jobToEdit={jobToEdit}
-      />
+        {/* Recent Jobs Section */}
+        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+          <div className="p-6 border-b border-gray-100 flex justify-between items-center bg-gray-50/50">
+            <h2 className="text-lg font-bold text-gray-900">Recent Job Postings</h2>
+            <Link to="/recruiter/jobs" className="text-sm font-medium text-blue-600 hover:text-blue-800 transition-colors">
+              View All Jobs &rarr;
+            </Link>
+          </div>
+          <div className="divide-y divide-gray-100">
+            {recentJobs.map((job) => (
+              <div key={job.id} className="p-6 hover:bg-gray-50 transition-colors flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+                <div className="flex-1">
+                  <h3 className="text-lg font-bold text-gray-900 mb-1">{job.title}</h3>
+                  <div className="flex flex-wrap gap-4 text-sm text-gray-500">
+                    <span className="flex items-center">
+                      <svg className="w-4 h-4 mr-1.5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"></path><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
+                      {job.location}
+                    </span>
+                    <span className="flex items-center">
+                      <svg className="w-4 h-4 mr-1.5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                      {job.date}
+                    </span>
+                  </div>
+                </div>
+                
+                <div className="flex items-center gap-6">
+                  <div className="text-right">
+                    <p className="text-2xl font-bold text-gray-900">{job.applicants}</p>
+                    <p className="text-xs text-gray-500 uppercase font-medium tracking-wider">Applicants</p>
+                  </div>
+                  <div className="w-24 text-right">
+                    <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium border ${
+                      job.status === 'Active' 
+                        ? 'bg-green-50 text-green-700 border-green-200' 
+                        : 'bg-gray-100 text-gray-700 border-gray-200'
+                    }`}>
+                      <span className={`w-1.5 h-1.5 rounded-full mr-1.5 ${job.status === 'Active' ? 'bg-green-500' : 'bg-gray-400'}`}></span>
+                      {job.status}
+                    </span>
+                  </div>
+                  <Link to={`/recruiter/jobs`} className="text-gray-400 hover:text-blue-600 transition-colors">
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5l7 7-7 7"></path></svg>
+                  </Link>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </main>
 
-      <ApplicantListModal
-        isOpen={!!selectedJobForApplicants}
-        onClose={() => setSelectedJobForApplicants(null)}
-        job={selectedJobForApplicants}
-      />
-    </PortalShell>
+      <style dangerouslySetInnerHTML={{
+        __html: `
+        @keyframes fadeInUp {
+          from { opacity: 0; transform: translateY(10px); }
+          to { opacity: 1; transform: translateY(0); }
+        }
+        .animate-fade-in-up {
+          animation: fadeInUp 0.4s ease-out forwards;
+        }
+      `}} />
+    </div>
   );
-}
+};
+
+export default RecruiterDashboard;

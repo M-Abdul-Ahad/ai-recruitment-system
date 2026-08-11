@@ -1,33 +1,9 @@
-import React, { useContext, useRef, useState } from "react";
-import { useNavigate } from "react-router-dom";
-import { AuthContext } from "../auth/AuthContext";
-import PortalShell from "../components/PortalShell";
-
-const applicantNav = [
-  { label: "Overview", to: "/applicant", end: true },
-  { label: "Resume Analysis", to: "/applicant/resume", end: true },
-  { label: "Resume Builder", to: "/applicant/builder", end: true },
-  { label: "Jobs", to: "/applicant/jobs", end: true },
-  { label: "Applications", to: "/applicant/applications", end: true },
-];
+import React, { useState, useRef } from "react";
 
 
 const API_URL = import.meta.env.VITE_API_URL || "http://127.0.0.1:8000";
 
-const parseErrorResponse = async (response, fallbackMessage) => {
-  const errorText = await response.text();
-
-  try {
-    const errorData = JSON.parse(errorText);
-    return errorData.error || fallbackMessage;
-  } catch {
-    return errorText || fallbackMessage;
-  }
-};
-
 const ResumeAnalysis = () => {
-  const { user, logout } = useContext(AuthContext);
-  const navigate = useNavigate();
   const [uploadedFile, setUploadedFile] = useState(null);
   const [isUploading, setIsUploading] = useState(false);
   const [uploadError, setUploadError] = useState(null);
@@ -37,11 +13,6 @@ const ResumeAnalysis = () => {
   const [aiError, setAiError] = useState(null);
 
   const fileInputRef = useRef(null);
-
-  const handleLogout = () => {
-    logout();
-    navigate("/login");
-  };
 
   const handleUploadClick = () => {
     fileInputRef.current?.click();
@@ -85,8 +56,8 @@ const ResumeAnalysis = () => {
       );
 
       if (!response.ok) {
-        const errorMessage = await parseErrorResponse(response, 'Upload failed');
-        throw new Error(errorMessage);
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Upload failed');
       }
 
       const result = await response.json();
@@ -146,8 +117,8 @@ const ResumeAnalysis = () => {
       );
 
       if (!response.ok) {
-        const errorMessage = await parseErrorResponse(response, 'Failed to generate AI feedback');
-        throw new Error(errorMessage);
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to generate AI feedback');
       }
 
       const result = await response.json();
@@ -160,32 +131,57 @@ const ResumeAnalysis = () => {
   };
 
   return (
-    <PortalShell
-      user={user}
-      onLogout={handleLogout}
-      badge="Resume Analysis"
-      title="Analyze your resume with AI and improve how you present your experience."
-      subtitle="Upload your resume, review scoring and suggestions, and inspect the parsed output without leaving the applicant workspace."
-      navItems={applicantNav}
-      stats={[
-        { value: aiFeedback ? `${aiFeedback.score || 0}%` : "--", label: "Current AI score" },
-        { value: uploadedFile ? "01" : "00", label: "Resume uploaded" },
-        { value: resumeData?.skills?.length ? String(resumeData.skills.length).padStart(2, "0") : "00", label: "Skills detected" },
-        { value: aiFeedback ? "Ready" : "Pending", label: "Feedback status" },
-      ]}
-    >
-      <main className="rounded-[32px] border border-white/10 bg-white/[0.03] p-4 md:p-6 lg:p-8">
-        <div className="grid grid-cols-12 gap-6 xl:gap-8">
+    <div className="min-h-screen bg-[#f8fafc] dark:bg-[#0f172a] font-sans text-slate-900 dark:text-slate-100 transition-colors duration-300">
+
+      {/* HEADER */}
+      <header className="bg-white/80 dark:bg-[#1e293b]/80 backdrop-blur-md border-b border-slate-200 dark:border-slate-800 sticky top-0 z-50">
+        <div className="max-w-7xl mx-auto px-6 py-3 flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className="size-10 bg-gradient-to-br from-indigo-600 to-violet-600 rounded-xl flex items-center justify-center shadow-lg shadow-indigo-500/20">
+            </div>
+            <div>
+              <h2 className="text-lg font-bold tracking-tight leading-tight">Resume Feedback</h2>
+              <p className="text-[10px] text-slate-500 font-medium uppercase tracking-widest">AI Analytics</p>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-6">
+            <div className="hidden md:flex items-center gap-1 bg-slate-100 dark:bg-slate-800 p-1 rounded-lg">
+              <button className="px-3 py-1.5 text-xs font-bold rounded-md bg-white dark:bg-slate-700 shadow-sm">Dashboard</button>
+              <button className="px-3 py-1.5 text-xs font-bold text-slate-500 hover:text-slate-700 transition">History</button>
+            </div>
+
+            <div className="flex items-center gap-4 border-l border-slate-200 dark:border-slate-800 pl-6">
+              <button className="relative size-10 flex items-center justify-center rounded-full hover:bg-slate-100 dark:hover:bg-slate-800 transition">
+                <span className="absolute top-2 right-2 size-2 bg-red-500 rounded-full border-2 border-white dark:border-[#1e293b]"></span>
+              </button>
+              <div className="flex items-center gap-3 cursor-pointer group">
+                <div className="text-right hidden sm:block">
+                  <p className="text-sm font-bold group-hover:text-indigo-600 transition">Alex Rivera</p>
+                  <p className="text-[10px] text-slate-500 font-bold uppercase">Pro Plan</p>
+                </div>
+                <div className="size-10 rounded-xl bg-gradient-to-tr from-slate-200 to-slate-300 dark:from-slate-700 dark:to-slate-600 border-2 border-white dark:border-slate-800 shadow-sm overflow-hidden">
+                  <img src="https://api.dicebear.com/7.x/avataaars/svg?seed=Alex" alt="avatar" />
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </header>
+
+      {/* MAIN CONTENT */}
+      <main className="max-w-7xl mx-auto p-6 lg:p-10">
+        <div className="grid grid-cols-12 gap-8">
 
           {/* LEFT COLUMN: SCORING */}
-          <div className="col-span-12 space-y-6 xl:col-span-4">
-            <section className="relative overflow-hidden rounded-[2rem] border border-slate-200 bg-white p-8 shadow-sm dark:border-slate-800 dark:bg-[#1e293b]">
+          <div className="col-span-12 lg:col-span-4 space-y-8">
+            <section className="bg-white dark:bg-[#1e293b] p-8 rounded-[2rem] shadow-sm border border-slate-200 dark:border-slate-800 relative overflow-hidden">
               <div className="absolute top-0 right-0 p-6">
                 <span className="material-symbols-outlined text-slate-200 dark:text-slate-800 text-6xl"></span>
               </div>
 
-              <div className="relative flex flex-col items-center text-center">
-                <div className="relative size-44">
+              <div className="relative flex flex-col items-center">
+                <div className="relative size-48">
                   {/* Progress Circle */}
                   <svg className="size-full rotate-90" viewBox="0 0 36 36">
                     <circle
@@ -222,7 +218,7 @@ const ResumeAnalysis = () => {
                   </div>
                 </div>
 
-                <div className="mt-7 max-w-sm text-center">
+                <div className="text-center mt-8">
                   {aiFeedback ? (
                     <>
                       <div className={`inline-block px-4 py-1 rounded-full text-xs font-bold mb-3 ${aiFeedback.score >= 80 ? 'bg-emerald-50 dark:bg-emerald-500/10 text-emerald-600 dark:text-emerald-400' :
@@ -232,7 +228,7 @@ const ResumeAnalysis = () => {
                         {aiFeedback.score >= 80 ? 'Excellent' : aiFeedback.score >= 60 ? 'Good' : 'Needs Work'}
                       </div>
                       <h3 className="text-2xl font-bold tracking-tight">Resume Analysis Complete</h3>
-                      <p className="mt-3 text-sm leading-7 text-slate-500 dark:text-slate-400">
+                      <p className="text-sm text-slate-500 dark:text-slate-400 mt-2 leading-relaxed">
                         {aiFeedback.score >= 80 ? 'Your resume is well-optimized and highly competitive.' :
                           aiFeedback.score >= 60 ? 'Your resume has good structure. Review suggestions to improve further.' :
                             'Follow the AI suggestions below to strengthen your resume.'}
@@ -244,7 +240,7 @@ const ResumeAnalysis = () => {
                         Ready for Analysis
                       </div>
                       <h3 className="text-2xl font-bold tracking-tight">Upload Your Resume</h3>
-                      <p className="mt-3 text-sm leading-7 text-slate-500 dark:text-slate-400">
+                      <p className="text-sm text-slate-500 dark:text-slate-400 mt-2 leading-relaxed">
                         Upload and get instant AI-powered feedback on your resume quality and suggestions for improvement.
                       </p>
                     </>
@@ -254,11 +250,11 @@ const ResumeAnalysis = () => {
             </section>
 
             {/* QUICK ACTIONS */}
-            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+            <div className="grid grid-cols-2 gap-4">
               <button
                 onClick={handleUploadClick}
                 disabled={isUploading}
-                className="flex min-h-[128px] flex-col items-center justify-center gap-3 rounded-[1.5rem] bg-indigo-600 p-6 text-white shadow-lg shadow-indigo-500/20 transition-all hover:bg-indigo-700 disabled:cursor-not-allowed disabled:opacity-50"
+                className="flex flex-col items-center gap-3 p-6 bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed text-white rounded-[1.5rem] transition-all shadow-lg shadow-indigo-500/20"
               >
                 <span className="material-symbols-outlined">{isUploading ? 'hourglass_top' : 'file_upload'}</span>
                 <span className="text-xs font-bold">{isUploading ? 'Uploading...' : 'New Scan'}</span>
@@ -266,7 +262,7 @@ const ResumeAnalysis = () => {
               <button
                 onClick={generateAIFeedback}
                 disabled={aiLoading || !uploadedFile}
-                className="flex min-h-[128px] flex-col items-center justify-center gap-3 rounded-[1.5rem] border border-slate-200 bg-white p-6 transition-all hover:border-indigo-500 disabled:cursor-not-allowed disabled:opacity-50 dark:border-slate-800 dark:bg-[#1e293b]"
+                className="flex flex-col items-center gap-3 p-6 bg-white dark:bg-[#1e293b] border border-slate-200 dark:border-slate-800 hover:border-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed rounded-[1.5rem] transition-all"
               >
                 <span className="material-symbols-outlined text-indigo-500">{aiLoading ? 'hourglass_top' : 'sparkles'}</span>
                 <span className="text-xs font-bold">{aiLoading ? 'Analyzing...' : 'AI Analysis'}</span>
@@ -284,10 +280,10 @@ const ResumeAnalysis = () => {
           </div>
 
           {/* RIGHT COLUMN: ANALYSIS */}
-          <div className="col-span-12 space-y-6 xl:col-span-8">
+          <div className="col-span-12 lg:col-span-8 space-y-6">
 
             {/* FILE STATUS */}
-            <div className="rounded-[2rem] border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-[#1e293b]">
+            <div className="bg-white dark:bg-[#1e293b] p-6 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm">
               {uploadError && (
                 <div className="mb-4 p-4 bg-red-50 dark:bg-red-500/10 border border-red-200 dark:border-red-500/20 rounded-xl">
                   <div className="flex items-start gap-3">
@@ -315,14 +311,14 @@ const ResumeAnalysis = () => {
               {!isUploading && !uploadedFile && (
                 <div
                   onClick={handleUploadClick}
-                  className="flex min-h-[248px] flex-col items-center justify-center gap-5 rounded-[1.5rem] py-12 text-center transition-colors hover:bg-slate-50 dark:hover:bg-slate-900/50"
+                  className="flex flex-col items-center justify-center py-12 gap-4 cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-900/50 rounded-xl transition-colors"
                 >
-                  <div className="flex size-16 items-center justify-center rounded-2xl bg-indigo-50 dark:bg-indigo-500/10">
+                  <div className="size-16 bg-indigo-50 dark:bg-indigo-500/10 rounded-2xl flex items-center justify-center">
                     <span className="material-symbols-outlined text-indigo-500 text-3xl">cloud_upload</span>
                   </div>
                   <div className="text-center">
                     <p className="text-sm font-bold text-slate-700 dark:text-slate-300">No resume uploaded yet</p>
-                    <p className="mt-2 text-xs text-slate-500 dark:text-slate-400">Click to select PDF or DOCX file</p>
+                    <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">Click to select PDF or DOCX file</p>
                   </div>
                 </div>
               )}
@@ -371,10 +367,10 @@ const ResumeAnalysis = () => {
             )}
 
             {/* ANALYSIS GRID */}
-            <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
 
               {/* SKILLS CARDS */}
-              <div className="min-h-[320px] rounded-[2rem] border border-slate-200 bg-white p-6 dark:border-slate-800 dark:bg-[#1e293b]">
+              <div className="bg-white dark:bg-[#1e293b] p-6 rounded-[2rem] border border-slate-200 dark:border-slate-800">
                 <h4 className="flex items-center gap-2 text-sm font-black uppercase tracking-widest text-slate-400 mb-6">
                   <span className="size-2 bg-indigo-500 rounded-full"></span>
                   Key Skill Gaps
@@ -399,7 +395,7 @@ const ResumeAnalysis = () => {
               </div>
 
               {/* IMPROVEMENTS */}
-              <div className="min-h-[320px] rounded-[2rem] border border-slate-200 bg-white p-6 dark:border-slate-800 dark:bg-[#1e293b]">
+              <div className="bg-white dark:bg-[#1e293b] p-6 rounded-[2rem] border border-slate-200 dark:border-slate-800">
                 <h4 className="flex items-center gap-2 text-sm font-black uppercase tracking-widest text-slate-400 mb-6">
                   <span className="size-2 bg-amber-500 rounded-full"></span>
                   AI Suggestions
@@ -578,7 +574,7 @@ const ResumeAnalysis = () => {
             )}
 
             {/* RAW DATA PREVIEW */}
-            <div className="overflow-hidden rounded-[2rem] border border-slate-700 bg-gradient-to-br from-slate-900 via-slate-900 to-slate-800 shadow-xl">
+            <div className="bg-gradient-to-br from-slate-900 via-slate-900 to-slate-800 rounded-[2rem] overflow-hidden border border-slate-700 shadow-xl">
               <div className="px-6 py-4 border-b border-slate-700 flex justify-between items-center bg-slate-950/50 backdrop-blur">
                 <span className="text-sm font-black uppercase tracking-[0.2em] text-slate-300">{aiFeedback ? 'AI Feedback Output' : 'Parsed Entity Output'}</span>
                 <div className="flex gap-1.5">
@@ -626,7 +622,7 @@ const ResumeAnalysis = () => {
           </div>
         </div>
       </main>
-    </PortalShell>
+    </div>
   );
 };
 
