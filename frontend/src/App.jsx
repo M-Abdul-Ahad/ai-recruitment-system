@@ -5,6 +5,7 @@ import PublicRoute from "./auth/PublicRoute";
 import Login from "./auth/Login";
 import Signup from "./auth/Signup";
 import ApplicantLayout from "./layouts/ApplicantLayout";
+import RecruiterLayout from "./layouts/RecruiterLayout";
 
 import ApplicantDashboard from "./applicant/Dashboard";
 import ResumeAnalysis from "./applicant/ResumeAnalysis";
@@ -83,64 +84,18 @@ export default function App() {
             path="/recruiter"
             element={
               <RoleRoute allowedRoles={["recruiter"]}>
-                <RecruiterDashboard />
+                <RecruiterLayout />
               </RoleRoute>
             }
-          />
-
-          <Route
-            path="/recruiter/company"
-            element={
-              <RoleRoute allowedRoles={["recruiter"]}>
-                <Company />
-              </RoleRoute>
-            }
-          />
-
-          <Route
-            path="/recruiter/jobs"
-            element={
-              <RoleRoute allowedRoles={["recruiter"]}>
-                <RecruiterJobs />
-              </RoleRoute>
-            }
-          />
-
-          <Route
-            path="/recruiter/jobs/create"
-            element={
-              <RoleRoute allowedRoles={["recruiter"]}>
-                <CreateJob />
-              </RoleRoute>
-            }
-          />
-
-          <Route
-            path="/recruiter/candidates"
-            element={
-              <RoleRoute allowedRoles={["recruiter"]}>
-                <CandidateManagement />
-              </RoleRoute>
-            }
-          />
-
-          <Route
-            path="/recruiter/shortlist/:jobId"
-            element={
-              <RoleRoute allowedRoles={["recruiter"]}>
-                <CandidateShortlisting />
-              </RoleRoute>
-            }
-          />
-
-          <Route
-            path="/recruiter/candidate/:id"
-            element={
-              <RoleRoute allowedRoles={["recruiter"]}>
-                <CandidateDetail />
-              </RoleRoute>
-            }
-          />
+          >
+            <Route index                   element={<RecruiterDashboard />} />
+            <Route path="company"          element={<Company />} />
+            <Route path="jobs"             element={<RecruiterJobs />} />
+            <Route path="jobs/create"      element={<CreateJob />} />
+            <Route path="candidates"       element={<CandidateManagement />} />
+            <Route path="shortlist/:jobId" element={<CandidateShortlisting />} />
+            <Route path="candidate/:id"    element={<CandidateDetail />} />
+          </Route>
 
           {/* ================= ADMIN ================= */}
           <Route

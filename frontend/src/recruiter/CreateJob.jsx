@@ -145,8 +145,7 @@ const CreateJob = () => {
   const isEdit = !!jobToEdit;
 
   return (
-    <div className="min-h-screen bg-gray-50 py-8 px-4 sm:px-6 lg:px-8 font-sans selection:bg-blue-100 selection:text-blue-900 animate-fade-in-up">
-      <div className="max-w-4xl mx-auto">
+    <div className="max-w-4xl mx-auto">
         <div className="mb-8 flex items-center justify-between">
           <div>
             <Link to="/recruiter/jobs" className="text-blue-600 hover:text-blue-800 font-medium text-sm flex items-center mb-2">
@@ -336,17 +335,6 @@ const CreateJob = () => {
           </div>
         </form>
 
-        <style dangerouslySetInnerHTML={{
-          __html: `
-          @keyframes fadeInUp {
-            from { opacity: 0; transform: translateY(10px); }
-            to { opacity: 1; transform: translateY(0); }
-          }
-          .animate-fade-in-up {
-            animation: fadeInUp 0.4s ease-out forwards;
-          }
-        `}} />
-      </div>
     </div>
   );
 };

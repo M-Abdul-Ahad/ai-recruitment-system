@@ -1,15 +1,9 @@
-import React, { useContext } from "react";
+import { useContext } from "react";
 import { AuthContext } from "../auth/AuthContext";
-import { useNavigate, Link } from "react-router-dom";
+import { Link } from "react-router-dom";
 
 const RecruiterDashboard = () => {
-  const { user, logout } = useContext(AuthContext);
-  const navigate = useNavigate();
-
-  const handleLogout = () => {
-    logout();
-    navigate("/login");
-  };
+  const { user } = useContext(AuthContext);
 
   // Dummy stats
   const stats = [
@@ -27,50 +21,7 @@ const RecruiterDashboard = () => {
   ];
 
   return (
-    <div className="min-h-screen bg-gray-50 font-sans selection:bg-blue-100 selection:text-blue-900">
-      {/* Navigation Bar */}
-      <nav className="bg-white border-b border-gray-100 sticky top-0 z-30 shadow-sm">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between h-16 items-center">
-            <div className="flex items-center gap-3">
-              <Link to="/recruiter" className="flex items-center gap-3 mr-6">
-                <div className="bg-blue-600 text-white p-2 rounded-lg">
-                  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path></svg>
-                </div>
-                <span className="text-xl font-bold text-gray-900 tracking-tight">AI Recruiter</span>
-              </Link>
-
-              <div className="hidden md:flex items-center gap-6">
-                <Link to="/recruiter" className="text-blue-600 font-medium transition-colors border-b-2 border-blue-600 py-5">
-                  Dashboard
-                </Link>
-                <Link to="/recruiter/jobs" className="text-gray-500 font-medium hover:text-blue-600 transition-colors">
-                  Jobs
-                </Link>
-                <Link to="/recruiter/company" className="text-gray-500 font-medium hover:text-blue-600 transition-colors">
-                  Company
-                </Link>
-              </div>
-            </div>
-
-            <div className="flex items-center gap-6">
-              <div className="hidden md:block text-right">
-                <p className="text-sm font-medium text-gray-900">{user?.email}</p>
-                <p className="text-xs text-gray-500 capitalize">{user?.role}</p>
-              </div>
-              <button
-                onClick={handleLogout}
-                className="text-sm font-medium text-gray-500 hover:text-red-600 transition-colors px-3 py-2 rounded-lg hover:bg-red-50"
-              >
-                Logout
-              </button>
-            </div>
-          </div>
-        </div>
-      </nav>
-
-      {/* Main Content */}
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 animate-fade-in-up">
+    <>
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-8 gap-4">
           <div>
             <h1 className="text-3xl font-bold text-gray-900">Dashboard Overview</h1>
@@ -151,19 +102,7 @@ const RecruiterDashboard = () => {
             ))}
           </div>
         </div>
-      </main>
-
-      <style dangerouslySetInnerHTML={{
-        __html: `
-        @keyframes fadeInUp {
-          from { opacity: 0; transform: translateY(10px); }
-          to { opacity: 1; transform: translateY(0); }
-        }
-        .animate-fade-in-up {
-          animation: fadeInUp 0.4s ease-out forwards;
-        }
-      `}} />
-    </div>
+    </>
   );
 };
 
