@@ -39,3 +39,9 @@ export const getMyApplications = () => api.get('/jobs/my-applications/');
 
 /** GET /api/resumes/my-resumes/ → applicant's uploaded resumes */
 export const getMyResumes = () => api.get('/resumes/my-resumes/');
+
+/** POST /api/resumes/upload/ → upload a new resume PDF/DOCX */
+export const uploadResume = (formData) =>
+  api.post('/resumes/upload/', formData, {
+    headers: { 'Content-Type': 'multipart/form-data' },
+  });

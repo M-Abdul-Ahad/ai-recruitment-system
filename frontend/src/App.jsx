@@ -4,6 +4,7 @@ import RoleRoute from "./auth/RoleRoute";
 import PublicRoute from "./auth/PublicRoute";
 import Login from "./auth/Login";
 import Signup from "./auth/Signup";
+import ApplicantLayout from "./layouts/ApplicantLayout";
 
 import ApplicantDashboard from "./applicant/Dashboard";
 import ResumeAnalysis from "./applicant/ResumeAnalysis";
@@ -66,46 +67,16 @@ export default function App() {
             path="/applicant"
             element={
               <RoleRoute allowedRoles={["applicant"]}>
-                <ApplicantDashboard />
+                <ApplicantLayout />
               </RoleRoute>
             }
-          />
-
-          <Route
-            path="/applicant/resume"
-            element={
-              <RoleRoute allowedRoles={["applicant"]}>
-                <ResumeAnalysis />
-              </RoleRoute>
-            }
-          />
-
-          <Route
-            path="/applicant/builder"
-            element={
-              <RoleRoute allowedRoles={["applicant"]}>
-                <ResumeBuilder />
-              </RoleRoute>
-            }
-          />
-
-          <Route
-            path="/applicant/jobs"
-            element={
-              <RoleRoute allowedRoles={["applicant"]}>
-                <ApplicantJobs />
-              </RoleRoute>
-            }
-          />
-
-          <Route
-            path="/applicant/applications"
-            element={
-              <RoleRoute allowedRoles={["applicant"]}>
-                <Applications />
-              </RoleRoute>
-            }
-          />
+          >
+            <Route index element={<ApplicantDashboard />} />
+            <Route path="resume"       element={<ResumeAnalysis />} />
+            <Route path="builder"      element={<ResumeBuilder />} />
+            <Route path="jobs"         element={<ApplicantJobs />} />
+            <Route path="applications" element={<Applications />} />
+          </Route>
 
           {/* ================= RECRUITER (HR INCLUDED) ================= */}
           <Route

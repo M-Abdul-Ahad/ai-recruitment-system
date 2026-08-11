@@ -1,6 +1,19 @@
-# resumes/utils.py
-from resumes.data.skills import SKILLS
+import re
+import docx
 import PyPDF2
+from resumes.data.skills import SKILLS
+
+# Date pattern to detect job dates/durations in experience sections
+DATE_PATTERN = (
+    r'(?:\b(?:jan(?:uary)?|feb(?:ruary)?|mar(?:ch)?|apr(?:il)?|may|jun(?:e)?|jul(?:y)?|'
+    r'aug(?:ust)?|sep(?:tember)?|oct(?:ober)?|nov(?:ember)?|dec(?:ember)?|\d{1,2}[/-])\s*)?'
+    r'\b(?:19|20)\d{2}\b'
+    r'(?:\s*(?:[-–]|to|\s)\s*'
+    r'(?:\b(?:jan(?:uary)?|feb(?:ruary)?|mar(?:ch)?|apr(?:il)?|may|jun(?:e)?|jul(?:y)?|'
+    r'aug(?:ust)?|sep(?:tember)?|oct(?:ober)?|nov(?:ember)?|dec(?:ember)?|\d{1,2}[/-])\s*)?'
+    r'(?:\b(?:19|20)\d{2}\b|present|current|now))?'
+)
+
 
 def extract_text_from_pdf(file_path):
     text = ""
@@ -12,9 +25,6 @@ def extract_text_from_pdf(file_path):
                 text += page_text + "\n"
     return text
 
-# resumes/utils.py
-
-import docx
 
 def extract_text_from_docx(file_path):
     doc = docx.Document(file_path)
@@ -23,9 +33,6 @@ def extract_text_from_docx(file_path):
         text += para.text + "\n"
     return text
 
-# resumes/utils.py
-
-import re
 
 def clean_resume_text(text):
     text = text.lower()
@@ -33,7 +40,6 @@ def clean_resume_text(text):
     text = re.sub(r'[^\w\s\n]', '', text)          # keep \n
     text = re.sub(r'[ \t]+', ' ', text)            # only spaces
     return text.strip()
-
 
 
 def extract_skills(cleaned_text):
@@ -44,6 +50,7 @@ def extract_skills(cleaned_text):
             found_skills.append(skill)
 
     return list(set(found_skills))
+
 
 def extract_education_section(cleaned_text):
     lines = cleaned_text.split('\n')
@@ -84,6 +91,7 @@ def extract_year(text):
     match = re.search(r'(19|20)\d{2}', text)
     return match.group() if match else ""
 
+
 def parse_education(education_lines):
     education_data = []
 
@@ -106,7 +114,6 @@ def parse_education(education_lines):
         if any(word in line for word in ["university", "college", "institute"]):
             institution = re.sub(r'(19|20)\d{2}', '', line).title().strip()
 
-
         # Year detection
         year_match = re.search(r'(19|20)\d{2}', line)
         if year_match:
@@ -120,6 +127,7 @@ def parse_education(education_lines):
             })
 
     return education_data
+
 
 def extract_experience_section(cleaned_text):
     lines = cleaned_text.split('\n')
@@ -161,7 +169,7 @@ def split_experience_blocks(experience_lines):
     current_block = []
 
     for line in experience_lines:
-        if re.search(DATE_PATTERN, line):
+        if re.search(DATE_PATTERN, line, re.IGNORECASE):
             if current_block:
                 blocks.append(current_block)
                 current_block = []
@@ -187,8 +195,12 @@ def parse_experience(blocks):
 
         # Duration
         duration_match = re.search(
-            r'(20\d{2})\s*[-–]\s*(20\d{2}|present)',
-            header
+            r'(?:(?:jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec|[0-9]{1,2}/)\s*)?'
+            r'(?:19|20)\d{2}\s*[-–\s|to]*\s*'
+            r'(?:(?:jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec|[0-9]{1,2}/)\s*)?'
+            r'(?:(?:19|20)\d{2}|present|current|now)',
+            header,
+            re.IGNORECASE
         )
         if duration_match:
             duration = duration_match.group()
@@ -214,4 +226,3 @@ def parse_experience(blocks):
         })
 
     return experience_data
-
