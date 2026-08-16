@@ -13,13 +13,13 @@ class IsApplicant(permissions.BasePermission):
 
 class IsRecruiter(permissions.BasePermission):
     """
-    Allows access only to recruiter users.
+    Allows access only to recruiter and company_admin users.
     """
     def has_permission(self, request, view):
         return bool(
             request.user and 
             request.user.is_authenticated and 
-            request.user.role == 'recruiter'
+            request.user.role in ['recruiter', 'company_admin']
         )
 
 class IsAdmin(permissions.BasePermission):

@@ -1,15 +1,23 @@
+from __future__ import annotations
+
+from typing import TYPE_CHECKING, cast
+
 from rest_framework import serializers
-from .models import Company
-
-
 from django.contrib.auth import get_user_model
 
-User = get_user_model()
+from .models import Company
+
+if TYPE_CHECKING:
+    from users.models import User
+
+_User = get_user_model()
+
 
 class CompanyMemberSerializer(serializers.ModelSerializer):
     class Meta:
-        model = User
+        model = _User
         fields = ["id", "username", "role", "is_hr"]
+
 
 class CompanySerializer(serializers.ModelSerializer):
     """Read-only serializer for Company details."""
@@ -17,8 +25,8 @@ class CompanySerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Company
-        fields = ["id", "name", "description", "website", "logo", "created_at", "updated_at", "recruiters"]
-        read_only_fields = fields
+        fields = ["id", "name", "email", "description", "website", "industry", "phone", "address", "logo", "created_at", "updated_at", "recruiters"]
+        read_only_fields = ["id", "name", "email", "description", "website", "industry", "phone", "address", "logo", "created_at", "updated_at", "recruiters"]
 
 
 class CompanyCreateSerializer(serializers.ModelSerializer):
@@ -33,7 +41,7 @@ class CompanyCreateSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Company
-        fields = ["name", "description", "website", "logo"]
+        fields = ["name", "email", "description", "website", "industry", "phone", "address", "logo"]
 
     def validate_name(self, value):
         if Company.objects.filter(name__iexact=value).exists():
@@ -45,7 +53,7 @@ class CompanyCreateSerializer(serializers.ModelSerializer):
         if not request or not request.user:
             raise serializers.ValidationError("Authentication required.")
 
-        user = request.user
+        user = cast("User", request.user)
 
         # Applicants cannot create companies
         if user.role == "applicant":
@@ -57,9 +65,6 @@ class CompanyCreateSerializer(serializers.ModelSerializer):
 
         return attrs
 
-from django.contrib.auth import get_user_model
-
-User = get_user_model()
 
 class AddHRSerializer(serializers.Serializer):
     user_id = serializers.IntegerField()
@@ -68,19 +73,20 @@ class AddHRSerializer(serializers.Serializer):
         request = self.context.get("request")
         if not request or not getattr(request, 'user', None):
             raise serializers.ValidationError("Authentication required.")
-        
+
         try:
-            user = User.objects.get(id=value)
-        except User.DoesNotExist:
+            user = cast("User", _User.objects.get(id=value))
+        except _User.DoesNotExist:
             raise serializers.ValidationError("User not found.")
 
         if user.role != "recruiter":
             raise serializers.ValidationError("Only recruiters can be HR.")
-            
-        if request.user.role != "admin" and user.company != request.user.company:
+
+        req_user = cast("User", request.user)
+        if req_user.role != "admin" and user.company != req_user.company:
             raise serializers.ValidationError("User must belong to your company.")
-            
+
         if getattr(user, 'is_hr', False):
             raise serializers.ValidationError("User is already HR.")
-            
+
         return value

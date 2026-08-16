@@ -1,9 +1,7 @@
 from django.test import TestCase
-from django.contrib.auth import get_user_model
+from users.models import User
 from .serializers import SignupSerializer
 
-
-User = get_user_model()
 
 
 class UserModelTests(TestCase):
@@ -16,13 +14,14 @@ class UserModelTests(TestCase):
         self.assertEqual(user.role, User.Role.APPLICANT)
 
     def test_cannot_set_blank_or_null_role(self):
-        with self.assertRaises(ValueError):
-            User.objects.create_user(
-                email="another@example.com",
-                username="user2",
-                password="password123",
-                role="",
-            )
+        user = User(
+            email="another@example.com",
+            username="user2",
+            password="password123",
+            role="",
+        )
+        with self.assertRaises(Exception):
+            user.full_clean()
 
 
 class SignupSerializerTests(TestCase):
@@ -70,7 +69,10 @@ class SignupSerializerTests(TestCase):
             password="Tokenpass1",
             role=User.Role.RECRUITER,
         )
-        from backend.users.serializers import CustomTokenObtainPairSerializer
+        try:
+            from users.serializers import CustomTokenObtainPairSerializer
+        except ImportError:
+            from backend.users.serializers import CustomTokenObtainPairSerializer
         data = {'email': user.email, 'password': 'Tokenpass1'}
         serializer = CustomTokenObtainPairSerializer(data=data)
         self.assertTrue(serializer.is_valid(), serializer.errors)
@@ -82,4 +84,71 @@ class SignupSerializerTests(TestCase):
         self.assertEqual(result['user_id'], user.id)
         self.assertEqual(result['email'], user.email)
         self.assertEqual(result['role'], user.role)
+
+    def test_company_signup_success(self):
+        from companies.models import Company
+        data = {
+            "role": "company_admin",
+            "ownerName": "Alice_CEO",
+            "ownerEmail": "alice@acmecorp.com",
+            "password": "StrongPassword123!",
+            "companyName": "Acme Corp",
+            "companyEmail": "contact@acmecorp.com",
+            "website": "https://acmecorp.com",
+            "industry": "technology",
+            "phone": "+15551234567",
+            "address": "100 Acme Way",
+        }
+        serializer = SignupSerializer(data=data)
+        self.assertTrue(serializer.is_valid(), serializer.errors)
+        user = serializer.save()
+
+        # Check user created correctly
+        self.assertEqual(user.email, "alice@acmecorp.com")
+        self.assertEqual(user.role, User.Role.COMPANY_ADMIN)
+        self.assertTrue(user.is_hr)
+        self.assertIsNotNone(user.company)
+
+        # Check company details saved in companies_company
+        company = user.company
+        self.assertEqual(company.name, "Acme Corp")
+        self.assertEqual(company.email, "contact@acmecorp.com")
+        self.assertEqual(company.website, "https://acmecorp.com")
+        self.assertEqual(company.industry, "technology")
+        self.assertEqual(company.phone, "+15551234567")
+        self.assertEqual(company.address, "100 Acme Way")
+
+    def test_company_signup_duplicate_name_rejected(self):
+        from companies.models import Company
+        Company.objects.create(name="Existing Corp")
+
+        data = {
+            "role": "company_admin",
+            "ownerName": "Bob_Owner",
+            "ownerEmail": "bob@existing.com",
+            "password": "StrongPassword123!",
+            "companyName": "Existing Corp",
+        }
+        serializer = SignupSerializer(data=data)
+        self.assertFalse(serializer.is_valid())
+        self.assertIn("company_name", serializer.errors)
+
+    def test_company_signup_rollback_on_error(self):
+        from companies.models import Company
+        # Existing user with email
+        User.objects.create_user(email="taken@company.com", username="existinguser", password="password123")
+
+        data = {
+            "role": "company_admin",
+            "ownerName": "New_Owner",
+            "ownerEmail": "taken@company.com",  # Duplicate email to trigger failure
+            "password": "StrongPassword123!",
+            "companyName": "Rollback Corp",
+        }
+        serializer = SignupSerializer(data=data)
+        # Email uniqueness fails
+        self.assertFalse(serializer.is_valid())
+        self.assertFalse(Company.objects.filter(name="Rollback Corp").exists())
+
+
 

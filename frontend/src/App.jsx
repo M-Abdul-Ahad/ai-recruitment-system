@@ -83,7 +83,7 @@ export default function App() {
           <Route
             path="/recruiter"
             element={
-              <RoleRoute allowedRoles={["recruiter"]}>
+              <RoleRoute allowedRoles={["recruiter", "company_admin"]}>
                 <RecruiterLayout />
               </RoleRoute>
             }

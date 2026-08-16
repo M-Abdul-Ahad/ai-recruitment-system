@@ -10,7 +10,7 @@ const PublicRoute = ({ children }) => {
     if (user) {
         const role = user.role?.toLowerCase();
         if (role === "applicant") return <Navigate to="/applicant" replace />;
-        if (role === "recruiter") return <Navigate to="/recruiter" replace />;
+        if (role === "recruiter" || role === "company_admin") return <Navigate to="/recruiter" replace />;
         if (role === "admin") return <Navigate to="/admin" replace />;
         return <Navigate to="/unauthorized" replace />;
     }

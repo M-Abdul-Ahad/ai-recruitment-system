@@ -1,0 +1,17 @@
+{
+  "venvPath": "..",
+  "venv": "venv",
+  "extraPaths": [
+    "."
+  ],
+  "pythonVersion": "3.12",
+  "executionEnvironments": [
+    {
+      "root": ".",
+      "extraPaths": ["."]
+    }
+  ],
+  "defineConstant": {
+    "DJANGO_SETTINGS_MODULE": "core.settings"
+  }
+}

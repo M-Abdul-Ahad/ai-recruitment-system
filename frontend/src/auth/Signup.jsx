@@ -80,6 +80,7 @@ export default function Signup() {
   const [showPw, setShowPw] = useState(false);
   const [showConfirmPw, setShowConfirmPw] = useState(false);
   const [logoPreview, setLogoPreview] = useState(null);
+  const [logoFile, setLogoFile] = useState(null);
 
   /* ── Applicant form state ─────────────────────────────────── */
   const [applicantForm, setApplicantForm] = useState({
@@ -107,6 +108,7 @@ export default function Signup() {
   const handleLogoChange = (e) => {
     const file = e.target.files[0];
     if (file) {
+      setLogoFile(file);
       const reader = new FileReader();
       reader.onload = (ev) => setLogoPreview(ev.target.result);
       reader.readAsDataURL(file);
@@ -140,7 +142,15 @@ export default function Signup() {
       navigate("/login");
     } catch (err) {
       console.error("API Error during signup:", err);
-      setError("Signup failed. Please check your details and try again.");
+      const apiError = err.response?.data;
+      let errMsgs = [];
+      if (apiError && typeof apiError === "object") {
+        for (const key in apiError) {
+          const msg = Array.isArray(apiError[key]) ? apiError[key].join(" ") : apiError[key];
+          errMsgs.push(`${key}: ${msg}`);
+        }
+      }
+      setError(errMsgs.length > 0 ? errMsgs.join(" | ") : "Signup failed. Please check your details and try again.");
     } finally {
       setLoading(false);
     }
@@ -151,19 +161,47 @@ export default function Signup() {
     e.preventDefault();
     setError("");
     console.log("Current formData state:", companyForm);
-    console.log("Current role value:", "recruiter");
 
     if (companyForm.password !== companyForm.confirmPassword) {
       setError("Passwords do not match.");
       return;
     }
 
-    const payload = {
-      username: companyForm.ownerName,
-      email: companyForm.ownerEmail,
-      password: companyForm.password,
-      role: "recruiter",
-    };
+    if (!companyForm.companyName.trim()) {
+      setError("Company Name is required.");
+      return;
+    }
+
+    let payload;
+    if (logoFile) {
+      const formData = new FormData();
+      formData.append("role", "company_admin");
+      formData.append("username", companyForm.ownerName);
+      formData.append("email", companyForm.ownerEmail);
+      formData.append("password", companyForm.password);
+      formData.append("company_name", companyForm.companyName);
+      formData.append("company_email", companyForm.companyEmail);
+      formData.append("website", companyForm.website);
+      formData.append("industry", companyForm.industry);
+      formData.append("phone", companyForm.phone);
+      formData.append("address", companyForm.address);
+      formData.append("logo", logoFile);
+      payload = formData;
+    } else {
+      payload = {
+        role: "company_admin",
+        username: companyForm.ownerName,
+        email: companyForm.ownerEmail,
+        password: companyForm.password,
+        company_name: companyForm.companyName,
+        company_email: companyForm.companyEmail,
+        website: companyForm.website,
+        industry: companyForm.industry,
+        phone: companyForm.phone,
+        address: companyForm.address,
+      };
+    }
+
     console.log("API Payload before call:", payload);
 
     setLoading(true);
@@ -173,7 +211,15 @@ export default function Signup() {
       navigate("/login");
     } catch (err) {
       console.error("API Error during signup:", err);
-      setError("Registration failed. Please check your details and try again.");
+      const apiError = err.response?.data;
+      let errMsgs = [];
+      if (apiError && typeof apiError === "object") {
+        for (const key in apiError) {
+          const msg = Array.isArray(apiError[key]) ? apiError[key].join(" ") : apiError[key];
+          errMsgs.push(`${key}: ${msg}`);
+        }
+      }
+      setError(errMsgs.length > 0 ? errMsgs.join(" | ") : "Registration failed. Please check your details and try again.");
     } finally {
       setLoading(false);
     }

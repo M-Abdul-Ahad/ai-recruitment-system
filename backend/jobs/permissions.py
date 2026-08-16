@@ -7,14 +7,14 @@ User = get_user_model()
 
 class IsRecruiter(permissions.BasePermission):
     """
-    Allows access only to users with the role "RECRUITER".
+    Allows access only to users with the role "RECRUITER" or "COMPANY_ADMIN".
     """
 
     def has_permission(self, request, view):
         return bool(
             request.user
             and request.user.is_authenticated
-            and request.user.role == User.Role.RECRUITER
+            and request.user.role in [User.Role.RECRUITER, User.Role.COMPANY_ADMIN]
         )
 
 

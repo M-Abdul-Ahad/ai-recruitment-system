@@ -17,9 +17,11 @@ The module also provides tuples for easy iteration and validation.
 
 APPLICANT = "applicant"
 RECRUITER = "recruiter"
+COMPANY_ADMIN = "company_admin"
 ADMIN = "admin"
 
 #: all defined roles
-ALL_ROLES = (APPLICANT, RECRUITER, ADMIN)
+ALL_ROLES = (APPLICANT, RECRUITER, COMPANY_ADMIN, ADMIN)
 #: roles that may be assigned during public registration
-PUBLIC_ROLES = (APPLICANT, RECRUITER)
+PUBLIC_ROLES = (APPLICANT, RECRUITER, COMPANY_ADMIN)
+
