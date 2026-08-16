@@ -145,196 +145,198 @@ const CreateJob = () => {
   const isEdit = !!jobToEdit;
 
   return (
-    <div className="max-w-4xl mx-auto">
-        <div className="mb-8 flex items-center justify-between">
-          <div>
-            <Link to="/recruiter/jobs" className="text-blue-600 hover:text-blue-800 font-medium text-sm flex items-center mb-2">
-              <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path></svg>
-              Back to Jobs
-            </Link>
-            <h1 className="text-3xl font-bold text-gray-900">{isEdit ? "Edit Job Posting" : "Create New Job Posting"}</h1>
-            <p className="text-gray-500 mt-1">Fill out the details below to {isEdit ? "update the" : "create a"} job.</p>
-          </div>
+    <div className="max-w-4xl mx-auto apl-animate-fade space-y-6">
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+        <div>
+          <Link to="/recruiter/jobs" className="text-xs font-bold text-[#3D4127] dark:text-[#D4DE95] hover:underline inline-flex items-center gap-1 mb-2">
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path></svg>
+            Back to Jobs
+          </Link>
+          <h1 className="text-2xl sm:text-3xl font-extrabold text-[#22241B] dark:text-[#EBF0DA] tracking-tight">{isEdit ? "Edit Job Posting" : "Create New Job Posting"}</h1>
+          <p className="text-xs sm:text-sm text-[#8A8F76] dark:text-[#9CA485] mt-1">Fill out the details below to {isEdit ? "update the" : "create a"} job requisition.</p>
         </div>
+      </div>
 
-        <form onSubmit={handleSubmit} className="space-y-8">
-          {error && (
-            <div className="p-4 bg-red-50 border border-red-100 text-red-600 rounded-xl">
-              {error}
+      <form onSubmit={handleSubmit} className="space-y-8">
+        {error && (
+          <div className="p-4 bg-[#B4453D]/10 border border-[#B4453D]/20 text-[#B4453D] rounded-xl text-sm font-semibold">
+            {error}
+          </div>
+        )}
+
+        {/* Section 1: Basic Info */}
+        <div className="apl-card">
+          <h2 className="text-lg font-extrabold text-[#22241B] dark:text-[#EBF0DA] mb-6 flex items-center">
+            <span className="bg-[#D4DE95] text-[#3D4127] w-8 h-8 rounded-lg inline-flex items-center justify-center mr-3 text-sm font-extrabold shadow-xs">1</span>
+            Basic Info
+          </h2>
+          <div className="space-y-5">
+            <div>
+              <label className="apl-label">Job Title *</label>
+              <input type="text" name="title" required value={formData.title} onChange={handleChange} className="apl-input" placeholder="e.g. Senior Frontend Developer" />
             </div>
-          )}
-
-          {/* Section 1: Basic Info */}
-          <div className="bg-white rounded-2xl p-8 shadow-sm border border-gray-100">
-            <h2 className="text-xl font-bold text-gray-800 mb-6 flex items-center">
-              <span className="bg-blue-100 text-blue-600 w-8 h-8 rounded-lg inline-flex items-center justify-center mr-3 text-sm">1</span>
-              Basic Info
-            </h2>
-            <div className="space-y-5">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Job Title *</label>
-                <input type="text" name="title" required value={formData.title} onChange={handleChange} className="w-full px-4 py-2.5 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all" placeholder="e.g. Senior Frontend Developer" />
-              </div>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Location</label>
-                  <input type="text" name="location" value={formData.location} onChange={handleChange} className="w-full px-4 py-2.5 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all" placeholder="e.g. New York, NY (or Remote)" />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Experience Required (Years) *</label>
-                  <input type="number" min="0" name="experience_required" required value={formData.experience_required} onChange={handleChange} className="w-full px-4 py-2.5 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all" />
-                </div>
-              </div>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Min Salary</label>
-                  <input type="number" name="salary_min" value={formData.salary_min} onChange={handleChange} className="w-full px-4 py-2.5 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all" placeholder="e.g. 80000" />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Max Salary</label>
-                  <input type="number" name="salary_max" value={formData.salary_max} onChange={handleChange} className="w-full px-4 py-2.5 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all" placeholder="e.g. 120000" />
-                </div>
+                <label className="apl-label">Location</label>
+                <input type="text" name="location" value={formData.location} onChange={handleChange} className="apl-input" placeholder="e.g. New York, NY (or Remote)" />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Skills Required (Select at least one for publishing)</label>
-                <div className="flex flex-wrap gap-2">
-                  {availableSkills.map((skill) => (
+                <label className="apl-label">Experience Required (Years) *</label>
+                <input type="number" min="0" name="experience_required" required value={formData.experience_required} onChange={handleChange} className="apl-input" />
+              </div>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+              <div>
+                <label className="apl-label">Min Salary ($)</label>
+                <input type="number" name="salary_min" value={formData.salary_min} onChange={handleChange} className="apl-input" placeholder="e.g. 80000" />
+              </div>
+              <div>
+                <label className="apl-label">Max Salary ($)</label>
+                <input type="number" name="salary_max" value={formData.salary_max} onChange={handleChange} className="apl-input" placeholder="e.g. 120000" />
+              </div>
+            </div>
+            <div>
+              <label className="apl-label">Skills Required (Select at least one for publishing)</label>
+              <div className="flex flex-wrap gap-2 mt-1">
+                {availableSkills.map((skill) => {
+                  const isSelected = formData.skills.includes(skill.id);
+                  return (
                     <button
                       key={skill.id}
                       type="button"
                       onClick={() => handleSkillToggle(skill.id)}
-                      className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors border ${
-                        formData.skills.includes(skill.id)
-                          ? "bg-blue-600 text-white border-blue-600"
-                          : "bg-gray-50 text-gray-600 border-gray-200 hover:bg-gray-100"
+                      className={`px-3.5 py-1.5 rounded-full text-xs font-bold transition-all border ${
+                        isSelected
+                          ? "bg-[#D4DE95] text-[#3D4127] border-[#3D4127]/20 shadow-xs"
+                          : "bg-[#ECEEDF] dark:bg-[#2A2E1E] text-[#52564A] dark:text-[#9CA485] border-[#D3D6C4] dark:border-[#383D28] hover:bg-[#D3D6C4]"
                       }`}
                     >
-                      {skill.name}
+                      {isSelected ? "✓ " : "+ "}{skill.name}
                     </button>
-                  ))}
-                  {availableSkills.length === 0 && (
-                    <span className="text-gray-400 text-sm italic">No skills available.</span>
-                  )}
-                </div>
+                  );
+                })}
+                {availableSkills.length === 0 && (
+                  <span className="text-[#8A8F76] text-xs italic">No skills available.</span>
+                )}
               </div>
             </div>
           </div>
+        </div>
 
-          {/* Section 2: Job Details */}
-          <div className="bg-white rounded-2xl p-8 shadow-sm border border-gray-100">
-            <h2 className="text-xl font-bold text-gray-800 mb-6 flex items-center">
-              <span className="bg-blue-100 text-blue-600 w-8 h-8 rounded-lg inline-flex items-center justify-center mr-3 text-sm">2</span>
-              Job Details
-            </h2>
-            <div className="space-y-5">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Job Type</label>
-                  <select
-                    name="job_type"
-                    value={formData.job_type}
-                    onChange={handleChange}
-                    className="w-full px-4 py-2.5 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all bg-white"
-                  >
-                    <option value="">Select Job Type</option>
-                    <option value="Full-time">Full-time</option>
-                    <option value="Part-time">Part-time</option>
-                    <option value="Hybrid">Hybrid</option>
-                    <option value="Remote">Remote</option>
-                  </select>
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Timings</label>
-                  <input type="text" name="timings" value={formData.timings} onChange={handleChange} className="w-full px-4 py-2.5 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all" placeholder="e.g. 9 AM - 5 PM EST" />
-                </div>
+        {/* Section 2: Job Details */}
+        <div className="apl-card">
+          <h2 className="text-lg font-extrabold text-[#22241B] dark:text-[#EBF0DA] mb-6 flex items-center">
+            <span className="bg-[#D4DE95] text-[#3D4127] w-8 h-8 rounded-lg inline-flex items-center justify-center mr-3 text-sm font-extrabold shadow-xs">2</span>
+            Job Details
+          </h2>
+          <div className="space-y-5">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+              <div>
+                <label className="apl-label">Job Type</label>
+                <select
+                  name="job_type"
+                  value={formData.job_type}
+                  onChange={handleChange}
+                  className="apl-select"
+                >
+                  <option value="">Select Job Type</option>
+                  <option value="Full-time">Full-time</option>
+                  <option value="Part-time">Part-time</option>
+                  <option value="Hybrid">Hybrid</option>
+                  <option value="Remote">Remote</option>
+                </select>
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Type of Experience Required</label>
-                <textarea name="experience_details" rows="2" value={formData.experience_details} onChange={handleChange} className="w-full px-4 py-2.5 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all resize-none" placeholder="e.g. Experience with high-traffic e-commerce systems..." />
+                <label className="apl-label">Timings</label>
+                <input type="text" name="timings" value={formData.timings} onChange={handleChange} className="apl-input" placeholder="e.g. 9 AM - 5 PM EST" />
               </div>
             </div>
-          </div>
-
-          {/* Section 3: Requirements */}
-          <div className="bg-white rounded-2xl p-8 shadow-sm border border-gray-100">
-            <h2 className="text-xl font-bold text-gray-800 mb-6 flex items-center">
-              <span className="bg-blue-100 text-blue-600 w-8 h-8 rounded-lg inline-flex items-center justify-center mr-3 text-sm">3</span>
-              Requirements
-            </h2>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Additional Skills / Technologies</label>
-              <textarea name="additional_requirements" rows="3" value={formData.additional_requirements} onChange={handleChange} className="w-full px-4 py-2.5 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all resize-none" placeholder="e.g. Nice to have: Docker, Kubernetes, AWS..." />
+              <label className="apl-label">Type of Experience Required</label>
+              <textarea name="experience_details" rows="2" value={formData.experience_details} onChange={handleChange} className="apl-textarea resize-none" placeholder="e.g. Experience with high-traffic e-commerce systems..." />
             </div>
           </div>
+        </div>
 
-          {/* Section 4: AI JD Generator */}
-          <div className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-2xl p-8 shadow-sm border border-blue-100">
-            <h2 className="text-xl font-bold text-gray-800 mb-6 flex items-center">
-              <span className="bg-blue-600 text-white w-8 h-8 rounded-lg inline-flex items-center justify-center mr-3 text-sm">
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg>
-              </span>
-              AI Job Description Generator
-            </h2>
-            <div className="space-y-5">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Additional Instructions for AI JD</label>
-                <textarea name="jd_prompt" rows="2" value={formData.jd_prompt} onChange={handleChange} className="w-full px-4 py-2.5 border border-blue-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all resize-none bg-white" placeholder="e.g. Emphasize teamwork, agile methodologies, and leadership potential." />
+        {/* Section 3: Requirements */}
+        <div className="apl-card">
+          <h2 className="text-lg font-extrabold text-[#22241B] dark:text-[#EBF0DA] mb-6 flex items-center">
+            <span className="bg-[#D4DE95] text-[#3D4127] w-8 h-8 rounded-lg inline-flex items-center justify-center mr-3 text-sm font-extrabold shadow-xs">3</span>
+            Requirements
+          </h2>
+          <div>
+            <label className="apl-label">Additional Skills / Technologies</label>
+            <textarea name="additional_requirements" rows="3" value={formData.additional_requirements} onChange={handleChange} className="apl-textarea resize-none" placeholder="e.g. Nice to have: Docker, Kubernetes, AWS..." />
+          </div>
+        </div>
+
+        {/* Section 4: AI JD Generator */}
+        <div className="bg-[#D4DE95]/15 dark:bg-[#D4DE95]/5 rounded-2xl p-8 border border-[#D4DE95]/40 shadow-sm space-y-6">
+          <h2 className="text-lg font-extrabold text-[#3D4127] dark:text-[#D4DE95] flex items-center">
+            <span className="bg-[#3D4127] text-[#D4DE95] w-8 h-8 rounded-lg inline-flex items-center justify-center mr-3 text-sm font-bold shadow-xs">
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg>
+            </span>
+            AI Job Description Generator
+          </h2>
+          <div className="space-y-5">
+            <div>
+              <label className="apl-label">Additional Instructions for AI JD</label>
+              <textarea name="jd_prompt" rows="2" value={formData.jd_prompt} onChange={handleChange} className="apl-textarea resize-none" placeholder="e.g. Emphasize teamwork, agile methodologies, and leadership potential." />
+            </div>
+            <div className="flex flex-wrap gap-3">
+              <button type="button" onClick={handleGenerateJD} disabled={isGeneratingJD} className="apl-btn apl-btn-dark shadow-md disabled:opacity-50">
+                {isGeneratingJD ? (
+                  <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
+                ) : (
+                  <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z"></path></svg>
+                )}
+                {isGeneratingJD ? "Generating..." : "Generate AI JD"}
+              </button>
+              <button type="button" onClick={handleGenerateJD} disabled={isGeneratingJD} className="apl-btn apl-btn-secondary disabled:opacity-50">
+                <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>
+                Regenerate
+              </button>
+            </div>
+            <div>
+              <div className="flex justify-between items-center mb-1">
+                <label className="apl-label">Final Job Description *</label>
+                {formData.description && (
+                  <button type="button" onClick={handleCopy} className="text-xs text-[#3D4127] dark:text-[#D4DE95] hover:underline flex items-center font-bold transition-colors">
+                    {copied ? (
+                      <>
+                        <svg className="w-3.5 h-3.5 mr-1 text-[#4E7A33]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M5 13l4 4L19 7"></path></svg>
+                        Copied!
+                      </>
+                    ) : (
+                      <>
+                        <svg className="w-3.5 h-3.5 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"></path></svg>
+                        Copy
+                      </>
+                    )}
+                  </button>
+                )}
               </div>
-              <div className="flex gap-3">
-                <button type="button" onClick={handleGenerateJD} disabled={isGeneratingJD} className="px-5 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl font-medium shadow-md shadow-indigo-200 transition-colors flex items-center disabled:opacity-50">
-                  {isGeneratingJD ? (
-                    <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
-                  ) : (
-                    <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z"></path></svg>
-                  )}
-                  {isGeneratingJD ? "Generating..." : "Generate AI JD"}
-                </button>
-                <button type="button" onClick={handleGenerateJD} disabled={isGeneratingJD} className="px-5 py-2.5 bg-white text-indigo-600 border border-indigo-200 hover:bg-indigo-50 rounded-xl font-medium transition-colors flex items-center disabled:opacity-50">
-                  <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>
-                  Regenerate
-                </button>
-              </div>
-              <div>
-                <div className="flex justify-between items-center mb-1">
-                  <label className="block text-sm font-medium text-gray-700">Final Job Description *</label>
-                  {formData.description && (
-                    <button type="button" onClick={handleCopy} className="text-sm text-indigo-600 hover:text-indigo-800 flex items-center font-medium transition-colors">
-                      {copied ? (
-                        <>
-                          <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7"></path></svg>
-                          Copied!
-                        </>
-                      ) : (
-                        <>
-                          <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"></path></svg>
-                          Copy
-                        </>
-                      )}
-                    </button>
-                  )}
-                </div>
-                <textarea name="description" required rows="10" value={formData.description} onChange={handleChange} className="w-full px-4 py-2.5 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all resize-y bg-white font-mono text-sm" placeholder="The generated description will appear here. You can manually edit this text before saving." />
-              </div>
+              <textarea name="description" required rows="10" value={formData.description} onChange={handleChange} className="apl-textarea apl-font-mono text-xs resize-y" placeholder="The generated description will appear here. You can manually edit this text before saving." />
             </div>
           </div>
+        </div>
 
-          <div className="flex justify-end gap-4 border-t border-gray-100 pt-8 pb-12">
-            <Link to="/recruiter/jobs" className="px-6 py-3 text-gray-600 bg-white border border-gray-200 hover:bg-gray-50 rounded-xl font-medium transition-colors shadow-sm">
-              Cancel
-            </Link>
-            <button type="submit" disabled={loading} className="px-8 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-medium shadow-md shadow-blue-200 transition-colors disabled:opacity-50 flex items-center text-lg">
-              {loading ? (
-                <>
-                  <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
-                  {isEdit ? "Updating..." : "Creating..."}
-                </>
-              ) : (
-                isEdit ? "Update Job" : "Create Job"
-              )}
-            </button>
-          </div>
-        </form>
-
+        <div className="flex justify-end gap-3 pt-4 pb-12 border-t border-[#ECEEDF] dark:border-[#2A2E1E]">
+          <Link to="/recruiter/jobs" className="apl-btn apl-btn-secondary px-6">
+            Cancel
+          </Link>
+          <button type="submit" disabled={loading} className="apl-btn apl-btn-primary px-8 py-3 text-base shadow-md disabled:opacity-50">
+            {loading ? (
+              <>
+                <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-[#3D4127]" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
+                {isEdit ? "Updating..." : "Creating..."}
+              </>
+            ) : (
+              isEdit ? "Update Job" : "Create Job"
+            )}
+          </button>
+        </div>
+      </form>
     </div>
   );
 };

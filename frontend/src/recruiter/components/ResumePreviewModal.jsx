@@ -47,18 +47,18 @@ const ResumePreviewModal = ({ isOpen, onClose, resumeUrl, applicantName }) => {
           onClick={(e) => e.stopPropagation()}
         >
           {/* Header */}
-          <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100 dark:border-slate-800 bg-gray-50/50 dark:bg-slate-900/50">
+          <div className="flex items-center justify-between px-6 py-4 border-b border-[#ECEEDF] dark:border-[#2A2E1E] bg-[#F8F9F1]/50 dark:bg-[#171911]/50">
             <div className="flex items-center gap-3 min-w-0">
-              <div className="w-10 h-10 rounded-xl bg-blue-50 dark:bg-blue-500/10 flex items-center justify-center flex-shrink-0">
-                <svg className="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <div className="w-10 h-10 rounded-xl bg-[#D4DE95] text-[#3D4127] flex items-center justify-center flex-shrink-0 font-bold shadow-sm">
+                <svg className="w-5 h-5 text-[#3D4127]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                 </svg>
               </div>
               <div className="min-w-0">
-                <h3 className="text-sm font-bold text-gray-900 dark:text-white truncate">
+                <h3 className="text-sm font-bold text-[#22241B] dark:text-[#EBF0DA] truncate">
                   {applicantName ? `${applicantName}'s Resume` : "Resume Preview"}
                 </h3>
-                <p className="text-xs text-gray-400 dark:text-slate-500 truncate">
+                <p className="text-xs text-[#8A8F76] dark:text-[#9CA485] truncate">
                   {extractFilename(fullUrl)}
                 </p>
               </div>
@@ -71,7 +71,7 @@ const ResumePreviewModal = ({ isOpen, onClose, resumeUrl, applicantName }) => {
                 download
                 target="_blank"
                 rel="noopener noreferrer"
-                className="px-3 py-2 text-xs font-bold text-gray-600 dark:text-slate-400 bg-gray-100 dark:bg-slate-800 hover:bg-gray-200 dark:hover:bg-slate-700 rounded-lg transition flex items-center gap-1.5"
+                className="px-3 py-2 text-xs font-bold text-[#3D4127] dark:text-[#EBF0DA] bg-[#ECEEDF] dark:bg-[#2A2E1E] hover:bg-[#D3D6C4] dark:hover:bg-[#383D28] rounded-lg transition flex items-center gap-1.5"
               >
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
@@ -84,7 +84,7 @@ const ResumePreviewModal = ({ isOpen, onClose, resumeUrl, applicantName }) => {
                 href={fullUrl}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="px-3 py-2 text-xs font-bold text-gray-600 dark:text-slate-400 bg-gray-100 dark:bg-slate-800 hover:bg-gray-200 dark:hover:bg-slate-700 rounded-lg transition flex items-center gap-1.5"
+                className="px-3 py-2 text-xs font-bold text-[#3D4127] dark:text-[#EBF0DA] bg-[#ECEEDF] dark:bg-[#2A2E1E] hover:bg-[#D3D6C4] dark:hover:bg-[#383D28] rounded-lg transition flex items-center gap-1.5"
               >
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
@@ -95,9 +95,9 @@ const ResumePreviewModal = ({ isOpen, onClose, resumeUrl, applicantName }) => {
               {/* Close */}
               <button
                 onClick={onClose}
-                className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-slate-800 transition"
+                className="p-2 rounded-lg hover:bg-[#ECEEDF] dark:hover:bg-[#2A2E1E] transition"
               >
-                <svg className="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg className="w-5 h-5 text-[#8A8F76]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
                 </svg>
               </button>
@@ -105,7 +105,7 @@ const ResumePreviewModal = ({ isOpen, onClose, resumeUrl, applicantName }) => {
           </div>
 
           {/* Preview Body */}
-          <div className="flex-1 bg-gray-100 dark:bg-slate-950 overflow-hidden">
+          <div className="flex-1 bg-[#F8F9F1] dark:bg-[#171911] overflow-hidden">
             {isPdf && !iframeError ? (
               <iframe
                 src={`${fullUrl}#toolbar=1&navpanes=0`}
@@ -123,16 +123,16 @@ const ResumePreviewModal = ({ isOpen, onClose, resumeUrl, applicantName }) => {
             ) : (
               /* Fallback */
               <div className="flex flex-col items-center justify-center h-full gap-4">
-                <div className="w-20 h-20 rounded-2xl bg-white dark:bg-slate-800 shadow-sm flex items-center justify-center">
-                  <svg className="w-10 h-10 text-gray-300 dark:text-slate-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <div className="w-20 h-20 rounded-2xl bg-white dark:bg-[#222518] shadow-sm flex items-center justify-center">
+                  <svg className="w-10 h-10 text-[#8A8F76]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                   </svg>
                 </div>
                 <div className="text-center">
-                  <p className="text-sm font-bold text-gray-700 dark:text-slate-300 mb-1">
+                  <p className="text-sm font-bold text-[#22241B] dark:text-[#EBF0DA] mb-1">
                     {isDocx ? "DOCX preview not available locally" : "Preview unavailable"}
                   </p>
-                  <p className="text-xs text-gray-400 dark:text-slate-500 mb-4">
+                  <p className="text-xs text-[#8A8F76] dark:text-[#9CA485] mb-4">
                     {isDocx
                       ? "DOCX preview requires a publicly accessible URL. Use download or open in new tab."
                       : "This file type cannot be previewed in the browser."}
@@ -141,7 +141,7 @@ const ResumePreviewModal = ({ isOpen, onClose, resumeUrl, applicantName }) => {
                     href={fullUrl}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="inline-flex items-center gap-2 px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white text-sm font-bold rounded-xl shadow-lg shadow-blue-500/20 transition"
+                    className="inline-flex items-center gap-2 px-5 py-2.5 bg-[#D4DE95] text-[#3D4127] text-sm font-bold rounded-xl shadow-md hover:bg-[#C6D17E] transition"
                   >
                     <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />

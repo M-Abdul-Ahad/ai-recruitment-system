@@ -3,31 +3,31 @@ import React, { useState, useRef, useEffect } from "react";
 const STATUS_CONFIG = {
   APPLIED: {
     label: "Applied",
-    bg: "bg-blue-50",
-    text: "text-blue-700",
-    ring: "ring-blue-200",
-    dot: "bg-blue-500",
+    bg: "bg-[#3E7285]/10 dark:bg-[#3E7285]/20",
+    text: "text-[#3E7285] dark:text-[#5B9DB5]",
+    ring: "ring-[#3E7285]/20",
+    dot: "bg-[#3E7285]",
   },
   SHORTLISTED: {
     label: "Shortlisted",
-    bg: "bg-emerald-50",
-    text: "text-emerald-700",
-    ring: "ring-emerald-200",
-    dot: "bg-emerald-500",
+    bg: "bg-[#4E7A33]/10 dark:bg-[#4E7A33]/20",
+    text: "text-[#4E7A33] dark:text-[#74AB50]",
+    ring: "ring-[#4E7A33]/20",
+    dot: "bg-[#4E7A33]",
   },
   INTERVIEW: {
     label: "Interview",
-    bg: "bg-purple-50",
-    text: "text-purple-700",
-    ring: "ring-purple-200",
-    dot: "bg-purple-500",
+    bg: "bg-[#C99A3E]/10 dark:bg-[#C99A3E]/20",
+    text: "text-[#C99A3E] dark:text-[#E0B55C]",
+    ring: "ring-[#C99A3E]/20",
+    dot: "bg-[#C99A3E]",
   },
   REJECTED: {
     label: "Rejected",
-    bg: "bg-red-50",
-    text: "text-red-700",
-    ring: "ring-red-200",
-    dot: "bg-red-500",
+    bg: "bg-[#B4453D]/10 dark:bg-[#B4453D]/20",
+    text: "text-[#B4453D] dark:text-[#D96B63]",
+    ring: "ring-[#B4453D]/20",
+    dot: "bg-[#B4453D]",
   },
 };
 
@@ -93,7 +93,7 @@ const StatusDropdown = ({ currentStatus, onStatusChange, disabled = false }) => 
                 <span className={`w-2 h-2 rounded-full flex-shrink-0 ${sc.dot}`} />
                 <span className={isActive ? sc.text : "text-gray-700"}>{sc.label}</span>
                 {isActive && (
-                  <svg className="w-3.5 h-3.5 ml-auto text-blue-600" fill="currentColor" viewBox="0 0 20 20">
+                  <svg className="w-3.5 h-3.5 ml-auto text-[#3D4127] dark:text-[#D4DE95]" fill="currentColor" viewBox="0 0 20 20">
                     <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
                   </svg>
                 )}
