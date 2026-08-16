@@ -6,6 +6,7 @@ import Login from "./auth/Login";
 import Signup from "./auth/Signup";
 import ApplicantLayout from "./layouts/ApplicantLayout";
 import RecruiterLayout from "./layouts/RecruiterLayout";
+import CompanyLayout from "./layouts/CompanyLayout";
 
 import ApplicantDashboard from "./applicant/Dashboard";
 import ResumeAnalysis from "./applicant/ResumeAnalysis";
@@ -20,6 +21,10 @@ import CreateJob from "./recruiter/CreateJob";
 import RecruiterJobs from "./recruiter/Jobs";
 import CandidateShortlisting from "./recruiter/CandidateShortlisting";
 import CandidateManagement from "./recruiter/CandidateManagement";
+
+import CompanyDashboard from "./company/CompanyDashboard";
+import RecruiterManagement from "./company/RecruiterManagement";
+import CompanySettings from "./company/CompanySettings";
 
 import AdminDashboard from "./admin/AdminDashboard";
 import Users from "./admin/Users";
@@ -95,6 +100,20 @@ export default function App() {
             <Route path="candidates"       element={<CandidateManagement />} />
             <Route path="shortlist/:jobId" element={<CandidateShortlisting />} />
             <Route path="candidate/:id"    element={<CandidateDetail />} />
+          </Route>
+
+          {/* ================= COMPANY MANAGEMENT ================= */}
+          <Route
+            path="/company"
+            element={
+              <RoleRoute allowedRoles={["company_admin"]}>
+                <CompanyLayout />
+              </RoleRoute>
+            }
+          >
+            <Route index element={<CompanyDashboard />} />
+            <Route path="recruiters" element={<RecruiterManagement />} />
+            <Route path="settings" element={<CompanySettings />} />
           </Route>
 
           {/* ================= ADMIN ================= */}
