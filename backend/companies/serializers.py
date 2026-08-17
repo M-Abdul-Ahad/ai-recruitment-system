@@ -213,6 +213,8 @@ class RecruiterInvitationListSerializer(serializers.ModelSerializer):
 
 class AcceptInvitationSerializer(serializers.Serializer):
     token = serializers.CharField(write_only=True)
+    first_name = serializers.CharField(required=False, allow_blank=True, default="")
+    last_name = serializers.CharField(required=False, allow_blank=True, default="")
     username = serializers.CharField()
     password = serializers.CharField(write_only=True, validators=[validate_password])
 
@@ -244,6 +246,8 @@ class AcceptInvitationSerializer(serializers.Serializer):
     def save(self, **kwargs):
         username = self.validated_data["cleaned_username"]
         password = self.validated_data["password"]
+        first_name = self.validated_data.get("first_name", "").strip()
+        last_name = self.validated_data.get("last_name", "").strip()
 
         with transaction.atomic():
             recruiter_role_name = "recruiter"
@@ -257,6 +261,8 @@ class AcceptInvitationSerializer(serializers.Serializer):
                 role=recruiter_role_name,
                 company=self.invitation.company,
                 is_hr=True,
+                first_name=first_name,
+                last_name=last_name,
             )
             if role_obj:
                 user.role_fk = role_obj

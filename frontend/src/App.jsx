@@ -64,16 +64,8 @@ export default function App() {
               <Signup />
             </PublicRoute>
           } />
-          <Route path="/setup-password" element={
-            <PublicRoute>
-              <SetupPassword />
-            </PublicRoute>
-          } />
-          <Route path="/accept-invitation" element={
-            <PublicRoute>
-              <SetupPassword />
-            </PublicRoute>
-          } />
+          <Route path="/setup-password" element={<SetupPassword />} />
+          <Route path="/accept-invitation" element={<SetupPassword />} />
           <Route path="/unauthorized" element={<Unauthorized />} />
 
 

@@ -106,7 +106,7 @@ def send_invitation_email(
         "<p>Click the button below to set up your account and password:</p>"
         "<p style='text-align:center;margin:28px 0;'>"
         f"<a href='{setup_link}' style='background:#2563eb;color:#fff;padding:12px 28px;"
-        "border-radius:6px;text-decoration:none;font-weight:bold;'>Set Up My Account</a></p>"
+        "border-radius:6px;text-decoration:none;font-weight:bold;'>Setup Your Account</a></p>"
         f"<p style='font-size:13px;color:#555;'>Or copy this link:<br>"
         f"<a href='{setup_link}' style='color:#2563eb;'>{setup_link}</a></p>"
         "<hr style='border:none;border-top:1px solid #eee;margin:24px 0;'>"

@@ -2,10 +2,13 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, cast
 
+import logging
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
 from rest_framework.permissions import IsAuthenticated
+
+logger = logging.getLogger("companies.views")
 
 from users.permissions import RolePermission
 from .models import Company
@@ -255,20 +258,25 @@ class VerifyInvitationView(APIView):
     def get(self, request):
         raw_token = request.query_params.get("token", "")
         if not raw_token:
+            logger.warning("[VerifyInvitation] Missing token parameter in request.")
             return Response({"detail": "Token parameter is required."}, status=status.HTTP_400_BAD_REQUEST)
 
         token_hash = hashlib.sha256(raw_token.encode("utf-8")).hexdigest()
         invitation = RecruiterInvitation.objects.filter(token_hash=token_hash).first()
 
         if not invitation:
+            logger.warning("[VerifyInvitation] Invalid token attempt.")
             return Response({"detail": "Invalid invitation token."}, status=status.HTTP_404_NOT_FOUND)
 
         if invitation.accepted_at is not None:
+            logger.info("[VerifyInvitation] Already accepted invitation for %s.", invitation.email)
             return Response({"detail": "This invitation has already been accepted."}, status=status.HTTP_400_BAD_REQUEST)
 
         if invitation.expires_at <= timezone.now():
+            logger.info("[VerifyInvitation] Expired invitation token for %s.", invitation.email)
             return Response({"detail": "This invitation link has expired."}, status=status.HTTP_400_BAD_REQUEST)
 
+        logger.info("[VerifyInvitation] Valid token verified for %s (company: %s).", invitation.email, invitation.company.name)
         return Response(
             {
                 "valid": True,
@@ -287,9 +295,11 @@ class AcceptInvitationView(APIView):
     permission_classes = []
 
     def post(self, request):
+        logger.debug("[AcceptInvitation] Received account setup payload.")
         serializer = AcceptInvitationSerializer(data=request.data)
         if serializer.is_valid():
             user = serializer.save()
+            logger.info("[AcceptInvitation] Recruiter account created for %s (role: %s, company_id: %s).", user.email, user.role, user.company_id)
             return Response(
                 {
                     "message": "Recruiter account created successfully! You may now log in.",
@@ -299,5 +309,6 @@ class AcceptInvitationView(APIView):
                 },
                 status=status.HTTP_201_CREATED,
             )
+        logger.warning("[AcceptInvitation] Account creation validation failed: %s", serializer.errors)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 

@@ -11,6 +11,8 @@ export default function SetupPassword() {
   const [tokenValid, setTokenValid] = useState(false);
   const [invitationData, setInvitationData] = useState(null);
 
+  const [firstName, setFirstName] = useState("");
+  const [lastName, setLastName] = useState("");
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
@@ -20,6 +22,7 @@ export default function SetupPassword() {
 
   useEffect(() => {
     if (!token) {
+      console.debug("[SetupPassword] No token param found in URL.");
       setError("No invitation token provided in the link.");
       setVerifying(false);
       return;
@@ -28,17 +31,18 @@ export default function SetupPassword() {
     const verifyToken = async () => {
       setVerifying(true);
       setError("");
+      console.debug("[SetupPassword] Verifying token...", token);
       try {
         const res = await api.get(`/companies/invitations/verify/?token=${encodeURIComponent(token)}`);
+        console.debug("[SetupPassword] Token verification success:", res.data);
         setInvitationData(res.data);
         setTokenValid(true);
         if (res.data.email) {
-          // Pre-populate suggested username from email prefix
           const suggestedUsername = res.data.email.split("@")[0].replace(/[^a-zA-Z0-9_]/g, "_");
           setUsername(suggestedUsername);
         }
       } catch (err) {
-        console.error("Invitation token verification error:", err);
+        console.error("[SetupPassword] Token verification error:", err);
         setTokenValid(false);
         setError(
           err.response?.data?.detail ||
@@ -77,17 +81,21 @@ export default function SetupPassword() {
     }
 
     setLoading(true);
+    console.debug("[SetupPassword] Submitting setup form for username:", username.trim());
 
     try {
       await api.post("/companies/invitations/accept/", {
         token,
+        first_name: firstName.trim(),
+        last_name: lastName.trim(),
         username: username.trim(),
         password,
       });
 
+      console.debug("[SetupPassword] Account setup completed successfully.");
       setSuccess(true);
     } catch (err) {
-      console.error("Account setup error:", err);
+      console.error("[SetupPassword] Account setup error:", err);
       setError(
         err.response?.data?.detail ||
           err.response?.data?.username?.[0] ||
@@ -178,7 +186,7 @@ export default function SetupPassword() {
                 </div>
               )}
 
-              {/* Email (Readonly) */}
+              {/* Invited Email (Readonly) */}
               <div className="space-y-1">
                 <label className="text-xs font-bold text-[#52564A] dark:text-[#9CA485]">
                   Invited Email Address
@@ -189,6 +197,34 @@ export default function SetupPassword() {
                   disabled
                   className="w-full px-3 py-2 text-xs rounded-xl border border-[#ECEEDF] dark:border-[#2A2E1E] bg-[#ECEEDF]/50 dark:bg-[#2A2E1E]/50 text-[#8A8F76] cursor-not-allowed"
                 />
+              </div>
+
+              {/* First Name & Last Name */}
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-1">
+                  <label className="text-xs font-bold text-[#22241B] dark:text-[#EBF0DA]">
+                    First Name
+                  </label>
+                  <input
+                    type="text"
+                    value={firstName}
+                    onChange={(e) => setFirstName(e.target.value)}
+                    placeholder="First name"
+                    className="w-full px-3 py-2 text-xs rounded-xl border border-[#ECEEDF] dark:border-[#2A2E1E] bg-white dark:bg-[#1A1D13] text-[#22241B] dark:text-[#EBF0DA] focus:outline-none focus:ring-2 focus:ring-[#4E7A33]"
+                  />
+                </div>
+                <div className="space-y-1">
+                  <label className="text-xs font-bold text-[#22241B] dark:text-[#EBF0DA]">
+                    Last Name
+                  </label>
+                  <input
+                    type="text"
+                    value={lastName}
+                    onChange={(e) => setLastName(e.target.value)}
+                    placeholder="Last name"
+                    className="w-full px-3 py-2 text-xs rounded-xl border border-[#ECEEDF] dark:border-[#2A2E1E] bg-white dark:bg-[#1A1D13] text-[#22241B] dark:text-[#EBF0DA] focus:outline-none focus:ring-2 focus:ring-[#4E7A33]"
+                  />
+                </div>
               </div>
 
               {/* Username */}

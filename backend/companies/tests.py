@@ -111,6 +111,8 @@ class RecruiterInvitationTests(TestCase):
         # 2. Accept token & set password
         accept_data = {
             "token": raw_token,
+            "first_name": "Jane",
+            "last_name": "Doe",
             "username": "new_recruiter_user",
             "password": "SecurePassword123!",
         }
@@ -120,6 +122,8 @@ class RecruiterInvitationTests(TestCase):
         # Check user created
         new_user = User.objects.get(email="accepted_recruiter@techcorp.com")
         self.assertEqual(new_user.username, "new_recruiter_user")
+        self.assertEqual(new_user.first_name, "Jane")
+        self.assertEqual(new_user.last_name, "Doe")
         self.assertEqual(new_user.role, User.Role.RECRUITER)
         self.assertEqual(new_user.company, self.company)
         self.assertTrue(new_user.is_hr)
