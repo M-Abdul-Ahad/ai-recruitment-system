@@ -1,5 +1,16 @@
 from django.urls import path
-from .views import CompanyCreateView, CompanyDetailView, AddHRView, RemoveHRView, HRListView, CompanyMembersView
+from .views import (
+    CompanyCreateView,
+    CompanyDetailView,
+    AddHRView,
+    RemoveHRView,
+    HRListView,
+    CompanyMembersView,
+    RecruiterInvitationView,
+    RevokeInvitationView,
+    VerifyInvitationView,
+    AcceptInvitationView,
+)
 
 urlpatterns = [
     path("register/", CompanyCreateView.as_view(), name="company-register"),
@@ -8,4 +19,9 @@ urlpatterns = [
     path("add-hr/", AddHRView.as_view(), name="add-hr"),
     path("remove-hr/", RemoveHRView.as_view(), name="remove-hr"),
     path("hr-list/", HRListView.as_view(), name="hr-list"),
+    path("invitations/", RecruiterInvitationView.as_view(), name="recruiter-invitations"),
+    path("invitations/<int:pk>/", RevokeInvitationView.as_view(), name="revoke-invitation"),
+    path("invitations/verify/", VerifyInvitationView.as_view(), name="verify-invitation"),
+    path("invitations/accept/", AcceptInvitationView.as_view(), name="accept-invitation"),
 ]
+

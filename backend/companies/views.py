@@ -177,3 +177,127 @@ class CompanyMembersView(APIView):
         members = _User.objects.filter(company=user.company)
         serializer = CompanyMemberSerializer(members, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
+
+
+import hashlib
+from django.utils import timezone
+from .models import RecruiterInvitation
+from .serializers import (
+    RecruiterInvitationCreateSerializer,
+    RecruiterInvitationListSerializer,
+    AcceptInvitationSerializer,
+)
+
+
+class RecruiterInvitationView(APIView):
+    """
+    GET /api/companies/invitations/ -> list pending/historical recruiter invitations
+    POST /api/companies/invitations/ -> create and send recruiter invitation
+    """
+    permission_classes = [IsAuthenticated, RolePermission]
+    allowed_roles = ["company_admin", "admin"]
+
+    def get(self, request):
+        user = cast("User", request.user)
+        if not user.company:
+            return Response({"error": "You do not belong to any company."}, status=status.HTTP_400_BAD_REQUEST)
+
+        invitations = RecruiterInvitation.objects.filter(company=user.company).order_by("-created_at")
+        serializer = RecruiterInvitationListSerializer(invitations, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
+    def post(self, request):
+        user = cast("User", request.user)
+        if not user.company:
+            return Response({"error": "You do not belong to any company."}, status=status.HTTP_400_BAD_REQUEST)
+
+        serializer = RecruiterInvitationCreateSerializer(data=request.data, context={"request": request})
+        if serializer.is_valid():
+            invitation = serializer.save()
+            data = RecruiterInvitationListSerializer(invitation).data
+            data["email_sent"] = getattr(invitation, "email_sent", True)
+            data["email_error"] = getattr(invitation, "email_error", None)
+            return Response(
+                data,
+                status=status.HTTP_201_CREATED,
+            )
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+
+class RevokeInvitationView(APIView):
+    """
+    DELETE /api/companies/invitations/<int:pk>/ -> revoke pending recruiter invitation
+    """
+    permission_classes = [IsAuthenticated, RolePermission]
+    allowed_roles = ["company_admin", "admin"]
+
+    def delete(self, request, pk):
+        user = cast("User", request.user)
+        if not user.company:
+            return Response({"error": "You do not belong to any company."}, status=status.HTTP_400_BAD_REQUEST)
+
+        try:
+            invitation = RecruiterInvitation.objects.get(pk=pk, company=user.company, accepted_at__isnull=True)
+        except RecruiterInvitation.DoesNotExist:
+            return Response({"detail": "Pending invitation not found."}, status=status.HTTP_404_NOT_FOUND)
+
+        invitation.delete()
+        return Response({"detail": "Invitation revoked successfully."}, status=status.HTTP_200_OK)
+
+
+class VerifyInvitationView(APIView):
+    """
+    GET /api/companies/invitations/verify/?token=<raw_token> -> verify token status
+    """
+    permission_classes = []
+
+    def get(self, request):
+        raw_token = request.query_params.get("token", "")
+        if not raw_token:
+            return Response({"detail": "Token parameter is required."}, status=status.HTTP_400_BAD_REQUEST)
+
+        token_hash = hashlib.sha256(raw_token.encode("utf-8")).hexdigest()
+        invitation = RecruiterInvitation.objects.filter(token_hash=token_hash).first()
+
+        if not invitation:
+            return Response({"detail": "Invalid invitation token."}, status=status.HTTP_404_NOT_FOUND)
+
+        if invitation.accepted_at is not None:
+            return Response({"detail": "This invitation has already been accepted."}, status=status.HTTP_400_BAD_REQUEST)
+
+        if invitation.expires_at <= timezone.now():
+            return Response({"detail": "This invitation link has expired."}, status=status.HTTP_400_BAD_REQUEST)
+
+        return Response(
+            {
+                "valid": True,
+                "email": invitation.email,
+                "company_name": invitation.company.name,
+                "expires_at": invitation.expires_at,
+            },
+            status=status.HTTP_200_OK,
+        )
+
+
+class AcceptInvitationView(APIView):
+    """
+    POST /api/companies/invitations/accept/ -> set password & create recruiter user account
+    """
+    permission_classes = []
+
+    def post(self, request):
+        serializer = AcceptInvitationSerializer(data=request.data)
+        if serializer.is_valid():
+            user = serializer.save()
+            return Response(
+                {
+                    "message": "Recruiter account created successfully! You may now log in.",
+                    "email": user.email,
+                    "username": user.username,
+                    "role": user.role,
+                },
+                status=status.HTTP_201_CREATED,
+            )
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+

@@ -4,6 +4,7 @@ import RoleRoute from "./auth/RoleRoute";
 import PublicRoute from "./auth/PublicRoute";
 import Login from "./auth/Login";
 import Signup from "./auth/Signup";
+import SetupPassword from "./auth/SetupPassword";
 import ApplicantLayout from "./layouts/ApplicantLayout";
 import RecruiterLayout from "./layouts/RecruiterLayout";
 import CompanyLayout from "./layouts/CompanyLayout";
@@ -63,7 +64,18 @@ export default function App() {
               <Signup />
             </PublicRoute>
           } />
+          <Route path="/setup-password" element={
+            <PublicRoute>
+              <SetupPassword />
+            </PublicRoute>
+          } />
+          <Route path="/accept-invitation" element={
+            <PublicRoute>
+              <SetupPassword />
+            </PublicRoute>
+          } />
           <Route path="/unauthorized" element={<Unauthorized />} />
+
 
           {/* Root */}
           <Route path="/" element={<Home />} />
