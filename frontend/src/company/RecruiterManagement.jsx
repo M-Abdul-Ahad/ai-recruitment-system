@@ -11,12 +11,11 @@ export default function RecruiterManagement() {
   
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
-  
-  const [selectedUserId, setSelectedUserId] = useState("");
-  const [actionLoading, setActionLoading] = useState(false);
 
   const [inviteEmail, setInviteEmail] = useState("");
   const [inviteLoading, setInviteLoading] = useState(false);
+
+  const [deleteLoadingId, setDeleteLoadingId] = useState(null);
 
   const fetchMembers = async () => {
     setLoading(true);
@@ -85,7 +84,6 @@ export default function RecruiterManagement() {
     }
   };
 
-
   const handleRevokeInvitation = async (invitationId) => {
     if (!window.confirm("Are you sure you want to revoke this invitation?")) {
       return;
@@ -103,50 +101,34 @@ export default function RecruiterManagement() {
     }
   };
 
-  const handleAddHR = async (userId) => {
-    setActionLoading(true);
-    setError("");
-    setSuccess("");
-    try {
-      await api.post("/companies/add-hr/", { user_id: userId });
-      setSuccess("HR privileges granted successfully.");
-      await fetchMembers();
-    } catch (err) {
-      console.error("Add HR error:", err);
-      setError(
-        err.response?.data?.detail ||
-          err.response?.data?.user_id?.[0] ||
-          "Failed to grant HR privileges."
-      );
-    } finally {
-      setActionLoading(false);
-    }
-  };
-
-  const handleRemoveHR = async (userId) => {
-    if (!window.confirm("Are you sure you want to revoke HR privileges for this user?")) {
+  const handleDeleteMember = async (memberId, memberName) => {
+    if (
+      !window.confirm(
+        `Are you sure you want to delete ${memberName || "this recruiter"} from the database? This action cannot be undone.`
+      )
+    ) {
       return;
     }
-    setActionLoading(true);
+
+    setDeleteLoadingId(memberId);
     setError("");
     setSuccess("");
+
     try {
-      await api.post("/companies/remove-hr/", { user_id: userId });
-      setSuccess("HR privileges revoked successfully.");
+      await api.delete(`/companies/members/${memberId}/`);
+      setSuccess("Recruiter deleted from database successfully.");
       await fetchMembers();
     } catch (err) {
-      console.error("Remove HR error:", err);
+      console.error("Delete recruiter error:", err);
       setError(
         err.response?.data?.detail ||
-          err.response?.data?.user_id?.[0] ||
-          "Failed to revoke HR privileges."
+          err.response?.data?.error ||
+          "Failed to delete recruiter."
       );
     } finally {
-      setActionLoading(false);
+      setDeleteLoadingId(null);
     }
   };
-
-  const nonHRMembers = members.filter((m) => !m.is_hr);
 
   return (
     <div className="apl-animate-fade max-w-5xl mx-auto space-y-6">
@@ -157,7 +139,7 @@ export default function RecruiterManagement() {
             Recruiter & Team Management
           </h1>
           <p className="text-xs sm:text-sm text-[#8A8F76] dark:text-[#9CA485] mt-1">
-            Invite new recruiters, control access permissions, and manage your company roster.
+            Invite new recruiters and manage your company roster.
           </p>
         </div>
       </div>
@@ -181,93 +163,39 @@ export default function RecruiterManagement() {
         </div>
       )}
 
-      {/* Grid for Actions: Invite Recruiter & Grant HR */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        {/* Card 1: Invite Recruiter via Email */}
-        <div className="apl-card space-y-4">
-          <div>
-            <h3 className="text-base font-extrabold text-[#22241B] dark:text-[#EBF0DA]">
-              Send Recruiter Invitation
-            </h3>
-            <p className="text-xs text-[#8A8F76] mt-1">
-              Invite a new recruiter via email. They will receive an expiring link to set up their password and join your company.
-            </p>
-          </div>
-
-          <form onSubmit={handleInviteRecruiter} className="space-y-3">
-            <div>
-              <label className="block text-xs font-bold text-[#52564A] dark:text-[#9CA485] mb-1">
-                Recruiter Email Address
-              </label>
-              <input
-                type="email"
-                required
-                value={inviteEmail}
-                onChange={(e) => setInviteEmail(e.target.value)}
-                placeholder="recruiter@company.com"
-                className="w-full px-3 py-2 text-xs rounded-xl border border-[#ECEEDF] dark:border-[#2A2E1E] bg-white dark:bg-[#1A1D13] text-[#22241B] dark:text-[#EBF0DA] focus:outline-none focus:ring-2 focus:ring-[#4E7A33]"
-              />
-            </div>
-            <button
-              type="submit"
-              disabled={inviteLoading || !inviteEmail.trim()}
-              className="w-full apl-btn apl-btn-primary py-2 px-4 text-xs font-bold shadow-xs"
-            >
-              {inviteLoading ? "Sending Email..." : "+ Send Invitation Link"}
-            </button>
-          </form>
+      {/* Card 1: Invite Recruiter via Email */}
+      <div className="apl-card space-y-4">
+        <div>
+          <h3 className="text-base font-extrabold text-[#22241B] dark:text-[#EBF0DA]">
+            Send Recruiter Invitation
+          </h3>
+          <p className="text-xs text-[#8A8F76] mt-1">
+            Invite a new recruiter via email. They will receive an expiring link to set up their password and join your company.
+          </p>
         </div>
 
-        {/* Card 2: Grant HR Permissions to existing member */}
-        <div className="apl-card space-y-4">
+        <form onSubmit={handleInviteRecruiter} className="space-y-3">
           <div>
-            <h3 className="text-base font-extrabold text-[#22241B] dark:text-[#EBF0DA]">
-              Grant HR / Recruiter Privileges
-            </h3>
-            <p className="text-xs text-[#8A8F76] mt-1">
-              Assign HR privileges to existing company team members to grant them posting and candidate management capabilities.
-            </p>
+            <label className="block text-xs font-bold text-[#52564A] dark:text-[#9CA485] mb-1">
+              Recruiter Email Address
+            </label>
+            <input
+              type="email"
+              required
+              value={inviteEmail}
+              onChange={(e) => setInviteEmail(e.target.value)}
+              placeholder="recruiter@company.com"
+              className="w-full px-3 py-2 text-xs rounded-xl border border-[#ECEEDF] dark:border-[#2A2E1E] bg-white dark:bg-[#1A1D13] text-[#22241B] dark:text-[#EBF0DA] focus:outline-none focus:ring-2 focus:ring-[#4E7A33]"
+            />
           </div>
-
-          <form
-            onSubmit={(e) => {
-              e.preventDefault();
-              if (selectedUserId) handleAddHR(selectedUserId);
-            }}
-            className="space-y-3"
+          <button
+            type="submit"
+            disabled={inviteLoading || !inviteEmail.trim()}
+            className="w-full sm:w-auto apl-btn apl-btn-primary py-2 px-4 text-xs font-bold shadow-xs"
           >
-            <div>
-              <label className="block text-xs font-bold text-[#52564A] dark:text-[#9CA485] mb-1">
-                Select Team Member
-              </label>
-              <select
-                value={selectedUserId}
-                onChange={(e) => setSelectedUserId(e.target.value)}
-                className="w-full px-3 py-2 text-xs rounded-xl border border-[#ECEEDF] dark:border-[#2A2E1E] bg-white dark:bg-[#1A1D13] text-[#22241B] dark:text-[#EBF0DA] focus:outline-none focus:ring-2 focus:ring-[#4E7A33]"
-                disabled={actionLoading || nonHRMembers.length === 0}
-              >
-                <option value="">
-                  {nonHRMembers.length === 0
-                    ? "All team members currently have HR status"
-                    : "-- Select team member --"}
-                </option>
-                {nonHRMembers.map((m) => (
-                  <option key={m.id} value={m.id}>
-                    {m.username || m.email || `User #${m.id}`} (ID: {m.id})
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            <button
-              type="submit"
-              disabled={!selectedUserId || actionLoading}
-              className="w-full apl-btn apl-btn-secondary py-2 px-4 text-xs font-bold shadow-xs"
-            >
-              {actionLoading ? "Processing..." : "Grant HR Privileges"}
-            </button>
-          </form>
-        </div>
+            {inviteLoading ? "Sending Email..." : "+ Send Invitation Link"}
+          </button>
+        </form>
       </div>
 
       {/* Pending Invitations Section */}
@@ -412,23 +340,13 @@ export default function RecruiterManagement() {
                       {member.is_hr ? "HR / Recruiter Active" : "Member"}
                     </span>
 
-                    {member.is_hr && !isSelf && (
+                    {!isSelf && (
                       <button
-                        onClick={() => handleRemoveHR(member.id)}
-                        disabled={actionLoading}
-                        className="text-xs text-red-600 hover:text-red-800 font-bold px-3 py-1 rounded-lg hover:bg-red-500/10 transition-colors"
+                        onClick={() => handleDeleteMember(member.id, member.username || member.email)}
+                        disabled={deleteLoadingId === member.id}
+                        className="text-xs text-red-600 hover:text-red-800 font-bold px-3 py-1 rounded-lg hover:bg-red-500/10 transition-colors disabled:opacity-50"
                       >
-                        Revoke HR
-                      </button>
-                    )}
-
-                    {!member.is_hr && (
-                      <button
-                        onClick={() => handleAddHR(member.id)}
-                        disabled={actionLoading}
-                        className="text-xs text-[#4E7A33] hover:underline font-bold px-3 py-1"
-                      >
-                        Grant HR
+                        {deleteLoadingId === member.id ? "Deleting..." : "Delete HR"}
                       </button>
                     )}
                   </div>

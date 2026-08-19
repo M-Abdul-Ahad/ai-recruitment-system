@@ -182,6 +182,60 @@ class CompanyMembersView(APIView):
         return Response(serializer.data, status=status.HTTP_200_OK)
 
 
+class DeleteMemberView(APIView):
+    """
+    DELETE /api/companies/members/<int:pk>/
+    
+    Deletes a recruiter/team member from the database.
+    """
+    permission_classes = [IsAuthenticated]
+
+    def delete(self, request, pk):
+        req_user = cast("User", request.user)
+
+        if req_user.role == "applicant":
+            return Response(
+                {"error": "Applicants cannot perform this action."},
+                status=status.HTTP_403_FORBIDDEN,
+            )
+
+        if not req_user.company:
+            return Response(
+                {"error": "You do not belong to any company."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        if not (req_user.role in ["company_admin", "admin"] or req_user.is_hr):
+            return Response(
+                {"detail": "Permission denied. Must be HR or Admin."},
+                status=status.HTTP_403_FORBIDDEN,
+            )
+
+        if req_user.id == pk:
+            return Response(
+                {"detail": "Cannot delete your own account."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        try:
+            target_user = cast("User", _User.objects.get(pk=pk))
+        except _User.DoesNotExist:
+            return Response(
+                {"detail": "Recruiter not found."},
+                status=status.HTTP_404_NOT_FOUND,
+            )
+
+        if target_user.company != req_user.company and req_user.role != "admin":
+            return Response(
+                {"detail": "User does not belong to your company."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        target_user.delete()
+        return Response({"detail": "Recruiter deleted successfully."}, status=status.HTTP_200_OK)
+
+
+
 import hashlib
 from django.utils import timezone
 from .models import RecruiterInvitation
