@@ -3,9 +3,9 @@ import { getJobs, createJob, updateJob, deleteJob, getCompanies, getSkills, getU
 
 /* ── Status pill ── */
 const STATUS_PILL = {
-  DRAFT: { bg: "var(--apl-neutral-100)", color: "var(--apl-neutral-700)" },
-  ACTIVE: { bg: "var(--apl-success-bg)", color: "var(--apl-success)" },
-  CLOSED: { bg: "var(--apl-danger-bg)", color: "var(--apl-danger)" },
+  DRAFT:  { bg: "var(--apl-neutral-100)", color: "var(--apl-neutral-700)" },
+  ACTIVE: { bg: "var(--apl-success-bg)",  color: "var(--apl-success)"    },
+  CLOSED: { bg: "var(--apl-danger-bg)",   color: "var(--apl-danger)"     },
 };
 const StatusPill = ({ status }) => {
   const style = STATUS_PILL[status] ?? STATUS_PILL.DRAFT;
@@ -23,30 +23,30 @@ const StatusPill = ({ status }) => {
 /* ── Icons ── */
 const PlusIcon = () => (
   <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-    <line x1="12" y1="5" x2="12" y2="19" /><line x1="5" y1="12" x2="19" y2="12" />
+    <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
   </svg>
 );
 const EditIcon = () => (
   <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
-    <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
-    <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
+    <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
+    <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
   </svg>
 );
 const TrashIcon = () => (
   <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
-    <polyline points="3 6 5 6 21 6" /><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6" />
-    <path d="M10 11v6" /><path d="M14 11v6" /><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2" />
+    <polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/>
+    <path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/>
   </svg>
 );
 const SaveIcon = () => (
   <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
-    <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z" />
-    <polyline points="17 21 17 13 7 13 7 21" /><polyline points="7 3 7 8 15 8" />
+    <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/>
+    <polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/>
   </svg>
 );
-const CancelIcon = () => (
-  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
-    <line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" />
+const CloseIcon = () => (
+  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
   </svg>
 );
 
@@ -103,23 +103,26 @@ const SkillPicker = ({ allSkills, selected, onChange, prefix }) => {
 };
 
 export default function Jobs() {
-  const [jobs, setJobs] = useState([]);
-  const [companies, setCompanies] = useState([]);
-  const [allSkills, setAllSkills] = useState([]);
-  const [allUsers, setAllUsers] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
+  const [jobs,       setJobs]       = useState([]);
+  const [companies,  setCompanies]  = useState([]);
+  const [allSkills,  setAllSkills]  = useState([]);
+  const [allUsers,   setAllUsers]   = useState([]);
+  const [loading,    setLoading]    = useState(true);
+  const [error,      setError]      = useState(null);
 
-  const [showAdd, setShowAdd] = useState(false);
-  const [addForm, setAddForm] = useState(EMPTY_ADD);
-  const [addErr, setAddErr] = useState(null);
-  const [addSaving, setAddSaving] = useState(false);
+  // Add state
+  const [showAdd,    setShowAdd]    = useState(false);
+  const [addForm,    setAddForm]    = useState(EMPTY_ADD);
+  const [addErr,     setAddErr]     = useState(null);
+  const [addSaving,  setAddSaving]  = useState(false);
 
-  const [editId, setEditId] = useState(null);
-  const [editForm, setEditForm] = useState({});
-  const [editErr, setEditErr] = useState(null);
+  // Modal edit state
+  const [editingJob, setEditingJob] = useState(null);
+  const [editForm,   setEditForm]   = useState({});
+  const [editErr,    setEditErr]    = useState(null);
   const [editSaving, setEditSaving] = useState(false);
 
+  // Delete state
   const [deletingId, setDeletingId] = useState(null);
 
   useEffect(() => { fetchAll(); }, []);
@@ -153,16 +156,16 @@ export default function Jobs() {
     e.preventDefault(); setAddErr(null); setAddSaving(true);
     try {
       const payload = {
-        title: addForm.title,
-        description: addForm.description,
-        company: Number(addForm.company),
-        created_by: Number(addForm.created_by),
-        status: addForm.status,
-        location: addForm.location,
+        title:               addForm.title,
+        description:         addForm.description,
+        company:             Number(addForm.company),
+        created_by:          Number(addForm.created_by),
+        status:              addForm.status,
+        location:            addForm.location,
         experience_required: Number(addForm.experience_required) || 0,
-        salary_min: toIntOrNull(addForm.salary_min),
-        salary_max: toIntOrNull(addForm.salary_max),
-        skills: addForm.skills,
+        salary_min:          toIntOrNull(addForm.salary_min),
+        salary_max:          toIntOrNull(addForm.salary_max),
+        skills:              addForm.skills,
       };
       const res = await createJob(payload);
       setJobs((prev) => [res.data, ...prev]);
@@ -174,39 +177,46 @@ export default function Jobs() {
     }
   };
 
-  /* ── Start edit ── */
-  const startEdit = (job) => {
-    setEditId(job.id);
+  /* ── Open Edit Modal ── */
+  const openEditModal = (job) => {
+    setEditingJob(job);
     setEditForm({
-      title: job.title ?? "",
-      description: job.description ?? "",
-      status: job.status ?? "DRAFT",
-      location: job.location ?? "",
+      title:               job.title               ?? "",
+      description:         job.description         ?? "",
+      status:              job.status              ?? "DRAFT",
+      location:            job.location            ?? "",
       experience_required: job.experience_required ?? "",
-      salary_min: job.salary_min ?? "",
-      salary_max: job.salary_max ?? "",
-      skills: (job.skills_data ?? []).map((s) => s.id),
+      salary_min:          job.salary_min          ?? "",
+      salary_max:          job.salary_max          ?? "",
+      skills:              (job.skills_data ?? []).map((s) => s.id),
     });
     setEditErr(null);
   };
 
-  /* ── Save edit ── */
-  const saveEdit = async (e) => {
+  /* ── Close Edit Modal ── */
+  const closeEditModal = () => {
+    setEditingJob(null);
+    setEditForm({});
+    setEditErr(null);
+  };
+
+  /* ── Save Edit ── */
+  const handleSaveEdit = async (e) => {
     e.preventDefault(); setEditErr(null); setEditSaving(true);
     try {
       const payload = {
-        title: editForm.title,
-        description: editForm.description,
-        status: editForm.status,
-        location: editForm.location,
+        title:               editForm.title,
+        description:         editForm.description,
+        status:              editForm.status,
+        location:            editForm.location,
         experience_required: Number(editForm.experience_required) || 0,
-        salary_min: toIntOrNull(editForm.salary_min),
-        salary_max: toIntOrNull(editForm.salary_max),
-        skills: editForm.skills,
+        salary_min:          toIntOrNull(editForm.salary_min),
+        salary_max:          toIntOrNull(editForm.salary_max),
+        skills:              editForm.skills,
       };
-      const res = await updateJob(editId, payload);
-      setJobs((prev) => prev.map((j) => (j.id === editId ? res.data : j)));
-      setEditId(null); setEditForm({});
+      const res = await updateJob(editingJob.id, payload);
+      setJobs((prev) => prev.map((j) => (j.id === editingJob.id ? res.data : j)));
+      closeEditModal();
     } catch (err) {
       setEditErr(fmtErrors(err.response?.data));
     } finally {
@@ -230,7 +240,7 @@ export default function Jobs() {
 
   /* ── Reusable job form fields ── */
   const JobFields = ({ form, onChange, prefix }) => (
-    <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(200px, 1fr))", gap: "14px" }}>
+    <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "14px" }}>
       <Field label="Title *" htmlFor={`${prefix}-title`}>
         <input id={`${prefix}-title`} className="apl-input" type="text" required
           value={form.title} onChange={(e) => onChange({ ...form, title: e.target.value })} />
@@ -280,13 +290,13 @@ export default function Jobs() {
           <h1 className="apl-page-title">Jobs</h1>
           <p className="apl-page-sub">View, add, edit, and delete all job postings.</p>
         </div>
-        <button id="admin-add-job-btn" className="apl-btn apl-btn-primary"
-          onClick={() => { setShowAdd((s) => !s); setAddErr(null); setAddForm(EMPTY_ADD); setEditId(null); }}>
+        <button id="admin-add-job-btn" type="button" className="apl-btn apl-btn-primary"
+          onClick={() => { setShowAdd((s) => !s); setAddErr(null); setAddForm(EMPTY_ADD); }}>
           <PlusIcon /> {showAdd ? "Cancel" : "Add Job"}
         </button>
       </div>
 
-      {/* ─── Add form ─── */}
+      {/* ─── Add Form ─── */}
       {showAdd && (
         <div className="apl-card apl-animate-scale" style={{ marginBottom: "24px" }}>
           <h2 style={{ fontSize: "16px", fontWeight: 600, color: "var(--apl-neutral-900)", marginBottom: "16px" }}>New Job</h2>
@@ -346,70 +356,112 @@ export default function Jobs() {
               </tr>
             </thead>
             <tbody>
-              {jobs.map((job) => {
-                const isEditing = editId === job.id;
-                return (
-                  <>
-                    <tr key={job.id}>
-                      <td style={{ color: "var(--apl-neutral-500)", fontFamily: "JetBrains Mono, monospace", fontSize: "12px" }}>#{job.id}</td>
-                      <td style={{ fontWeight: 600 }}>{job.title}</td>
-                      <td style={{ color: "var(--apl-neutral-700)", fontSize: "13px" }}>
-                        {companies.find((c) => c.id === job.company)?.name ?? `#${job.company}`}
-                      </td>
-                      <td><StatusPill status={job.status} /></td>
-                      <td style={{ color: "var(--apl-neutral-700)", fontSize: "13px" }}>{job.location || "—"}</td>
-                      <td style={{ color: "var(--apl-neutral-700)", fontSize: "13px" }}>{job.experience_required ?? "—"}</td>
-                      <td style={{ textAlign: "right", whiteSpace: "nowrap" }}>
-                        {!isEditing ? (
-                          <>
-                            <button id={`edit-job-${job.id}`} className="apl-btn apl-btn-secondary"
-                              style={{ padding: "6px 12px", fontSize: "13px", marginRight: "6px" }}
-                              onClick={() => startEdit(job)}>
-                              <EditIcon /> Edit
-                            </button>
-                            <button id={`delete-job-${job.id}`} className="apl-btn apl-btn-danger"
-                              style={{ padding: "6px 12px", fontSize: "13px" }}
-                              onClick={() => handleDelete(job.id)}
-                              disabled={deletingId === job.id}>
-                              <TrashIcon /> {deletingId === job.id ? "…" : "Delete"}
-                            </button>
-                          </>
-                        ) : (
-                          <>
-                            <button id={`save-job-${job.id}`} className="apl-btn apl-btn-primary"
-                              style={{ padding: "6px 12px", fontSize: "13px", marginRight: "6px" }}
-                              form={`edit-job-form-${job.id}`} type="submit"
-                              disabled={editSaving}>
-                              <SaveIcon /> Save
-                            </button>
-                            <button className="apl-btn apl-btn-secondary"
-                              style={{ padding: "6px 12px", fontSize: "13px" }}
-                              onClick={() => { setEditId(null); setEditForm({}); setEditErr(null); }}>
-                              <CancelIcon /> Cancel
-                            </button>
-                          </>
-                        )}
-                      </td>
-                    </tr>
-
-                    {/* ── Inline edit form row ── */}
-                    {isEditing && (
-                      <tr key={`edit-${job.id}`}>
-                        <td colSpan={7} style={{ padding: "0", background: "var(--apl-neutral-50)" }}>
-                          <div style={{ padding: "20px 24px" }}>
-                            <ErrBanner msg={editErr} />
-                            <form id={`edit-job-form-${job.id}`} onSubmit={saveEdit}>
-                              <JobFields form={editForm} onChange={setEditForm} prefix={`edit-job-${job.id}`} />
-                            </form>
-                          </div>
-                        </td>
-                      </tr>
-                    )}
-                  </>
-                );
-              })}
+              {jobs.map((job) => (
+                <tr key={job.id}>
+                  <td style={{ color: "var(--apl-neutral-500)", fontFamily: "JetBrains Mono, monospace", fontSize: "12px" }}>#{job.id}</td>
+                  <td style={{ fontWeight: 600 }}>{job.title}</td>
+                  <td style={{ color: "var(--apl-neutral-700)", fontSize: "13px" }}>
+                    {companies.find((c) => c.id === job.company)?.name ?? `#${job.company}`}
+                  </td>
+                  <td><StatusPill status={job.status} /></td>
+                  <td style={{ color: "var(--apl-neutral-700)", fontSize: "13px" }}>{job.location || "—"}</td>
+                  <td style={{ color: "var(--apl-neutral-700)", fontSize: "13px" }}>{job.experience_required ?? "—"}</td>
+                  <td style={{ textAlign: "right", whiteSpace: "nowrap" }}>
+                    <button id={`edit-job-${job.id}`} type="button" className="apl-btn apl-btn-secondary"
+                      style={{ padding: "6px 12px", fontSize: "13px", marginRight: "6px" }}
+                      onClick={() => openEditModal(job)}>
+                      <EditIcon /> Edit
+                    </button>
+                    <button id={`delete-job-${job.id}`} type="button" className="apl-btn apl-btn-danger"
+                      style={{ padding: "6px 12px", fontSize: "13px" }}
+                      onClick={() => handleDelete(job.id)}
+                      disabled={deletingId === job.id}>
+                      <TrashIcon /> {deletingId === job.id ? "…" : "Delete"}
+                    </button>
+                  </td>
+                </tr>
+              ))}
             </tbody>
           </table>
+        </div>
+      )}
+
+      {/* ─── Edit Job Modal ─── */}
+      {editingJob !== null && (
+        <div
+          style={{
+            position: "fixed", top: 0, left: 0, right: 0, bottom: 0,
+            zIndex: 1000, background: "rgba(0, 0, 0, 0.45)",
+            backdropFilter: "blur(4px)",
+            display: "flex", alignItems: "center", justifyContent: "center",
+            padding: "20px",
+          }}
+          onClick={closeEditModal}
+        >
+          <div
+            className="apl-card apl-animate-scale"
+            style={{
+              width: "100%", maxWidth: "680px", maxHeight: "90vh",
+              overflowY: "auto", padding: "0", background: "var(--apl-bg-surface, #ffffff)",
+              boxShadow: "0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)",
+              borderRadius: "14px",
+            }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Modal Header */}
+            <div style={{
+              padding: "16px 24px", borderBottom: "1px solid var(--apl-neutral-200, #EAEBE4)",
+              display: "flex", justifyContent: "space-between", alignItems: "center",
+            }}>
+              <div>
+                <h3 style={{ fontSize: "16px", fontWeight: 700, color: "var(--apl-neutral-900)" }}>
+                  Edit Job: {editingJob.title}
+                </h3>
+                <p style={{ fontSize: "12px", color: "var(--apl-neutral-500)" }}>ID #{editingJob.id}</p>
+              </div>
+              <button
+                type="button"
+                onClick={closeEditModal}
+                style={{
+                  background: "transparent", border: "none", cursor: "pointer",
+                  color: "var(--apl-neutral-500)", padding: "4px", display: "flex",
+                }}
+              >
+                <CloseIcon />
+              </button>
+            </div>
+
+            {/* Modal Body */}
+            <form onSubmit={handleSaveEdit}>
+              <div style={{ padding: "20px 24px" }}>
+                <ErrBanner msg={editErr} />
+                <JobFields form={editForm} onChange={setEditForm} prefix={`modal-edit-job-${editingJob.id}`} />
+              </div>
+
+              {/* Modal Footer */}
+              <div style={{
+                padding: "14px 24px", borderTop: "1px solid var(--apl-neutral-200, #EAEBE4)",
+                display: "flex", justifyContent: "flex-end", gap: "10px",
+                background: "var(--apl-neutral-50, #F9FAF7)", borderRadius: "0 0 14px 14px",
+              }}>
+                <button
+                  type="button"
+                  className="apl-btn apl-btn-secondary"
+                  onClick={closeEditModal}
+                >
+                  Cancel
+                </button>
+                <button
+                  id="modal-save-job-btn"
+                  type="submit"
+                  className="apl-btn apl-btn-primary"
+                  disabled={editSaving}
+                >
+                  <SaveIcon /> {editSaving ? "Saving…" : "Save Changes"}
+                </button>
+              </div>
+            </form>
+          </div>
         </div>
       )}
     </div>
