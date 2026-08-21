@@ -11,6 +11,7 @@ from rest_framework.permissions import IsAuthenticated
 logger = logging.getLogger("companies.views")
 
 from users.permissions import RolePermission
+from users.permissions import IsAdmin
 from .models import Company
 from .serializers import CompanySerializer, CompanyCreateSerializer, AddHRSerializer, CompanyMemberSerializer
 from django.contrib.auth import get_user_model
@@ -366,3 +367,58 @@ class AcceptInvitationView(APIView):
         logger.warning("[AcceptInvitation] Account creation validation failed: %s", serializer.errors)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
+
+# ============================================================
+# ADMIN — COMPANY MANAGEMENT
+# ============================================================
+
+class AdminCompanyListCreateView(APIView):
+    """GET all companies / POST create a company — admin only."""
+    permission_classes = [IsAuthenticated, IsAdmin]
+
+    def get(self, request):
+        companies = Company.objects.all().order_by('id')
+        serializer = CompanySerializer(companies, many=True, context={'request': request})
+        return Response(serializer.data)
+
+    def post(self, request):
+        serializer = CompanyCreateSerializer(data=request.data, context={'request': request})
+        if serializer.is_valid():
+            company = serializer.save()
+            return Response(CompanySerializer(company, context={'request': request}).data, status=status.HTTP_201_CREATED)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+class AdminCompanyDetailView(APIView):
+    """GET / PATCH / DELETE a single company — admin only."""
+    permission_classes = [IsAuthenticated, IsAdmin]
+
+    def _get_company(self, pk):
+        try:
+            return Company.objects.get(pk=pk)
+        except Company.DoesNotExist:
+            return None
+
+    def get(self, request, pk):
+        company = self._get_company(pk)
+        if company is None:
+            return Response({'error': 'Company not found.'}, status=status.HTTP_404_NOT_FOUND)
+        return Response(CompanySerializer(company, context={'request': request}).data)
+
+    def patch(self, request, pk):
+        company = self._get_company(pk)
+        if company is None:
+            return Response({'error': 'Company not found.'}, status=status.HTTP_404_NOT_FOUND)
+        # Partial update: skip unique-name validation if name unchanged
+        serializer = CompanyCreateSerializer(company, data=request.data, partial=True, context={'request': request})
+        if serializer.is_valid():
+            updated = serializer.save()
+            return Response(CompanySerializer(updated, context={'request': request}).data)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+    def delete(self, request, pk):
+        company = self._get_company(pk)
+        if company is None:
+            return Response({'error': 'Company not found.'}, status=status.HTTP_404_NOT_FOUND)
+        company.delete()
+        return Response(status=status.HTTP_204_NO_CONTENT)

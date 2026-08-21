@@ -11,6 +11,8 @@ from .views import (
     RevokeInvitationView,
     VerifyInvitationView,
     AcceptInvitationView,
+    AdminCompanyListCreateView,
+    AdminCompanyDetailView,
 )
 
 urlpatterns = [
@@ -26,5 +28,9 @@ urlpatterns = [
     path("invitations/<int:pk>/", RevokeInvitationView.as_view(), name="revoke-invitation"),
     path("invitations/verify/", VerifyInvitationView.as_view(), name="verify-invitation"),
     path("invitations/accept/", AcceptInvitationView.as_view(), name="accept-invitation"),
+
+    # Admin — Company Management
+    path("admin/", AdminCompanyListCreateView.as_view(), name="admin-companies"),
+    path("admin/<int:pk>/", AdminCompanyDetailView.as_view(), name="admin-company-detail"),
 ]
 

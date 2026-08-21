@@ -171,3 +171,85 @@ class JobViewSet(viewsets.ModelViewSet):
 
         application.save()
         return Response(RecruiterApplicationSerializer(application).data)
+
+
+# ============================================================
+# ADMIN — JOB MANAGEMENT
+# ============================================================
+from rest_framework.views import APIView
+from users.permissions import IsAdmin
+from companies.models import Company
+
+
+class AdminJobSerializer(JobSerializer):
+    """JobSerializer variant that exposes company + created_by as writable for admin."""
+    company_name = __import__('rest_framework.serializers', fromlist=['serializers']).CharField(
+        source='company.name', read_only=True
+    )
+
+    class Meta(JobSerializer.Meta):
+        fields = JobSerializer.Meta.fields + ['company_name']
+        read_only_fields = ['created_at', 'updated_at']
+
+
+class AdminJobListCreateView(APIView):
+    """GET all jobs / POST create a job — admin only."""
+    permission_classes = [permissions.IsAuthenticated, IsAdmin]
+
+    def get(self, request):
+        jobs = Job.objects.select_related('company', 'created_by').prefetch_related('skills').order_by('-created_at')
+        serializer = JobSerializer(jobs, many=True)
+        return Response(serializer.data)
+
+    def post(self, request):
+        data = request.data.copy()
+        # Admin must supply company + created_by
+        serializer = JobSerializer(data=data)
+        if serializer.is_valid():
+            company_id = data.get('company')
+            created_by_id = data.get('created_by')
+            try:
+                company = Company.objects.get(pk=company_id)
+            except Company.DoesNotExist:
+                return Response({'company': ['Company not found.']}, status=status.HTTP_400_BAD_REQUEST)
+            try:
+                created_by = User.objects.get(pk=created_by_id)
+            except User.DoesNotExist:
+                return Response({'created_by': ['User not found.']}, status=status.HTTP_400_BAD_REQUEST)
+            job = serializer.save(company=company, created_by=created_by)
+            return Response(JobSerializer(job).data, status=status.HTTP_201_CREATED)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+class AdminJobDetailView(APIView):
+    """GET / PATCH / DELETE a single job — admin only."""
+    permission_classes = [permissions.IsAuthenticated, IsAdmin]
+
+    def _get_job(self, pk):
+        try:
+            return Job.objects.select_related('company', 'created_by').prefetch_related('skills').get(pk=pk)
+        except Job.DoesNotExist:
+            return None
+
+    def get(self, request, pk):
+        job = self._get_job(pk)
+        if job is None:
+            return Response({'error': 'Job not found.'}, status=status.HTTP_404_NOT_FOUND)
+        return Response(JobSerializer(job).data)
+
+    def patch(self, request, pk):
+        job = self._get_job(pk)
+        if job is None:
+            return Response({'error': 'Job not found.'}, status=status.HTTP_404_NOT_FOUND)
+        serializer = JobSerializer(job, data=request.data, partial=True)
+        if serializer.is_valid():
+            updated = serializer.save()
+            return Response(JobSerializer(updated).data)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+    def delete(self, request, pk):
+        job = self._get_job(pk)
+        if job is None:
+            return Response({'error': 'Job not found.'}, status=status.HTTP_404_NOT_FOUND)
+        job.delete()
+        return Response(status=status.HTTP_204_NO_CONTENT)

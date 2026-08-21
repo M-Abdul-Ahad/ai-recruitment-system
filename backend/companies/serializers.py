@@ -45,7 +45,10 @@ class CompanyCreateSerializer(serializers.ModelSerializer):
         fields = ["name", "email", "description", "website", "industry", "phone", "address", "logo"]
 
     def validate_name(self, value):
-        if Company.objects.filter(name__iexact=value).exists():
+        qs = Company.objects.filter(name__iexact=value)
+        if self.instance:
+            qs = qs.exclude(pk=self.instance.pk)
+        if qs.exists():
             raise serializers.ValidationError("A company with this name already exists.")
         return value
 
@@ -55,6 +58,10 @@ class CompanyCreateSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError("Authentication required.")
 
         user = cast("User", request.user)
+
+        # Admin can create companies freely
+        if user.role == "admin":
+            return attrs
 
         # Applicants cannot create companies
         if user.role == "applicant":
