@@ -1,101 +1,107 @@
-import { useContext } from "react";
-import { AuthContext } from "../auth/AuthContext";
-import { Link, useNavigate } from "react-router-dom";
+import { Link } from "react-router-dom";
+
+const CARDS = [
+  {
+    to: "/admin/users",
+    icon: (
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/>
+        <path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+      </svg>
+    ),
+    title: "User Management",
+    desc:  "View, add, edit, and delete users. Assign roles.",
+  },
+  {
+    to: "/admin/roles",
+    icon: (
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+      </svg>
+    ),
+    title: "Role Management",
+    desc:  "Create, rename, and delete system roles.",
+  },
+  {
+    to: "/admin/companies",
+    icon: (
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
+        <rect x="2" y="3" width="20" height="18" rx="2"/><path d="M8 21V9"/><path d="M16 21V9"/>
+        <path d="M2 9h20"/>
+      </svg>
+    ),
+    title: "Companies",
+    desc:  "View and manage all registered companies.",
+  },
+  {
+    to: "/admin/jobs",
+    icon: (
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
+        <rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2"/>
+      </svg>
+    ),
+    title: "Jobs",
+    desc:  "Monitor all job postings across the platform.",
+  },
+];
 
 const AdminDashboard = () => {
-  const { user, logout } = useContext(AuthContext);
-  const navigate = useNavigate();
-
-  console.log("ADMIN DASHBOARD LOADED");
-
-  const handleLogout = () => {
-      console.log("LOGOUT CLICKED");
-      logout();
-      navigate("/login");
-  };
-
   return (
-    <div style={styles.container}>
-      <div style={styles.header}>
-        <div>
-          <h1>Admin Dashboard</h1>
-          <p style={styles.subtitle}>System Control Panel</p>
-        </div>
-        <button onClick={handleLogout} style={styles.logoutBtn}>Logout</button>
+    <div className="apl-animate-fade">
+      {/* Page header */}
+      <div className="apl-page-header">
+        <h1 className="apl-page-title">Admin Dashboard</h1>
+        <p className="apl-page-sub">System control panel — manage users, roles, companies, and jobs.</p>
       </div>
 
-      <div style={styles.grid}>
-        <Link to="/admin/users" style={styles.card}>
-          <h2>👤 Users</h2>
-          <p>Manage all users (Applicants, Recruiters, HR)</p>
-        </Link>
-
-        <Link to="/admin/companies" style={styles.card}>
-          <h2>🏢 Companies</h2>
-          <p>View and manage companies</p>
-        </Link>
-
-        <Link to="/admin/jobs" style={styles.card}>
-          <h2>💼 Jobs</h2>
-          <p>Monitor all job postings</p>
-        </Link>
-      </div>
-
-      <div style={styles.footer}>
-        <p>Admin controls the entire platform ⚙️</p>
+      {/* Navigation cards */}
+      <div style={{
+        display: "grid",
+        gridTemplateColumns: "repeat(auto-fill, minmax(220px, 1fr))",
+        gap: "20px",
+      }}>
+        {CARDS.map((card) => (
+          <Link
+            key={card.to}
+            to={card.to}
+            style={{ textDecoration: "none" }}
+          >
+            <div
+              className="apl-card apl-card-hover"
+              style={{ display: "flex", flexDirection: "column", gap: "12px", cursor: "pointer" }}
+            >
+              <div style={{
+                width: "44px",
+                height: "44px",
+                borderRadius: "10px",
+                background: "var(--apl-accent)",
+                color: "var(--apl-dark)",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                flexShrink: 0,
+              }}>
+                {card.icon}
+              </div>
+              <div>
+                <h3 style={{
+                  fontSize: "16px",
+                  fontWeight: 600,
+                  color: "var(--apl-neutral-900)",
+                  marginBottom: "4px",
+                }}>
+                  {card.title}
+                </h3>
+                <p style={{ fontSize: "13px", color: "var(--apl-neutral-700)", lineHeight: 1.5 }}>
+                  {card.desc}
+                </p>
+              </div>
+            </div>
+          </Link>
+        ))}
       </div>
     </div>
   );
 };
 
 export default AdminDashboard;
-
-/* -------- STYLES -------- */
-
-const styles = {
-  container: {
-    padding: "30px",
-    fontFamily: "Arial, sans-serif",
-    background: "#f4f6f8",
-    minHeight: "100vh",
-  },
-  header: {
-    display: "flex",
-    justifyContent: "space-between",
-    alignItems: "flex-start",
-    marginBottom: "20px",
-  },
-  logoutBtn: {
-    padding: "8px 16px",
-    backgroundColor: "#ff4d4f",
-    color: "white",
-    border: "none",
-    borderRadius: "6px",
-    cursor: "pointer",
-    fontWeight: "bold",
-  },
-  subtitle: {
-    color: "#666",
-    marginBottom: "20px",
-  },
-  grid: {
-    display: "grid",
-    gridTemplateColumns: "repeat(auto-fit, minmax(240px, 1fr))",
-    gap: "20px",
-    marginTop: "20px",
-  },
-  card: {
-    textDecoration: "none",
-    background: "#fff",
-    padding: "25px",
-    borderRadius: "12px",
-    boxShadow: "0 4px 10px rgba(0,0,0,0.1)",
-    color: "#333",
-    transition: "0.2s",
-  },
-  footer: {
-    marginTop: "40px",
-    textAlign: "center",
-    color: "#888",
-  },
-};

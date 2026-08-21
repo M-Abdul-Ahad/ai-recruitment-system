@@ -8,7 +8,7 @@ from django.db import transaction
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 
 from companies.models import Company
-from users.models import Role, User
+from users.models import Role, User, UserRole
 
 
 
@@ -182,3 +182,100 @@ class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
             }
         )
         return data
+
+
+# ============================================================
+# ADMIN SERIALIZERS
+# ============================================================
+
+class RoleSerializer(serializers.ModelSerializer):
+    """CRUD serializer for the Role model (admin use only)."""
+
+    class Meta:
+        model = Role
+        fields = ['id', 'name']
+
+    def validate_name(self, value):
+        value = value.strip()
+        if not value:
+            raise serializers.ValidationError("Role name cannot be blank.")
+        return value
+
+
+class AdminUserSerializer(serializers.ModelSerializer):
+    """Full user serializer for admin list/create/update/delete."""
+
+    # Password is only required on create, write-only always
+    password = serializers.CharField(
+        write_only=True,
+        required=False,
+        allow_blank=True,
+        validators=[validate_password],
+    )
+    # Read-only FK name for display in the grid
+    role_name = serializers.SerializerMethodField(read_only=True)
+    company_name = serializers.SerializerMethodField(read_only=True)
+
+    class Meta:
+        model = User
+        fields = [
+            'id', 'username', 'email', 'role', 'role_fk',
+            'role_name', 'is_hr', 'company', 'company_name',
+            'is_active', 'date_joined', 'password',
+        ]
+        read_only_fields = ['id', 'date_joined', 'role_name', 'company_name']
+        extra_kwargs = {
+            'email': {'required': True},
+            'username': {'required': True},
+            'role_fk': {'required': False, 'allow_null': True},
+        }
+
+    def get_role_name(self, obj):
+        return obj.role_fk.name if obj.role_fk else obj.role
+
+    def get_company_name(self, obj):
+        return obj.company.name if obj.company else None
+
+    def validate(self, attrs):
+        # On create, password is required
+        if self.instance is None:
+            password = attrs.get('password', '').strip()
+            if not password:
+                raise serializers.ValidationError({'password': 'Password is required when creating a user.'})
+        return attrs
+
+    def create(self, validated_data):
+        password = validated_data.pop('password')
+        role = validated_data.get('role', User.Role.APPLICANT)
+
+        with transaction.atomic():
+            user = User(**validated_data)
+            user.set_password(password)
+            user.save()
+
+            # Sync role_fk with role CharField
+            role_obj = Role.objects.filter(name=role).first()
+            if role_obj:
+                user.role_fk = role_obj
+                user.save(update_fields=['role_fk'])
+
+        return user
+
+    def update(self, instance, validated_data):
+        password = validated_data.pop('password', None)
+        role = validated_data.get('role', instance.role)
+
+        with transaction.atomic():
+            for attr, value in validated_data.items():
+                setattr(instance, attr, value)
+
+            if password:
+                instance.set_password(password)
+
+            # Sync role_fk whenever role changes
+            role_obj = Role.objects.filter(name=role).first()
+            instance.role_fk = role_obj
+
+            instance.save()
+
+        return instance

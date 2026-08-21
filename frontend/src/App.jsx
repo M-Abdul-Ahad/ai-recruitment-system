@@ -31,6 +31,8 @@ import AdminDashboard from "./admin/AdminDashboard";
 import Users from "./admin/Users";
 import Companies from "./admin/Companies";
 import Jobs from "./admin/Jobs";
+import Roles from "./admin/Roles";
+import AdminLayout from "./layouts/AdminLayout";
 
 import Unauthorized from "./pages/Unauthorized";
 import Home from "./pages/Home";
@@ -125,38 +127,16 @@ export default function App() {
             path="/admin"
             element={
               <RoleRoute allowedRoles={["admin"]}>
-                <AdminDashboard />
+                <AdminLayout />
               </RoleRoute>
             }
-          />
-
-          <Route
-            path="/admin/users"
-            element={
-              <RoleRoute allowedRoles={["admin"]}>
-                <Users />
-              </RoleRoute>
-            }
-          />
-
-          <Route
-            path="/admin/companies"
-            element={
-              <RoleRoute allowedRoles={["admin"]}>
-                <Companies />
-              </RoleRoute>
-            }
-          />
-
-          <Route
-            path="/admin/jobs"
-            element={
-              <RoleRoute allowedRoles={["admin"]}>
-                <Jobs />
-              </RoleRoute>
-            }
-          />
-
+          >
+            <Route index                element={<AdminDashboard />} />
+            <Route path="users"         element={<Users />} />
+            <Route path="roles"         element={<Roles />} />
+            <Route path="companies"     element={<Companies />} />
+            <Route path="jobs"          element={<Jobs />} />
+          </Route>
           {/* Fallback */}
           <Route path="*" element={<FallbackRoute />} />
         </Routes>
