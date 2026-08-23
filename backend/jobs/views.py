@@ -14,6 +14,10 @@ from .services.gemini_jd_service import generate_job_description
 User = get_user_model()
 
 
+from django.db import transaction
+from resumes.models import Resume
+
+
 class SkillViewSet(viewsets.ReadOnlyModelViewSet):
     queryset = Skill.objects.all()
     serializer_class = SkillSerializer
@@ -133,8 +137,65 @@ class JobViewSet(viewsets.ModelViewSet):
         serializer = JobApplicationSerializer(data=request.data, context={'request': request})
         serializer.is_valid(raise_exception=True)
 
-        serializer.save(job=job, applicant=request.user)
+        serializer.save(job=job, applicant=request.user, source_type=JobApplication.SourceType.APPLICATION)
         return Response(serializer.data, status=status.HTTP_201_CREATED)
+
+    @action(detail=True, methods=["post"], url_path="bulk-upload-resumes", permission_classes=[permissions.IsAuthenticated, IsRecruiter, IsJobOwner])
+    def bulk_upload_resumes(self, request, pk=None):
+        job = self.get_object()
+
+        # Support 'files', 'resumes', or 'file' keys in multipart request
+        files = request.FILES.getlist('files') or request.FILES.getlist('resumes') or request.FILES.getlist('file')
+        if not files:
+            return Response(
+                {"error": "No resume files provided. Upload files under the 'files' or 'resumes' key."},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        allowed_extensions = ('.pdf', '.docx')
+        max_file_size = 10 * 1024 * 1024  # 10 MB per file limit
+
+        valid_files = []
+        errors = []
+
+        for file_obj in files:
+            file_name = file_obj.name.lower()
+            if not file_name.endswith(allowed_extensions):
+                errors.append(f"{file_obj.name}: Only PDF and DOCX files are allowed.")
+                continue
+            if file_obj.size > max_file_size:
+                errors.append(f"{file_obj.name}: File size exceeds 10MB limit.")
+                continue
+            valid_files.append(file_obj)
+
+        if not valid_files:
+            return Response({"error": "No valid files to process.", "details": errors}, status=status.HTTP_400_BAD_REQUEST)
+
+        created_applications = []
+        with transaction.atomic():
+            for file_obj in valid_files:
+                # Fast save of Resume file (without blocking text extraction/parsing)
+                resume = Resume.objects.create(
+                    user=None,
+                    file=file_obj
+                )
+                # Link Resume to Job via JobApplication
+                app = JobApplication.objects.create(
+                    job=job,
+                    applicant=None,
+                    resume=resume,
+                    source_type=JobApplication.SourceType.RECRUITER_UPLOAD,
+                    status=JobApplication.ApplicationStatus.APPLIED,
+                )
+                created_applications.append(app)
+
+        serializer = RecruiterApplicationSerializer(created_applications, many=True)
+        return Response({
+            "message": f"Successfully uploaded {len(created_applications)} candidate resume(s).",
+            "count": len(created_applications),
+            "errors": errors if errors else None,
+            "applications": serializer.data
+        }, status=status.HTTP_201_CREATED)
 
     @action(detail=False, methods=["get"], url_path="my-applications", permission_classes=[permissions.IsAuthenticated, IsApplicant])
     def my_applications(self, request):
@@ -158,19 +219,24 @@ class JobViewSet(viewsets.ModelViewSet):
             return Response({"error": "Application not found."}, status=status.HTTP_404_NOT_FOUND)
 
         new_status = request.data.get("status")
-        valid_statuses = [choice[0] for choice in JobApplication.ApplicationStatus.choices]
-        if new_status not in valid_statuses:
-            return Response({"error": f"Invalid status. Choose from {valid_statuses}."}, status=status.HTTP_400_BAD_REQUEST)
+        if new_status:
+            valid_statuses = [choice[0] for choice in JobApplication.ApplicationStatus.choices]
+            if new_status not in valid_statuses:
+                return Response({"error": f"Invalid status. Choose from {valid_statuses}."}, status=status.HTTP_400_BAD_REQUEST)
+            application.status = new_status
 
-        application.status = new_status
-
-        # Allow recruiter to update notes alongside status
+        # Allow recruiter to update notes and tags
         recruiter_notes = request.data.get("recruiter_notes")
         if recruiter_notes is not None:
             application.recruiter_notes = recruiter_notes
 
+        tags = request.data.get("tags")
+        if tags is not None and isinstance(tags, list):
+            application.tags = tags
+
         application.save()
         return Response(RecruiterApplicationSerializer(application).data)
+
 
 
 # ============================================================

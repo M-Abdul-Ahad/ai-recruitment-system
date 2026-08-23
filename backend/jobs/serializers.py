@@ -76,9 +76,9 @@ class JobApplicationSerializer(serializers.ModelSerializer):
         model = JobApplication
         fields = [
             'id', 'job', 'job_title', 'company_name',
-            'resume_id', 'status', 'applied_at',
+            'resume_id', 'source_type', 'status', 'tags', 'applied_at',
         ]
-        read_only_fields = ['id', 'job', 'status', 'applied_at']
+        read_only_fields = ['id', 'job', 'source_type', 'status', 'applied_at']
 
     def validate_resume_id(self, resume):
         """Ensure the resume belongs to the requesting applicant."""
@@ -94,15 +94,22 @@ class JobApplicationSerializer(serializers.ModelSerializer):
 
 class RecruiterApplicationSerializer(serializers.ModelSerializer):
     """Serializer for recruiter viewing applications on their jobs."""
-    applicant_email = serializers.EmailField(source='applicant.email', read_only=True)
-    applicant_name = serializers.CharField(source='applicant.username', read_only=True)
+    applicant_email = serializers.SerializerMethodField()
+    applicant_name = serializers.SerializerMethodField()
     resume_file = serializers.FileField(source='resume.file', read_only=True)
 
     class Meta:
         model = JobApplication
         fields = [
-            'id', 'applicant', 'applicant_email', 'applicant_name',
-            'resume_file', 'status', 'recruiter_notes', 'match_score',
-            'applied_at',
+            'id', 'job', 'applicant', 'applicant_email', 'applicant_name',
+            'resume', 'resume_file', 'source_type', 'status', 'tags',
+            'recruiter_notes', 'match_score', 'applied_at',
         ]
-        read_only_fields = ['id', 'applicant', 'applied_at']
+        read_only_fields = ['id', 'job', 'applicant', 'applied_at']
+
+    def get_applicant_email(self, obj):
+        return obj.applicant.email if obj.applicant else None
+
+    def get_applicant_name(self, obj):
+        return obj.applicant.username if obj.applicant else "Recruiter Candidate"
+

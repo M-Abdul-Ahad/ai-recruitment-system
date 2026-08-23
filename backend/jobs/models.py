@@ -62,8 +62,18 @@ class JobApplication(models.Model):
         INTERVIEW = "INTERVIEW", "Interview"
         REJECTED = "REJECTED", "Rejected"
 
+    class SourceType(models.TextChoices):
+        APPLICATION = "APPLICATION", "Application"
+        RECRUITER_UPLOAD = "RECRUITER_UPLOAD", "Recruiter Upload"
+
     job = models.ForeignKey(Job, on_delete=models.CASCADE, related_name="applications")
-    applicant = models.ForeignKey(User, on_delete=models.CASCADE, related_name="job_applications")
+    applicant = models.ForeignKey(
+        User,
+        on_delete=models.CASCADE,
+        null=True,
+        blank=True,
+        related_name="job_applications",
+    )
     resume = models.ForeignKey(
         "resumes.Resume",
         on_delete=models.SET_NULL,
@@ -71,11 +81,17 @@ class JobApplication(models.Model):
         blank=True,
         related_name="applications",
     )
+    source_type = models.CharField(
+        max_length=20,
+        choices=SourceType.choices,
+        default=SourceType.APPLICATION,
+    )
     status = models.CharField(
         max_length=20,
         choices=ApplicationStatus.choices,
         default=ApplicationStatus.APPLIED,
     )
+    tags = models.JSONField(default=list, blank=True, help_text="Candidate tags for filtering")
     recruiter_notes = models.TextField(blank=True, default="")
     match_score = models.FloatField(null=True, blank=True, help_text="AI-generated match score")
     applied_at = models.DateTimeField(auto_now_add=True)
@@ -84,4 +100,6 @@ class JobApplication(models.Model):
         unique_together = ['job', 'applicant']
 
     def __str__(self):
-        return f"{self.applicant.email} applied for {self.job.title}"
+        applicant_identifier = self.applicant.email if self.applicant else f"Recruiter Candidate (Resume #{self.resume_id})"
+        return f"{applicant_identifier} for {self.job.title}"
+
