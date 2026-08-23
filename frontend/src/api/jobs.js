@@ -27,6 +27,14 @@ export const updateApplicationDetails = (jobId, appId, data) =>
   api.patch(`/jobs/${jobId}/applications/${appId}/`, data);
 
 /**
+ * DELETE /api/jobs/:jobId/applications/:appId/remove/
+ * Removes a candidate's JobApplication. For recruiter-uploaded resumes,
+ * also deletes the orphaned Resume record and file on the server.
+ */
+export const removeCandidate = (jobId, appId) =>
+  api.delete(`/jobs/${jobId}/applications/${appId}/remove/`);
+
+/**
  * POST /api/jobs/:jobId/bulk-upload-resumes/
  * Uploads multiple resume files (PDF/DOCX) for a job as recruiter-sourced candidates.
  * @param {number} jobId

@@ -10,6 +10,13 @@ class Resume(models.Model):
         blank=True
     )
     file = models.FileField(upload_to='resumes/')
+    file_hash = models.CharField(
+        max_length=64,
+        null=True,
+        blank=True,
+        db_index=True,
+        help_text="SHA-256 hex digest of the uploaded file, used for duplicate detection.",
+    )
     extracted_text = models.TextField(null=True, blank=True)
     cleaned_text = models.TextField(null=True, blank=True)
     uploaded_at = models.DateTimeField(auto_now_add=True)

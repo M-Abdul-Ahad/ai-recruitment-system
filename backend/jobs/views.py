@@ -9,6 +9,8 @@ from .serializers import (
 from .permissions import IsRecruiter, IsJobOwner, IsApplicant
 from django.contrib.auth import get_user_model
 from .services.gemini_jd_service import generate_job_description
+import hashlib
+from django.db import transaction, IntegrityError
 
 
 User = get_user_model()
@@ -155,8 +157,9 @@ class JobViewSet(viewsets.ModelViewSet):
         allowed_extensions = ('.pdf', '.docx')
         max_file_size = 10 * 1024 * 1024  # 10 MB per file limit
 
-        valid_files = []
-        errors = []
+        # ── Phase 1: validate format/size & compute SHA-256 hash ──────────────
+        staged = []   # list of dicts: {file_obj, file_hash}
+        errors = []   # per-file validation failures reported to caller
 
         for file_obj in files:
             file_name = file_obj.name.lower()
@@ -166,36 +169,77 @@ class JobViewSet(viewsets.ModelViewSet):
             if file_obj.size > max_file_size:
                 errors.append(f"{file_obj.name}: File size exceeds 10MB limit.")
                 continue
-            valid_files.append(file_obj)
 
-        if not valid_files:
+            # Compute SHA-256 over the entire file content
+            hasher = hashlib.sha256()
+            for chunk in file_obj.chunks():
+                hasher.update(chunk)
+            file_hash = hasher.hexdigest()
+            # Seek back so Django can save the file later
+            file_obj.seek(0)
+
+            staged.append({"file_obj": file_obj, "file_hash": file_hash})
+
+        if not staged:
             return Response({"error": "No valid files to process.", "details": errors}, status=status.HTTP_400_BAD_REQUEST)
 
+        # ── Phase 2: create records (one transaction per file for granular errors) ──
         created_applications = []
-        with transaction.atomic():
-            for file_obj in valid_files:
-                # Fast save of Resume file (without blocking text extraction/parsing)
-                resume = Resume.objects.create(
-                    user=None,
-                    file=file_obj
-                )
-                # Link Resume to Job via JobApplication
-                app = JobApplication.objects.create(
-                    job=job,
-                    applicant=None,
-                    resume=resume,
-                    source_type=JobApplication.SourceType.RECRUITER_UPLOAD,
-                    status=JobApplication.ApplicationStatus.APPLIED,
-                )
-                created_applications.append(app)
 
+        for item in staged:
+            file_obj = item["file_obj"]
+            file_hash = item["file_hash"]
+
+            try:
+                with transaction.atomic():
+                    # 2a. Reuse an existing Resume with the same hash to avoid
+                    #     storing duplicate files on disk.
+                    existing_resume = Resume.objects.filter(file_hash=file_hash).first()
+
+                    if existing_resume is not None:
+                        resume = existing_resume
+                    else:
+                        resume = Resume.objects.create(
+                            user=None,
+                            file=file_obj,
+                            file_hash=file_hash,
+                        )
+
+                    # 2b. Guard: same resume already linked to this job?
+                    if JobApplication.objects.filter(job=job, resume=resume).exists():
+                        errors.append(
+                            f"{file_obj.name}: This resume is already linked to '{job.title}'."
+                        )
+                        continue
+
+                    # 2c. Create the JobApplication
+                    app = JobApplication.objects.create(
+                        job=job,
+                        applicant=None,
+                        resume=resume,
+                        source_type=JobApplication.SourceType.RECRUITER_UPLOAD,
+                        status=JobApplication.ApplicationStatus.APPLIED,
+                    )
+                    created_applications.append(app)
+
+            except IntegrityError:
+                # Catch race-condition duplicates at the DB level
+                errors.append(
+                    f"{file_obj.name}: A duplicate record was detected and skipped."
+                )
+
+        response_status = status.HTTP_201_CREATED if created_applications else status.HTTP_400_BAD_REQUEST
         serializer = RecruiterApplicationSerializer(created_applications, many=True)
         return Response({
-            "message": f"Successfully uploaded {len(created_applications)} candidate resume(s).",
+            "message": (
+                f"Successfully imported {len(created_applications)} candidate resume(s)."
+                if created_applications
+                else "No resumes were imported."
+            ),
             "count": len(created_applications),
             "errors": errors if errors else None,
             "applications": serializer.data
-        }, status=status.HTTP_201_CREATED)
+        }, status=response_status)
 
     @action(detail=False, methods=["get"], url_path="my-applications", permission_classes=[permissions.IsAuthenticated, IsApplicant])
     def my_applications(self, request):
@@ -236,6 +280,50 @@ class JobViewSet(viewsets.ModelViewSet):
 
         application.save()
         return Response(RecruiterApplicationSerializer(application).data)
+
+    @action(
+        detail=True,
+        methods=["delete"],
+        url_path=r'applications/(?P<app_id>[^/.]+)/remove',
+        permission_classes=[permissions.IsAuthenticated, IsRecruiter, IsJobOwner],
+    )
+    def remove_candidate(self, request, pk=None, app_id=None):
+        """
+        DELETE /api/jobs/{job_id}/applications/{app_id}/remove/
+        Removes a candidate's JobApplication from this job.
+        - For RECRUITER_UPLOAD: also deletes the linked Resume + file
+          IF that resume is not linked to any other job.
+        - For APPLICATION: only the JobApplication is deleted; the
+          applicant's Resume record is never touched.
+        """
+        job = self.get_object()  # enforces IsJobOwner
+        try:
+            application = job.applications.get(id=app_id)
+        except JobApplication.DoesNotExist:
+            return Response(
+                {"error": "Application not found."},
+                status=status.HTTP_404_NOT_FOUND,
+            )
+
+        resume = application.resume
+        is_recruiter_upload = application.source_type == JobApplication.SourceType.RECRUITER_UPLOAD
+
+        with transaction.atomic():
+            application.delete()
+
+            # Only clean up the Resume if it was recruiter-uploaded AND is now orphaned
+            if is_recruiter_upload and resume is not None:
+                still_linked = JobApplication.objects.filter(resume=resume).exists()
+                if not still_linked:
+                    # Delete the physical file from storage, then the DB row
+                    if resume.file:
+                        resume.file.delete(save=False)
+                    resume.delete()
+
+        return Response(
+            {"message": "Candidate removed successfully."},
+            status=status.HTTP_200_OK,
+        )
 
 
 

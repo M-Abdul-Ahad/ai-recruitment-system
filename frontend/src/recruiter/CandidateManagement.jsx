@@ -1,7 +1,7 @@
 import { useState, useEffect, useContext, useCallback, useMemo } from "react";
 import { AuthContext } from "../auth/AuthContext";
 import { Link } from "react-router-dom";
-import { getJobs, getApplicants, updateApplicationDetails } from "../api/jobs";
+import { getJobs, getApplicants, updateApplicationDetails, removeCandidate } from "../api/jobs";
 import ApplicantCard from "./components/ApplicantCard";
 import ResumePreviewModal from "./components/ResumePreviewModal";
 import BulkUploadModal from "./components/BulkUploadModal";
@@ -83,6 +83,13 @@ const CandidateManagement = () => {
       await updateApplicationDetails(selectedJobId, appId, { recruiter_notes: notes });
       setApplicants(prev => prev.map(a => a.id === appId ? { ...a, recruiter_notes: notes } : a));
     } catch (err) { console.error(err); }
+  }, [selectedJobId]);
+
+  // Remove candidate
+  const handleRemove = useCallback(async (appId) => {
+    await removeCandidate(selectedJobId, appId);
+    // Remove from local state immediately on success
+    setApplicants(prev => prev.filter(a => a.id !== appId));
   }, [selectedJobId]);
 
   // Filtering + search
@@ -268,9 +275,11 @@ const CandidateManagement = () => {
                   <ApplicantCard
                     key={app.id}
                     applicant={app}
+                    jobId={selectedJobId}
                     onStatusChange={handleStatusChange}
                     onNotesChange={handleNotesChange}
                     onViewResume={(a) => setResumePreview(a)}
+                    onRemove={handleRemove}
                     statusUpdating={statusUpdating}
                   />
                 ))}

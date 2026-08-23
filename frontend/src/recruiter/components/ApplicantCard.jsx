@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import StatusDropdown from "./StatusDropdown";
 import RecruiterNotesEditor from "./RecruiterNotesEditor";
 
@@ -7,13 +7,26 @@ import RecruiterNotesEditor from "./RecruiterNotesEditor";
  *
  * @param {{
  *   applicant: object,
+ *   jobId: number,
  *   onStatusChange: (appId, newStatus) => Promise<void>,
  *   onNotesChange: (appId, notes) => Promise<void>,
  *   onViewResume: (applicant) => void,
+ *   onRemove: (appId) => Promise<void>,
  *   statusUpdating?: number|null,
  * }} props
  */
-const ApplicantCard = ({ applicant, onStatusChange, onNotesChange, onViewResume, statusUpdating }) => {
+const ApplicantCard = ({
+  applicant,
+  onStatusChange,
+  onNotesChange,
+  onViewResume,
+  onRemove,
+  statusUpdating,
+}) => {
+  const [confirmingRemove, setConfirmingRemove] = useState(false);
+  const [removing, setRemoving] = useState(false);
+  const [removeError, setRemoveError] = useState(null);
+
   const formatDate = (dateStr) =>
     new Date(dateStr).toLocaleDateString("en-US", {
       year: "numeric",
@@ -32,26 +45,45 @@ const ApplicantCard = ({ applicant, onStatusChange, onNotesChange, onViewResume,
   };
 
   const isUpdating = statusUpdating === applicant.id;
+  const isRecruiterUpload = applicant.source_type === "RECRUITER_UPLOAD";
+
+  const handleRemoveConfirmed = async () => {
+    setRemoving(true);
+    setRemoveError(null);
+    try {
+      await onRemove(applicant.id);
+      // Parent removes the card from the list — no local state needed
+    } catch (err) {
+      const msg =
+        err.response?.data?.error ||
+        err.response?.data?.detail ||
+        "Failed to remove candidate. Please try again.";
+      setRemoveError(msg);
+      setConfirmingRemove(false);
+    } finally {
+      setRemoving(false);
+    }
+  };
 
   return (
     <div className="apl-card apl-card-hover overflow-hidden relative group transition-all duration-300">
       {/* Top color accent based on status */}
       <div className={`h-1 absolute top-0 left-0 right-0 ${
         applicant.status === "SHORTLISTED" ? "bg-[#4E7A33]" :
-        applicant.status === "INTERVIEW" ? "bg-[#C99A3E]" :
-        applicant.status === "REJECTED" ? "bg-[#B4453D]" :
+        applicant.status === "INTERVIEW"   ? "bg-[#C99A3E]" :
+        applicant.status === "REJECTED"    ? "bg-[#B4453D]" :
         "bg-[#3E7285]"
       }`} />
 
       <div className="pt-2">
-        {/* Header: Avatar + Name + Status */}
+        {/* Header: Avatar + Name + Status Dropdown + Remove button */}
         <div className="flex items-start justify-between gap-3 mb-4">
           <div className="flex items-start gap-3 min-w-0">
             {/* Avatar */}
             <div className={`w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 font-extrabold text-sm shadow-sm border ${
-              applicant.source_type === 'RECRUITER_UPLOAD'
-                ? 'bg-[#3E7285]/15 text-[#3E7285] border-[#3E7285]/20'
-                : 'bg-[#D4DE95] text-[#3D4127] border-[#3D4127]/10'
+              isRecruiterUpload
+                ? "bg-[#3E7285]/15 text-[#3E7285] border-[#3E7285]/20"
+                : "bg-[#D4DE95] text-[#3D4127] border-[#3D4127]/10"
             }`}>
               {(applicant.applicant_name || applicant.applicant_email || "?")
                 .charAt(0)
@@ -62,7 +94,7 @@ const ApplicantCard = ({ applicant, onStatusChange, onNotesChange, onViewResume,
                 <h4 className="text-sm font-bold text-[#22241B] dark:text-[#EBF0DA] truncate">
                   {applicant.applicant_name || "Unnamed Applicant"}
                 </h4>
-                {applicant.source_type === 'RECRUITER_UPLOAD' && (
+                {isRecruiterUpload && (
                   <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-[#3E7285]/10 text-[#3E7285] border border-[#3E7285]/20 text-[10px] font-bold uppercase tracking-wider flex-shrink-0">
                     <svg className="w-2.5 h-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
@@ -75,17 +107,86 @@ const ApplicantCard = ({ applicant, onStatusChange, onNotesChange, onViewResume,
                 <svg className="w-3 h-3 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
                 </svg>
-                {applicant.applicant_email || 'No email'}
+                {applicant.applicant_email || "No email"}
               </p>
             </div>
           </div>
 
-          <StatusDropdown
-            currentStatus={applicant.status}
-            onStatusChange={(s) => onStatusChange(applicant.id, s)}
-            disabled={isUpdating}
-          />
+          <div className="flex items-center gap-1.5 flex-shrink-0">
+            <StatusDropdown
+              currentStatus={applicant.status}
+              onStatusChange={(s) => onStatusChange(applicant.id, s)}
+              disabled={isUpdating}
+            />
+            {/* Remove button */}
+            {!confirmingRemove ? (
+              <button
+                onClick={() => setConfirmingRemove(true)}
+                title="Remove candidate"
+                className="p-1.5 rounded-lg text-[#8A8F76] hover:text-[#B4453D] hover:bg-[#B4453D]/10 transition-colors flex-shrink-0"
+              >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                </svg>
+              </button>
+            ) : null}
+          </div>
         </div>
+
+        {/* Inline confirmation panel */}
+        {confirmingRemove && (
+          <div className="mb-4 p-3 rounded-xl border border-[#B4453D]/30 bg-[#B4453D]/5 space-y-2">
+            <p className="text-xs font-semibold text-[#B4453D]">
+              Remove this candidate from the job?
+              {isRecruiterUpload && (
+                <span className="block font-normal text-[#8A8F76] mt-0.5">
+                  Their imported resume will also be deleted if not used elsewhere.
+                </span>
+              )}
+            </p>
+            <div className="flex gap-2">
+              <button
+                onClick={handleRemoveConfirmed}
+                disabled={removing}
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#B4453D] text-white text-xs font-bold hover:bg-[#9D3B34] disabled:opacity-60 transition-colors"
+              >
+                {removing ? (
+                  <>
+                    <svg className="w-3 h-3 animate-spin" fill="none" viewBox="0 0 24 24">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4l3-3-3-3v4a8 8 0 100 16v-4l-3 3 3 3v-4a8 8 0 01-8-8z" />
+                    </svg>
+                    Removing…
+                  </>
+                ) : (
+                  <>
+                    <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                    </svg>
+                    Yes, Remove
+                  </>
+                )}
+              </button>
+              <button
+                onClick={() => { setConfirmingRemove(false); setRemoveError(null); }}
+                disabled={removing}
+                className="px-3 py-1.5 rounded-lg bg-[#ECEEDF] dark:bg-[#2A2E1E] text-[#52564A] dark:text-[#9CA485] text-xs font-bold hover:bg-[#D3D6C4] dark:hover:bg-[#383D28] disabled:opacity-60 transition-colors"
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* Remove error */}
+        {removeError && (
+          <div className="mb-4 flex items-start gap-2 p-3 rounded-xl bg-[#B4453D]/10 border border-[#B4453D]/30">
+            <svg className="w-4 h-4 text-[#B4453D] flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4.5c-.77-.833-2.694-.833-3.464 0L3.34 16.5c-.77.833.192 2.5 1.732 2.5z" />
+            </svg>
+            <p className="text-xs font-semibold text-[#B4453D]">{removeError}</p>
+          </div>
+        )}
 
         {/* Meta row */}
         <div className="flex flex-wrap items-center gap-2.5 mb-4">
@@ -93,7 +194,7 @@ const ApplicantCard = ({ applicant, onStatusChange, onNotesChange, onViewResume,
             <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
             </svg>
-            Applied {formatDate(applicant.applied_at)} ({timeAgo(applicant.applied_at)})
+            {isRecruiterUpload ? "Imported" : "Applied"} {formatDate(applicant.applied_at)} ({timeAgo(applicant.applied_at)})
           </span>
 
           {/* AI Match Score badge */}

@@ -98,6 +98,13 @@ class JobApplication(models.Model):
 
     class Meta:
         unique_together = ['job', 'applicant']
+        constraints = [
+            models.UniqueConstraint(
+                fields=['job', 'resume'],
+                condition=models.Q(resume__isnull=False),
+                name='unique_job_resume',
+            ),
+        ]
 
     def __str__(self):
         applicant_identifier = self.applicant.email if self.applicant else f"Recruiter Candidate (Resume #{self.resume_id})"
