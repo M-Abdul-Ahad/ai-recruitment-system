@@ -85,9 +85,27 @@ const BulkUploadModal = ({ isOpen, onClose, job, onSuccess }) => {
       setFiles([]);
       if (onSuccess) onSuccess();
     } catch (err) {
-      const serverErrors =
-        err.response?.data?.details || err.response?.data?.error || 'Upload failed. Please try again.';
-      setUploadResult({ success: false, error: serverErrors });
+      const data = err.response?.data;
+      const fileErrors = data?.errors || null;
+      let primaryError = "Upload failed. Please try again.";
+
+      if (fileErrors && fileErrors.length > 0) {
+        primaryError = fileErrors[0];
+      } else if (data?.error) {
+        primaryError = data.error;
+      } else if (data?.details && Array.isArray(data.details)) {
+        primaryError = data.details[0];
+      } else if (data?.details) {
+        primaryError = data.details;
+      } else if (data?.message) {
+        primaryError = data.message;
+      }
+
+      setUploadResult({
+        success: false,
+        error: primaryError,
+        errors: fileErrors,
+      });
     } finally {
       setUploading(false);
     }
@@ -147,9 +165,9 @@ const BulkUploadModal = ({ isOpen, onClose, job, onSuccess }) => {
                 </p>
                 {uploadResult.data?.errors?.length > 0 && (
                   <div className="mt-2 space-y-1">
-                    <p className="text-xs font-semibold text-[#C99A3E]">Some files were skipped on the server:</p>
+                    <p className="text-xs font-semibold text-[#C99A3E]">Some files were skipped:</p>
                     {uploadResult.data.errors.map((e, i) => (
-                      <p key={i} className="text-xs text-[#B4453D]">• {e}</p>
+                      <p key={i} className="text-xs text-[#B4453D] font-medium">• {e}</p>
                     ))}
                   </div>
                 )}
@@ -169,12 +187,22 @@ const BulkUploadModal = ({ isOpen, onClose, job, onSuccess }) => {
               <svg className="w-5 h-5 text-[#B4453D] flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4.5c-.77-.833-2.694-.833-3.464 0L3.34 16.5c-.77.833.192 2.5 1.732 2.5z" />
               </svg>
-              <div>
-                <p className="text-sm font-bold text-[#B4453D]">Upload failed</p>
-                <p className="text-xs text-[#B4453D]/80 mt-0.5">{uploadResult.error}</p>
+              <div className="w-full">
+                <p className="text-sm font-bold text-[#B4453D]">Upload Notice</p>
+                {uploadResult.errors && uploadResult.errors.length > 0 ? (
+                  <div className="mt-1 space-y-1">
+                    {uploadResult.errors.map((errItem, idx) => (
+                      <p key={idx} className="text-xs font-medium text-[#B4453D]">
+                        • {errItem}
+                      </p>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="text-xs text-[#B4453D]/90 mt-0.5 font-medium">{uploadResult.error}</p>
+                )}
                 <button
                   onClick={() => setUploadResult(null)}
-                  className="mt-2 text-xs font-bold text-[#B4453D] underline"
+                  className="mt-3 text-xs font-bold text-[#B4453D] underline hover:text-[#9D3B34]"
                 >
                   Try again
                 </button>

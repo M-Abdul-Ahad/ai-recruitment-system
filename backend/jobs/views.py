@@ -208,7 +208,7 @@ class JobViewSet(viewsets.ModelViewSet):
                     # 2b. Guard: same resume already linked to this job?
                     if JobApplication.objects.filter(job=job, resume=resume).exists():
                         errors.append(
-                            f"{file_obj.name}: This resume is already linked to '{job.title}'."
+                            f"{file_obj.name}: This resume has already been uploaded for this job."
                         )
                         continue
 
@@ -225,8 +225,14 @@ class JobViewSet(viewsets.ModelViewSet):
             except IntegrityError:
                 # Catch race-condition duplicates at the DB level
                 errors.append(
-                    f"{file_obj.name}: A duplicate record was detected and skipped."
+                    f"{file_obj.name}: This resume has already been uploaded for this job."
                 )
+
+        primary_error = None
+        if errors and not created_applications:
+            primary_error = errors[0]
+        elif errors:
+            primary_error = f"{len(errors)} file(s) failed or were duplicates."
 
         response_status = status.HTTP_201_CREATED if created_applications else status.HTTP_400_BAD_REQUEST
         serializer = RecruiterApplicationSerializer(created_applications, many=True)
@@ -236,6 +242,7 @@ class JobViewSet(viewsets.ModelViewSet):
                 if created_applications
                 else "No resumes were imported."
             ),
+            "error": primary_error,
             "count": len(created_applications),
             "errors": errors if errors else None,
             "applications": serializer.data

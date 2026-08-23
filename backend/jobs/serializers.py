@@ -97,12 +97,13 @@ class RecruiterApplicationSerializer(serializers.ModelSerializer):
     applicant_email = serializers.SerializerMethodField()
     applicant_name = serializers.SerializerMethodField()
     resume_file = serializers.FileField(source='resume.file', read_only=True)
+    resume_text = serializers.CharField(source='resume.extracted_text', read_only=True, default="")
 
     class Meta:
         model = JobApplication
         fields = [
             'id', 'job', 'applicant', 'applicant_email', 'applicant_name',
-            'resume', 'resume_file', 'source_type', 'status', 'tags',
+            'resume', 'resume_file', 'resume_text', 'source_type', 'status', 'tags',
             'recruiter_notes', 'match_score', 'applied_at',
         ]
         read_only_fields = ['id', 'job', 'applicant', 'applied_at']

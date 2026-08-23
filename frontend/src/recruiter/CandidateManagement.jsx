@@ -326,6 +326,7 @@ const CandidateManagement = () => {
         onClose={() => setResumePreview(null)}
         resumeUrl={resumePreview?.resume_file}
         applicantName={resumePreview?.applicant_name}
+        resumeText={resumePreview?.resume_text}
       />
 
       {/* Bulk Upload Modal */}
