@@ -4,6 +4,7 @@ import { useNavigate } from "react-router-dom";
 import { getJobs, publishJob, closeJob, deleteJob } from "../api/jobs";
 import JobCard from "./components/JobCard";
 import ApplicantListModal from "./components/ApplicantListModal";
+import BulkUploadModal from "./components/BulkUploadModal";
 
 const Jobs = () => {
   const { user } = useContext(AuthContext);
@@ -14,6 +15,7 @@ const Jobs = () => {
   const [error, setError] = useState(null);
 
   const [selectedJobForApplicants, setSelectedJobForApplicants] = useState(null);
+  const [selectedJobForBulkUpload, setSelectedJobForBulkUpload] = useState(null);
 
   useEffect(() => {
     fetchJobs();
@@ -74,6 +76,10 @@ const Jobs = () => {
 
   const handleViewApplicants = (job) => {
     setSelectedJobForApplicants(job);
+  };
+
+  const handleBulkUpload = (job) => {
+    setSelectedJobForBulkUpload(job);
   };
 
   return (
@@ -141,6 +147,7 @@ const Jobs = () => {
               onViewApplicants={handleViewApplicants}
               onEdit={handleEditJob}
               onDelete={handleDeleteJob}
+              onBulkUpload={handleBulkUpload}
             />
           ))}
         </div>
@@ -151,6 +158,17 @@ const Jobs = () => {
         isOpen={!!selectedJobForApplicants}
         onClose={() => setSelectedJobForApplicants(null)}
         job={selectedJobForApplicants}
+      />
+
+      <BulkUploadModal
+        isOpen={!!selectedJobForBulkUpload}
+        onClose={() => setSelectedJobForBulkUpload(null)}
+        job={selectedJobForBulkUpload}
+        onSuccess={() => {
+          // If the applicant list modal for this job is open, it will refresh on next open.
+          // Close bulk upload modal after success.
+          setSelectedJobForBulkUpload(null);
+        }}
       />
     </div>
   );

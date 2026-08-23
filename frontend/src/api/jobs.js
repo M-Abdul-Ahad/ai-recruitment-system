@@ -26,6 +26,22 @@ export const updateApplicantStatus = (jobId, appId, status) =>
 export const updateApplicationDetails = (jobId, appId, data) =>
   api.patch(`/jobs/${jobId}/applications/${appId}/`, data);
 
+/**
+ * POST /api/jobs/:jobId/bulk-upload-resumes/
+ * Uploads multiple resume files (PDF/DOCX) for a job as recruiter-sourced candidates.
+ * @param {number} jobId
+ * @param {File[]} files
+ * @param {function} onUploadProgress - axios upload progress callback
+ */
+export const bulkUploadResumes = (jobId, files, onUploadProgress) => {
+  const formData = new FormData();
+  files.forEach((file) => formData.append('files', file));
+  return api.post(`/jobs/${jobId}/bulk-upload-resumes/`, formData, {
+    headers: { 'Content-Type': 'multipart/form-data' },
+    onUploadProgress,
+  });
+};
+
 // ─── Applicant APIs ───
 
 /** GET /api/jobs/:id/ → full job detail (applicant view) */
@@ -45,3 +61,4 @@ export const uploadResume = (formData) =>
   api.post('/resumes/upload/', formData, {
     headers: { 'Content-Type': 'multipart/form-data' },
   });
+

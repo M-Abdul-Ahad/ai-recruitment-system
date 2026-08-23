@@ -4,6 +4,7 @@ import { Link } from "react-router-dom";
 import { getJobs, getApplicants, updateApplicationDetails } from "../api/jobs";
 import ApplicantCard from "./components/ApplicantCard";
 import ResumePreviewModal from "./components/ResumePreviewModal";
+import BulkUploadModal from "./components/BulkUploadModal";
 
 const ITEMS_PER_PAGE = 9;
 
@@ -23,11 +24,15 @@ const CandidateManagement = () => {
 
   // Filters
   const [statusFilter, setStatusFilter] = useState("ALL");
+  const [sourceFilter, setSourceFilter] = useState("ALL"); // ALL | APPLICATION | RECRUITER_UPLOAD
   const [searchTerm, setSearchTerm] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
 
   // Resume preview
   const [resumePreview, setResumePreview] = useState(null);
+
+  // Bulk upload
+  const [bulkUploadOpen, setBulkUploadOpen] = useState(false);
 
   // Load jobs on mount
   useEffect(() => { fetchJobs(); }, []);
@@ -84,6 +89,7 @@ const CandidateManagement = () => {
   const filtered = useMemo(() => {
     let list = applicants;
     if (statusFilter !== "ALL") list = list.filter(a => a.status === statusFilter);
+    if (sourceFilter !== "ALL") list = list.filter(a => a.source_type === sourceFilter);
     if (searchTerm.trim()) {
       const q = searchTerm.toLowerCase();
       list = list.filter(a =>
@@ -92,13 +98,13 @@ const CandidateManagement = () => {
       );
     }
     return list;
-  }, [applicants, statusFilter, searchTerm]);
+  }, [applicants, statusFilter, sourceFilter, searchTerm]);
 
   // Pagination
   const totalPages = Math.max(1, Math.ceil(filtered.length / ITEMS_PER_PAGE));
   const paginated = filtered.slice((currentPage - 1) * ITEMS_PER_PAGE, currentPage * ITEMS_PER_PAGE);
 
-  useEffect(() => { setCurrentPage(1); }, [statusFilter, searchTerm, selectedJobId]);
+  useEffect(() => { setCurrentPage(1); }, [statusFilter, sourceFilter, searchTerm, selectedJobId]);
 
   const selectedJob = jobs.find(j => j.id === selectedJobId);
   const statusCounts = useMemo(() => ({
@@ -112,9 +118,22 @@ const CandidateManagement = () => {
   return (
     <div className="apl-animate-fade space-y-6">
       {/* Header */}
-      <div>
-        <h1 className="text-2xl sm:text-3xl font-extrabold text-[#22241B] dark:text-[#EBF0DA] tracking-tight">Candidate Management</h1>
-        <p className="text-xs sm:text-sm text-[#8A8F76] dark:text-[#9CA485] mt-1">Review applicants, manage statuses, and preview candidate resumes</p>
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
+        <div>
+          <h1 className="text-2xl sm:text-3xl font-extrabold text-[#22241B] dark:text-[#EBF0DA] tracking-tight">Candidate Management</h1>
+          <p className="text-xs sm:text-sm text-[#8A8F76] dark:text-[#9CA485] mt-1">Review applicants, manage statuses, and preview candidate resumes</p>
+        </div>
+        {selectedJobId && (
+          <button
+            onClick={() => setBulkUploadOpen(true)}
+            className="flex items-center gap-2 apl-btn py-2 px-4 text-xs font-bold text-[#3D4127] dark:text-[#D4DE95] bg-[#D4DE95]/15 dark:bg-[#D4DE95]/10 hover:bg-[#D4DE95]/30 border border-[#D4DE95]/40 rounded-xl transition-all whitespace-nowrap"
+          >
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
+            </svg>
+            Bulk Import Resumes
+          </button>
+        )}
       </div>
 
       {/* Job Selector Card */}
@@ -148,7 +167,7 @@ const CandidateManagement = () => {
 
       {selectedJobId && (
         <>
-          {/* Stats + Filters bar */}
+          {/* Filters bar */}
           <div className="flex flex-col lg:flex-row gap-4">
             {/* Status filter pills */}
             <div className="flex items-center gap-2 overflow-x-auto pb-1 flex-1">
@@ -163,6 +182,26 @@ const CandidateManagement = () => {
                   }`}
                 >
                   {s === "ALL" ? "All" : s.charAt(0) + s.slice(1).toLowerCase()} ({statusCounts[s]})
+                </button>
+              ))}
+
+              {/* Source type divider + filter */}
+              <span className="h-5 w-px bg-[#D3D6C4] dark:bg-[#383D28] mx-1 flex-shrink-0" />
+              {[
+                { key: "ALL", label: "All Sources" },
+                { key: "APPLICATION", label: "Applicants" },
+                { key: "RECRUITER_UPLOAD", label: "Imported" },
+              ].map(({ key, label }) => (
+                <button
+                  key={key}
+                  onClick={() => setSourceFilter(key)}
+                  className={`px-3.5 py-2 text-xs font-bold rounded-full whitespace-nowrap transition-all border ${
+                    sourceFilter === key
+                      ? "bg-[#3E7285] text-white border-[#3E7285] shadow-xs"
+                      : "bg-white dark:bg-[#222518] text-[#52564A] dark:text-[#9CA485] border-[#D3D6C4] dark:border-[#383D28] hover:bg-[#ECEEDF]"
+                  }`}
+                >
+                  {label}
                 </button>
               ))}
             </div>
@@ -278,6 +317,17 @@ const CandidateManagement = () => {
         onClose={() => setResumePreview(null)}
         resumeUrl={resumePreview?.resume_file}
         applicantName={resumePreview?.applicant_name}
+      />
+
+      {/* Bulk Upload Modal */}
+      <BulkUploadModal
+        isOpen={bulkUploadOpen}
+        onClose={() => setBulkUploadOpen(false)}
+        job={jobs.find(j => j.id === selectedJobId) || null}
+        onSuccess={() => {
+          setBulkUploadOpen(false);
+          if (selectedJobId) fetchApplicants(selectedJobId);
+        }}
       />
     </div>
   );

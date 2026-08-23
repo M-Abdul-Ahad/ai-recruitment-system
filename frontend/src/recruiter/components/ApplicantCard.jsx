@@ -46,22 +46,36 @@ const ApplicantCard = ({ applicant, onStatusChange, onNotesChange, onViewResume,
       <div className="pt-2">
         {/* Header: Avatar + Name + Status */}
         <div className="flex items-start justify-between gap-3 mb-4">
-          <div className="flex items-center gap-3 min-w-0">
+          <div className="flex items-start gap-3 min-w-0">
             {/* Avatar */}
-            <div className="w-10 h-10 rounded-xl bg-[#D4DE95] text-[#3D4127] flex items-center justify-center flex-shrink-0 font-extrabold text-sm shadow-sm border border-[#3D4127]/10">
+            <div className={`w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 font-extrabold text-sm shadow-sm border ${
+              applicant.source_type === 'RECRUITER_UPLOAD'
+                ? 'bg-[#3E7285]/15 text-[#3E7285] border-[#3E7285]/20'
+                : 'bg-[#D4DE95] text-[#3D4127] border-[#3D4127]/10'
+            }`}>
               {(applicant.applicant_name || applicant.applicant_email || "?")
                 .charAt(0)
                 .toUpperCase()}
             </div>
             <div className="min-w-0">
-              <h4 className="text-sm font-bold text-[#22241B] dark:text-[#EBF0DA] truncate">
-                {applicant.applicant_name || "Unnamed Applicant"}
-              </h4>
+              <div className="flex items-center gap-2 flex-wrap">
+                <h4 className="text-sm font-bold text-[#22241B] dark:text-[#EBF0DA] truncate">
+                  {applicant.applicant_name || "Unnamed Applicant"}
+                </h4>
+                {applicant.source_type === 'RECRUITER_UPLOAD' && (
+                  <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-[#3E7285]/10 text-[#3E7285] border border-[#3E7285]/20 text-[10px] font-bold uppercase tracking-wider flex-shrink-0">
+                    <svg className="w-2.5 h-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
+                    </svg>
+                    Imported
+                  </span>
+                )}
+              </div>
               <p className="text-xs text-[#8A8F76] dark:text-[#9CA485] truncate flex items-center gap-1">
                 <svg className="w-3 h-3 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
                 </svg>
-                {applicant.applicant_email}
+                {applicant.applicant_email || 'No email'}
               </p>
             </div>
           </div>

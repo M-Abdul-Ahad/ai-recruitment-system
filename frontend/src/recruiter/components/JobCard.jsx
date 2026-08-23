@@ -1,6 +1,6 @@
 import React from 'react';
 
-const JobCard = ({ job, onPublish, onClose, onViewApplicants, onEdit, onDelete }) => {
+const JobCard = ({ job, onPublish, onClose, onViewApplicants, onEdit, onDelete, onBulkUpload }) => {
   const isDraft = job.status === "DRAFT";
   const isActive = job.status === "ACTIVE";
   const isClosed = job.status === "CLOSED";
@@ -84,36 +84,52 @@ const JobCard = ({ job, onPublish, onClose, onViewApplicants, onEdit, onDelete }
         </div>
       </div>
 
-      <div className="flex items-center gap-3 pt-4 border-t border-[#ECEEDF] dark:border-[#2A2E1E]">
-        {isDraft && (
-          <button 
-            onClick={() => onPublish(job.id)}
-            className="flex-1 apl-btn apl-btn-primary"
-          >
-            Publish Job
-          </button>
-        )}
-        
-        {isActive && (
-          <button 
-            onClick={() => onClose(job.id)}
-            className="flex-1 apl-btn apl-btn-danger"
-          >
-            Close Job
-          </button>
-        )}
+      <div className="flex flex-col gap-2 pt-4 border-t border-[#ECEEDF] dark:border-[#2A2E1E]">
+        {/* Primary action row */}
+        <div className="flex items-center gap-3">
+          {isDraft && (
+            <button
+              onClick={() => onPublish(job.id)}
+              className="flex-1 apl-btn apl-btn-primary"
+            >
+              Publish Job
+            </button>
+          )}
 
-        <button 
-          onClick={() => onViewApplicants(job)}
-          className={`flex-1 apl-btn ${
-            isDraft 
-              ? 'opacity-50 cursor-not-allowed bg-[#ECEEDF] text-[#8A8F76] border border-[#D3D6C4]' 
-              : 'apl-btn-secondary'
-          }`}
-          disabled={isDraft}
-        >
-          View Applicants
-        </button>
+          {isActive && (
+            <button
+              onClick={() => onClose(job.id)}
+              className="flex-1 apl-btn apl-btn-danger"
+            >
+              Close Job
+            </button>
+          )}
+
+          <button
+            onClick={() => onViewApplicants(job)}
+            className={`flex-1 apl-btn ${
+              isDraft
+                ? 'opacity-50 cursor-not-allowed bg-[#ECEEDF] text-[#8A8F76] border border-[#D3D6C4]'
+                : 'apl-btn-secondary'
+            }`}
+            disabled={isDraft}
+          >
+            View Applicants
+          </button>
+        </div>
+
+        {/* Bulk Import Resumes — only visible on non-draft jobs */}
+        {!isDraft && onBulkUpload && (
+          <button
+            onClick={() => onBulkUpload(job)}
+            className="w-full flex items-center justify-center gap-2 py-2 px-4 rounded-xl text-xs font-bold text-[#3D4127] dark:text-[#D4DE95] bg-[#D4DE95]/15 dark:bg-[#D4DE95]/10 hover:bg-[#D4DE95]/30 dark:hover:bg-[#D4DE95]/20 border border-[#D4DE95]/40 dark:border-[#D4DE95]/20 transition-all duration-200"
+          >
+            <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
+            </svg>
+            Bulk Import Resumes
+          </button>
+        )}
       </div>
     </div>
   );
