@@ -18,6 +18,9 @@ User = get_user_model()
 
 from django.db import transaction
 from resumes.models import Resume
+from resumes.utils import extract_text_from_pdf, extract_text_from_docx
+from resumes.services.resume_parser import parse_and_store_resume_data
+
 
 
 class SkillViewSet(viewsets.ReadOnlyModelViewSet):
@@ -204,6 +207,15 @@ class JobViewSet(viewsets.ModelViewSet):
                             file=file_obj,
                             file_hash=file_hash,
                         )
+                        file_name = resume.file.name.lower()
+                        with resume.file.open('rb') as f:
+                            if file_name.endswith('.pdf'):
+                                extracted_text = extract_text_from_pdf(f)
+                            else:
+                                extracted_text = extract_text_from_docx(f)
+                        resume.extracted_text = extracted_text
+                        resume.save()
+                        parse_and_store_resume_data(resume)
 
                     # 2b. Guard: same resume already linked to this job?
                     if JobApplication.objects.filter(job=job, resume=resume).exists():

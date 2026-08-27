@@ -46,13 +46,12 @@ class ResumeUploadView(APIView):
         )
 
         # 5️⃣ Extract raw text
-        file_path = resume.file.path
-        extension = os.path.splitext(file_path)[1].lower()
-
-        if extension == '.pdf':
-            extracted_text = extract_text_from_pdf(file_path)
-        else:
-            extracted_text = extract_text_from_docx(file_path)
+        file_name = resume.file.name.lower()
+        with resume.file.open('rb') as f:
+            if file_name.endswith('.pdf'):
+                extracted_text = extract_text_from_pdf(f)
+            else:
+                extracted_text = extract_text_from_docx(f)
 
         # 6️⃣ Save RAW extracted text (important)
         resume.extracted_text = extracted_text

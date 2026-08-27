@@ -15,10 +15,18 @@ DATE_PATTERN = (
 )
 
 
-def extract_text_from_pdf(file_path):
+def extract_text_from_pdf(file_input):
     text = ""
-    with open(file_path, 'rb') as file:
-        reader = PyPDF2.PdfReader(file)
+    if isinstance(file_input, (str, bytes)):
+        with open(file_input, 'rb') as file:
+            reader = PyPDF2.PdfReader(file)
+            for page in reader.pages:
+                page_text = page.extract_text()
+                if page_text:
+                    text += page_text + "\n"
+    else:
+        file_input.seek(0)
+        reader = PyPDF2.PdfReader(file_input)
         for page in reader.pages:
             page_text = page.extract_text()
             if page_text:
@@ -26,8 +34,12 @@ def extract_text_from_pdf(file_path):
     return text
 
 
-def extract_text_from_docx(file_path):
-    doc = docx.Document(file_path)
+def extract_text_from_docx(file_input):
+    if isinstance(file_input, (str, bytes)):
+        doc = docx.Document(file_input)
+    else:
+        file_input.seek(0)
+        doc = docx.Document(file_input)
     text = ""
     for para in doc.paragraphs:
         text += para.text + "\n"
