@@ -1,0 +1,53 @@
+/**
+ * Modern Professional category styles.
+ * Same structural rules as base.css - only tokens differ per template.
+ */
+
+/* modern-01: Helvetica/Arial, blue accent, underline headings, left header */
+.tpl-modern-01 {
+  --font-family: Helvetica, Arial, sans-serif;
+  --accent-color: #235789;
+  --heading-color: #1c2b36;
+  --text-color: #1c1c1c;
+  --muted-color: #52606d;
+  --rule-color: #d3dae0;
+  --font-size-body: 10.5pt;
+  --section-gap: 14px;
+}
+
+/* modern-02: Segoe UI fallback stack, slate accent, rule-below headings */
+.tpl-modern-02 {
+  --font-family: "Segoe UI", Arial, Helvetica, sans-serif;
+  --accent-color: #34495e;
+  --heading-color: #202a33;
+  --text-color: #1c1c1c;
+  --muted-color: #5b6b79;
+  --rule-color: #d6dbe0;
+  --font-size-body: 10.5pt;
+  --section-gap: 14px;
+}
+
+/* modern-03: Arial, muted indigo accent, bold-caps headings, pipe separator */
+.tpl-modern-03 {
+  --font-family: Arial, Helvetica, sans-serif;
+  --accent-color: #3c4a8c;
+  --heading-color: #24284a;
+  --text-color: #1a1a1a;
+  --muted-color: #545b70;
+  --rule-color: #d8dae6;
+  --font-size-body: 10.5pt;
+  --font-size-heading: 12.5pt;
+  --section-gap: 13px;
+}
+
+/* modern-04: Trebuchet MS, teal accent, boxed-label headings, centered header */
+.tpl-modern-04 {
+  --font-family: "Trebuchet MS", Arial, sans-serif;
+  --accent-color: #1f6f78;
+  --heading-color: #1b2e30;
+  --text-color: #1a1a1a;
+  --muted-color: #4e6367;
+  --rule-color: #d1dee0;
+  --font-size-body: 10.5pt;
+  --section-gap: 14px;
+}

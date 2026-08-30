@@ -1,0 +1,349 @@
+/**
+ * base.css
+ *
+ * Shared, ATS-safe structural styles for ALL 16 templates.
+ * Import this ONCE in your app (e.g. in the resume preview root or
+ * global stylesheet). Individual template stylesheets (e.g.
+ * templates/classic/styles.css) only set CSS custom properties
+ * (colors, fonts, spacing) scoped to their own root class, plus small
+ * cosmetic tweaks - they never redefine layout/structure.
+ *
+ * Layout constraints followed throughout:
+ *  - Single column, linear document flow only.
+ *  - No CSS grid/columns/tables/absolute positioning for content.
+ *  - No floats for layout.
+ */
+
+.resume-root {
+  /* Default design tokens; every template overrides these via its own
+     scoped class, e.g. .tpl-classic-01 { --accent-color: #1a3a5c; } */
+  --font-family: Arial, Helvetica, sans-serif;
+  --font-size-body: 11pt;
+  --font-size-name: 24pt;
+  --font-size-title: 12.5pt;
+  --font-size-heading: 13pt;
+  --line-height: 1.4;
+  --accent-color: #222222;
+  --heading-color: #111111;
+  --text-color: #1a1a1a;
+  --muted-color: #444444;
+  --rule-color: #cccccc;
+  --section-gap: 14px;
+  --item-gap: 10px;
+  --page-margin: 0.5in;
+
+  max-width: 8.5in;
+  margin: 0 auto;
+  padding: var(--page-margin);
+  background: #ffffff;
+  color: var(--text-color);
+  font-family: var(--font-family);
+  font-size: var(--font-size-body);
+  line-height: var(--line-height);
+  box-sizing: border-box;
+}
+
+.resume-root * {
+  box-sizing: border-box;
+}
+
+/* ---------- Header ---------- */
+
+.resume-header {
+  margin-bottom: var(--section-gap);
+}
+
+.header-align-center .resume-header {
+  text-align: center;
+}
+
+.header-align-left .resume-header {
+  text-align: left;
+}
+
+.resume-header h1 {
+  font-size: var(--font-size-name);
+  font-weight: 700;
+  margin: 0 0 2px 0;
+  color: var(--heading-color);
+  letter-spacing: 0.2px;
+}
+
+.resume-header h1.name-uppercase {
+  text-transform: uppercase;
+  letter-spacing: 1.5px;
+}
+
+.professional-title {
+  font-size: var(--font-size-title);
+  color: var(--muted-color);
+  margin: 0 0 6px 0;
+  font-weight: 500;
+}
+
+.contact-line {
+  font-size: 10pt;
+  color: var(--muted-color);
+  margin: 0;
+}
+
+.contact-line a {
+  color: var(--muted-color);
+  text-decoration: none;
+}
+
+.contact-sep {
+  color: var(--rule-color);
+}
+
+.header-rule {
+  border: none;
+  border-top: 1px solid var(--rule-color);
+  margin: 10px 0 0 0;
+}
+
+/* ---------- Sections ---------- */
+
+.resume-section {
+  margin-top: var(--section-gap);
+}
+
+.resume-section:first-of-type {
+  margin-top: 0;
+}
+
+.section-heading {
+  font-size: var(--font-size-heading);
+  color: var(--accent-color);
+  margin: 0 0 8px 0;
+  font-weight: 700;
+}
+
+.section-body > *:last-child {
+  margin-bottom: 0;
+}
+
+/* Heading style variants - shared structure, cosmetic only */
+
+.heading-underline {
+  display: inline-block;
+  border-bottom: 1.5px solid var(--accent-color);
+  padding-bottom: 2px;
+}
+
+.heading-rule-below {
+  border-bottom: 1px solid var(--rule-color);
+  padding-bottom: 4px;
+}
+
+.heading-uppercase-spaced {
+  text-transform: uppercase;
+  letter-spacing: 1.8px;
+  font-size: calc(var(--font-size-heading) - 1pt);
+}
+
+.heading-boxed-label {
+  display: inline-block;
+  border: 1px solid var(--accent-color);
+  padding: 2px 8px;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  font-size: calc(var(--font-size-heading) - 1.5pt);
+}
+
+.heading-bold-caps {
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  font-weight: 800;
+}
+
+/* ---------- Items (experience / education / volunteer) ---------- */
+
+.experience-item,
+.education-item,
+.project-item,
+.volunteer-item {
+  margin-bottom: var(--item-gap);
+}
+
+.experience-item:last-child,
+.education-item:last-child,
+.project-item:last-child,
+.volunteer-item:last-child {
+  margin-bottom: 0;
+}
+
+.item-heading-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: 4px 12px;
+}
+
+.item-heading-row.date-block {
+  flex-direction: column;
+  align-items: flex-start;
+}
+
+.item-heading-main {
+  font-weight: 600;
+  color: var(--heading-color);
+}
+
+.item-position,
+.item-institution,
+.item-role,
+.item-project-name {
+  font-weight: 700;
+}
+
+.item-company,
+.item-org,
+.item-degree,
+.item-location {
+  font-weight: 400;
+  color: var(--text-color);
+}
+
+.item-dates {
+  font-size: 10pt;
+  color: var(--muted-color);
+  white-space: nowrap;
+}
+
+.item-bullets {
+  margin: 6px 0 0 0;
+  padding-left: 18px;
+}
+
+.item-bullets li {
+  margin-bottom: 3px;
+}
+
+.item-bullets li:last-child {
+  margin-bottom: 0;
+}
+
+.item-description,
+.item-technologies,
+.item-gpa {
+  margin: 4px 0 0 0;
+  font-size: var(--font-size-body);
+}
+
+.tech-label {
+  font-weight: 600;
+}
+
+/* ---------- Skills ---------- */
+
+.skills-categorized-block .skills-group-line {
+  margin: 0 0 4px 0;
+}
+
+.skills-categorized-block .skills-group-line:last-child {
+  margin-bottom: 0;
+}
+
+.skills-category {
+  font-weight: 700;
+}
+
+.skills-categorized-columns {
+  display: block;
+}
+
+.skills-categorized-columns .skills-group-line {
+  margin: 0 0 4px 0;
+}
+
+.skills-flat {
+  margin: 0;
+}
+
+/* ---------- Certifications / Awards / Publications / Memberships ---------- */
+
+.certification-item,
+.award-item,
+.publication-item {
+  margin-bottom: 6px;
+}
+
+.certification-item:last-child,
+.award-item:last-child,
+.publication-item:last-child {
+  margin-bottom: 0;
+}
+
+.award-description {
+  margin: 3px 0 0 0;
+}
+
+.memberships-list {
+  margin: 0;
+  padding-left: 18px;
+}
+
+.memberships-list li {
+  margin-bottom: 3px;
+}
+
+.memberships-list li:last-child {
+  margin-bottom: 0;
+}
+
+.summary-text {
+  margin: 0;
+}
+
+.languages-line {
+  margin: 0;
+}
+
+/* ---------- Page-break handling ---------- */
+
+.avoid-break {
+  break-inside: avoid;
+  page-break-inside: avoid;
+}
+
+.resume-section {
+  break-inside: avoid-page;
+}
+
+.section-heading {
+  break-after: avoid;
+  page-break-after: avoid;
+}
+
+/* ---------- Print ---------- */
+
+@page {
+  size: A4;
+  margin: 0.5in;
+}
+
+@media print {
+  .resume-root {
+    max-width: 100%;
+    padding: 0;
+    margin: 0;
+  }
+
+  a {
+    color: inherit !important;
+  }
+
+  .template-gallery-chrome {
+    display: none !important;
+  }
+}
+
+/* US Letter support: swap via a class on <html>/<body> if the consuming
+   app needs to target Letter explicitly instead of the A4 default. */
+@media print and (min-resolution: 0) {
+  .page-letter {
+    width: 8.5in;
+  }
+}

@@ -1,0 +1,67 @@
+/**
+ * Technical / Minimal category styles.
+ * Denser spacing and slightly smaller headings than the other
+ * categories, but still within the 10-12pt body / 13-18pt heading
+ * ranges and with the same shared structure.
+ */
+
+/* technical-01: Arial, slate-green accent, bold-caps headings, dense spacing */
+.tpl-technical-01 {
+  --font-family: Arial, Helvetica, sans-serif;
+  --accent-color: #1f4d3d;
+  --heading-color: #1a1a1a;
+  --text-color: #1a1a1a;
+  --muted-color: #4a4a4a;
+  --rule-color: #cfd6d2;
+  --font-size-body: 10.5pt;
+  --font-size-heading: 12.5pt;
+  --section-gap: 12px;
+  --item-gap: 8px;
+}
+
+/* technical-02: Arial body / monospace headings, uppercase-spaced, dense */
+.tpl-technical-02 {
+  --font-family: Arial, Helvetica, sans-serif;
+  --accent-color: #2b2b2b;
+  --heading-color: #1a1a1a;
+  --text-color: #1a1a1a;
+  --muted-color: #4a4a4a;
+  --rule-color: #d0d0d0;
+  --font-size-body: 10.5pt;
+  --font-size-heading: 11.5pt;
+  --section-gap: 12px;
+  --item-gap: 8px;
+}
+
+.tpl-technical-02 .resume-header h1,
+.tpl-technical-02 .section-heading {
+  font-family: Consolas, "Courier New", monospace;
+}
+
+/* technical-03: Verdana, underline headings, dense, pipe separator */
+.tpl-technical-03 {
+  --font-family: Verdana, Geneva, Arial, sans-serif;
+  --accent-color: #223a5e;
+  --heading-color: #1a1a1a;
+  --text-color: #1a1a1a;
+  --muted-color: #4a4a4a;
+  --rule-color: #ccd2da;
+  --font-size-body: 10pt;
+  --font-size-heading: 11.5pt;
+  --section-gap: 11px;
+  --item-gap: 8px;
+}
+
+/* technical-04: Arial, rule-below headings, dense, categorized-block skills */
+.tpl-technical-04 {
+  --font-family: Arial, Helvetica, sans-serif;
+  --accent-color: #35424a;
+  --heading-color: #1a1a1a;
+  --text-color: #1a1a1a;
+  --muted-color: #4a4a4a;
+  --rule-color: #cfd3d6;
+  --font-size-body: 10.5pt;
+  --font-size-heading: 12pt;
+  --section-gap: 12px;
+  --item-gap: 8px;
+}

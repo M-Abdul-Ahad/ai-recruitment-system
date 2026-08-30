@@ -1,0 +1,118 @@
+/**
+ * gallery.css
+ *
+ * Styling for the gallery/preview page ONLY. None of these rules
+ * affect the resume templates themselves - the gallery just arranges
+ * scaled-down previews in a grid for browsing.
+ */
+
+.template-gallery {
+  font-family: Arial, Helvetica, sans-serif;
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 32px 24px 64px;
+  color: #1a1a1a;
+}
+
+.gallery-title {
+  font-size: 28px;
+  margin: 0 0 8px 0;
+}
+
+.gallery-subtitle {
+  color: #555555;
+  margin: 0 0 32px 0;
+  max-width: 720px;
+  line-height: 1.5;
+}
+
+.gallery-category {
+  margin-bottom: 40px;
+}
+
+.gallery-category-title {
+  font-size: 20px;
+  border-bottom: 2px solid #e0e0e0;
+  padding-bottom: 8px;
+  margin-bottom: 20px;
+}
+
+.gallery-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 24px;
+}
+
+.gallery-card {
+  border: 1px solid #e2e2e2;
+  border-radius: 8px;
+  overflow: hidden;
+  background: #fafafa;
+  display: flex;
+  flex-direction: column;
+  transition: box-shadow 0.15s ease, border-color 0.15s ease;
+}
+
+.gallery-card:hover {
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.08);
+  border-color: #cfcfcf;
+}
+
+.gallery-card-selected {
+  border-color: #2a5c8a;
+  box-shadow: 0 0 0 2px #2a5c8a33;
+}
+
+.gallery-card-preview {
+  height: 340px;
+  overflow: hidden;
+  background: #ffffff;
+  border-bottom: 1px solid #ececec;
+  position: relative;
+}
+
+/* Scale the full-size resume down so it fits in the preview card while
+   keeping true-to-print proportions and text - this is presentational
+   only and is never applied when the template is used for real output
+   (print or PDF/DOCX generation). */
+.gallery-card-preview-scale {
+  transform: scale(0.42);
+  transform-origin: top left;
+  width: 238%;
+}
+
+.gallery-card-footer {
+  padding: 14px 16px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.gallery-card-name {
+  font-weight: 700;
+  font-size: 15px;
+}
+
+.gallery-card-description {
+  font-size: 12.5px;
+  color: #5a5a5a;
+  line-height: 1.4;
+  flex-grow: 1;
+}
+
+.gallery-card-button {
+  margin-top: 8px;
+  align-self: flex-start;
+  padding: 7px 14px;
+  font-size: 13px;
+  font-weight: 600;
+  border-radius: 5px;
+  border: 1px solid #2a5c8a;
+  background: #2a5c8a;
+  color: #ffffff;
+  cursor: pointer;
+}
+
+.gallery-card-button:hover {
+  background: #1f4a70;
+}

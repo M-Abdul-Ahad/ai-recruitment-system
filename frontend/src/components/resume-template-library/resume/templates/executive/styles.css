@@ -1,0 +1,60 @@
+/**
+ * Executive / Senior Professional category styles.
+ * Premium, higher-whitespace variants of the same structural rules.
+ */
+
+/* executive-01: Georgia, deep navy accent, rule-below headings, centered header */
+.tpl-executive-01 {
+  --font-family: Georgia, "Times New Roman", serif;
+  --accent-color: #14213d;
+  --heading-color: #14213d;
+  --text-color: #1a1a1a;
+  --muted-color: #4a4a4a;
+  --rule-color: #c3c8d1;
+  --font-size-body: 11pt;
+  --font-size-name: 26pt;
+  --section-gap: 18px;
+  --item-gap: 12px;
+}
+
+/* executive-02: Cambria/Georgia, underline headings, left header */
+.tpl-executive-02 {
+  --font-family: Cambria, Georgia, serif;
+  --accent-color: #3a3a3a;
+  --heading-color: #202020;
+  --text-color: #1c1c1c;
+  --muted-color: #545454;
+  --rule-color: #cfcfcf;
+  --font-size-body: 11pt;
+  --font-size-name: 25pt;
+  --section-gap: 17px;
+  --item-gap: 11px;
+}
+
+/* executive-03: Times New Roman, boxed-label headings, centered header, uppercase name */
+.tpl-executive-03 {
+  --font-family: "Times New Roman", Times, serif;
+  --accent-color: #262626;
+  --heading-color: #1e1e1e;
+  --text-color: #1a1a1a;
+  --muted-color: #4d4d4d;
+  --rule-color: #cccccc;
+  --font-size-body: 11pt;
+  --font-size-name: 25pt;
+  --section-gap: 17px;
+  --item-gap: 11px;
+}
+
+/* executive-04: Book Antiqua/Georgia, uppercase-spaced headings, left header */
+.tpl-executive-04 {
+  --font-family: "Book Antiqua", Georgia, serif;
+  --accent-color: #3d2b1f;
+  --heading-color: #2a2a2a;
+  --text-color: #1a1a1a;
+  --muted-color: #514236;
+  --rule-color: #d3c9bd;
+  --font-size-body: 11pt;
+  --font-size-name: 25pt;
+  --section-gap: 17px;
+  --item-gap: 11px;
+}
