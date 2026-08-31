@@ -5,51 +5,76 @@
  * see resume/styles/base.css for the shared structural rules.
  */
 
-/* classic-01: conservative Arial, navy accent, centered header, underline headings */
+/* classic-01: Classic Professional - Navy Accent, Centered Header, Underline Headings */
 .tpl-classic-01 {
-  --font-family: Arial, Helvetica, sans-serif;
-  --accent-color: #1a3350;
-  --heading-color: #14213d;
-  --text-color: #1a1a1a;
-  --muted-color: #4a4a4a;
-  --rule-color: #c7ccd1;
-  --font-size-body: 11pt;
-  --section-gap: 15px;
+  --font-family: Georgia, Arial, sans-serif;
+  --accent-color: #1e3a8a;
+  --heading-color: #0f172a;
+  --text-color: #1e293b;
+  --muted-color: #475569;
+  --rule-color: #cbd5e1;
+  --font-size-body: 10.5pt;
+  --font-size-name: 24pt;
+  --section-gap: 16px;
 }
 
-/* classic-02: Georgia serif, charcoal accent, left header, rule-below headings */
+.tpl-classic-01 .resume-header {
+  border-bottom: 2px double var(--accent-color);
+  padding-bottom: 8px;
+}
+
+/* classic-02: Traditional Serif - Georgia, Charcoal Accent, Left Header with Border Accent */
 .tpl-classic-02 {
   --font-family: Georgia, "Times New Roman", serif;
-  --accent-color: #2b2b2b;
-  --heading-color: #202020;
-  --text-color: #1c1c1c;
-  --muted-color: #545454;
-  --rule-color: #bfbfbf;
+  --accent-color: #262626;
+  --heading-color: #171717;
+  --text-color: #262626;
+  --muted-color: #525252;
+  --rule-color: #d4d4d4;
   --font-size-body: 10.5pt;
-  --section-gap: 14px;
-}
-
-/* classic-03: Times New Roman serif, muted burgundy accent, uppercase-spaced headings */
-.tpl-classic-03 {
-  --font-family: "Times New Roman", Times, serif;
-  --accent-color: #5c2430;
-  --heading-color: #2a2a2a;
-  --text-color: #1a1a1a;
-  --muted-color: #4d4d4d;
-  --rule-color: #cccccc;
-  --font-size-body: 11pt;
-  --section-gap: 14px;
-}
-
-/* classic-04: Verdana, boxed-label headings, centered header */
-.tpl-classic-04 {
-  --font-family: Verdana, Geneva, Arial, sans-serif;
-  --accent-color: #22344a;
-  --heading-color: #1c1c1c;
-  --text-color: #1a1a1a;
-  --muted-color: #4a4a4a;
-  --rule-color: #c9c9c9;
-  --font-size-body: 10.5pt;
-  --font-size-heading: 12pt;
+  --font-size-name: 23pt;
   --section-gap: 15px;
 }
+
+.tpl-classic-02 .resume-header {
+  border-left: 4px solid var(--accent-color);
+  padding-left: 14px;
+}
+
+/* classic-03: Traditional Formal - Burgundy Accent, Uppercase Spaced Headings */
+.tpl-classic-03 {
+  --font-family: "Times New Roman", Times, serif;
+  --accent-color: #701a2b;
+  --heading-color: #4a0e1a;
+  --text-color: #1c1917;
+  --muted-color: #57534e;
+  --rule-color: #e7e5e4;
+  --font-size-body: 11pt;
+  --font-size-name: 24pt;
+  --section-gap: 15px;
+}
+
+.tpl-classic-03 .resume-header h1 {
+  letter-spacing: 2px;
+}
+
+/* classic-04: Corporate Structured - Slate Corporate, Boxed Section Headings */
+.tpl-classic-04 {
+  --font-family: Verdana, Geneva, Arial, sans-serif;
+  --accent-color: #1e293b;
+  --heading-color: #0f172a;
+  --text-color: #334155;
+  --muted-color: #64748b;
+  --rule-color: #cbd5e1;
+  --font-size-body: 10pt;
+  --font-size-heading: 11.5pt;
+  --font-size-name: 22pt;
+  --section-gap: 15px;
+}
+
+.tpl-classic-04 .heading-boxed-label {
+  background-color: #f8fafc;
+  border-color: var(--accent-color);
+  border-radius: 2px;
+}
+

@@ -3,51 +3,72 @@
  * Same structural rules as base.css - only tokens differ per template.
  */
 
-/* modern-01: Helvetica/Arial, blue accent, underline headings, left header */
+/* modern-01: Modern Clean - Blue Accent, Left-Border-Bar Headings, Pill Skill Chips */
 .tpl-modern-01 {
-  --font-family: Helvetica, Arial, sans-serif;
-  --accent-color: #235789;
-  --heading-color: #1c2b36;
-  --text-color: #1c1c1c;
-  --muted-color: #52606d;
-  --rule-color: #d3dae0;
-  --font-size-body: 10.5pt;
-  --section-gap: 14px;
+  --font-family: Inter, Helvetica, Arial, sans-serif;
+  --accent-color: #2563eb;
+  --heading-color: #1e3a8a;
+  --text-color: #1e293b;
+  --muted-color: #475569;
+  --rule-color: #e2e8f0;
+  --chip-bg: #eff6ff;
+  --chip-color: #1e40af;
+  --chip-border: #bfdbfe;
+  --font-size-body: 10pt;
+  --font-size-name: 23pt;
+  --section-gap: 15px;
 }
 
-/* modern-02: Segoe UI fallback stack, slate accent, rule-below headings */
+/* modern-02: Modern Rule - Slate Theme, Gradient Rule Headings */
 .tpl-modern-02 {
-  --font-family: "Segoe UI", Arial, Helvetica, sans-serif;
-  --accent-color: #34495e;
-  --heading-color: #202a33;
-  --text-color: #1c1c1c;
-  --muted-color: #5b6b79;
-  --rule-color: #d6dbe0;
-  --font-size-body: 10.5pt;
-  --section-gap: 14px;
+  --font-family: "Segoe UI", Arial, sans-serif;
+  --accent-color: #334155;
+  --heading-color: #0f172a;
+  --text-color: #1e293b;
+  --muted-color: #64748b;
+  --rule-color: #cbd5e1;
+  --font-size-body: 10pt;
+  --font-size-name: 22pt;
+  --section-gap: 15px;
 }
 
-/* modern-03: Arial, muted indigo accent, bold-caps headings, pipe separator */
+.tpl-modern-02 {
+  border-top: 4px solid #334155;
+  padding-top: calc(var(--page-margin) - 4px);
+}
+
+/* modern-03: Modern Bold - Violet Royal Accent, Pill-Tag Headings */
 .tpl-modern-03 {
   --font-family: Arial, Helvetica, sans-serif;
-  --accent-color: #3c4a8c;
-  --heading-color: #24284a;
-  --text-color: #1a1a1a;
-  --muted-color: #545b70;
-  --rule-color: #d8dae6;
-  --font-size-body: 10.5pt;
-  --font-size-heading: 12.5pt;
-  --section-gap: 13px;
-}
-
-/* modern-04: Trebuchet MS, teal accent, boxed-label headings, centered header */
-.tpl-modern-04 {
-  --font-family: "Trebuchet MS", Arial, sans-serif;
-  --accent-color: #1f6f78;
-  --heading-color: #1b2e30;
-  --text-color: #1a1a1a;
-  --muted-color: #4e6367;
-  --rule-color: #d1dee0;
-  --font-size-body: 10.5pt;
+  --accent-color: #4f46e5;
+  --heading-color: #312e81;
+  --text-color: #1e293b;
+  --muted-color: #475569;
+  --rule-color: #e0e7ff;
+  --pill-bg: #e0e7ff;
+  --chip-bg: #f5f3ff;
+  --chip-color: #3730a3;
+  --chip-border: #c7d2fe;
+  --font-size-body: 10pt;
+  --font-size-heading: 11pt;
+  --font-size-name: 24pt;
   --section-gap: 14px;
 }
+
+/* modern-04: Modern Centered - Teal Accent, Pill Headings, Centered Header */
+.tpl-modern-04 {
+  --font-family: "Trebuchet MS", Arial, sans-serif;
+  --accent-color: #0d9488;
+  --heading-color: #115e59;
+  --text-color: #1e293b;
+  --muted-color: #475569;
+  --rule-color: #ccfbf1;
+  --pill-bg: #ccfbf1;
+  --chip-bg: #f0fdf4;
+  --chip-color: #115e59;
+  --chip-border: #99f6e4;
+  --font-size-body: 10pt;
+  --font-size-name: 23pt;
+  --section-gap: 15px;
+}
+

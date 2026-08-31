@@ -5,63 +5,82 @@
  * ranges and with the same shared structure.
  */
 
-/* technical-01: Arial, slate-green accent, bold-caps headings, dense spacing */
+/* technical-01: Technical Compact - Forest Emerald Accent, Bold-Caps, Pill Skill Chips */
 .tpl-technical-01 {
-  --font-family: Arial, Helvetica, sans-serif;
-  --accent-color: #1f4d3d;
-  --heading-color: #1a1a1a;
-  --text-color: #1a1a1a;
-  --muted-color: #4a4a4a;
-  --rule-color: #cfd6d2;
-  --font-size-body: 10.5pt;
-  --font-size-heading: 12.5pt;
-  --section-gap: 12px;
-  --item-gap: 8px;
-}
-
-/* technical-02: Arial body / monospace headings, uppercase-spaced, dense */
-.tpl-technical-02 {
-  --font-family: Arial, Helvetica, sans-serif;
-  --accent-color: #2b2b2b;
-  --heading-color: #1a1a1a;
-  --text-color: #1a1a1a;
-  --muted-color: #4a4a4a;
-  --rule-color: #d0d0d0;
-  --font-size-body: 10.5pt;
-  --font-size-heading: 11.5pt;
-  --section-gap: 12px;
-  --item-gap: 8px;
-}
-
-.tpl-technical-02 .resume-header h1,
-.tpl-technical-02 .section-heading {
-  font-family: Consolas, "Courier New", monospace;
-}
-
-/* technical-03: Verdana, underline headings, dense, pipe separator */
-.tpl-technical-03 {
-  --font-family: Verdana, Geneva, Arial, sans-serif;
-  --accent-color: #223a5e;
-  --heading-color: #1a1a1a;
-  --text-color: #1a1a1a;
-  --muted-color: #4a4a4a;
-  --rule-color: #ccd2da;
+  --font-family: Inter, Arial, sans-serif;
+  --accent-color: #047857;
+  --heading-color: #065f46;
+  --text-color: #1e293b;
+  --muted-color: #475569;
+  --rule-color: #a7f3d0;
+  --chip-bg: #ecfdf5;
+  --chip-color: #065f46;
+  --chip-border: #a7f3d0;
   --font-size-body: 10pt;
   --font-size-heading: 11.5pt;
-  --section-gap: 11px;
-  --item-gap: 8px;
-}
-
-/* technical-04: Arial, rule-below headings, dense, categorized-block skills */
-.tpl-technical-04 {
-  --font-family: Arial, Helvetica, sans-serif;
-  --accent-color: #35424a;
-  --heading-color: #1a1a1a;
-  --text-color: #1a1a1a;
-  --muted-color: #4a4a4a;
-  --rule-color: #cfd3d6;
-  --font-size-body: 10.5pt;
-  --font-size-heading: 12pt;
+  --font-size-name: 22pt;
   --section-gap: 12px;
   --item-gap: 8px;
 }
+
+/* technical-02: Technical Mono - Monospace Headings, Code Block Section Titles */
+.tpl-technical-02 {
+  --font-family: Arial, Helvetica, sans-serif;
+  --accent-color: #0f172a;
+  --heading-color: #0f172a;
+  --text-color: #1e293b;
+  --muted-color: #475569;
+  --rule-color: #cbd5e1;
+  --chip-bg: #f1f5f9;
+  --chip-color: #0f172a;
+  --chip-border: #cbd5e1;
+  --font-size-body: 10pt;
+  --font-size-heading: 11pt;
+  --font-size-name: 22pt;
+  --section-gap: 12px;
+  --item-gap: 8px;
+}
+
+.tpl-technical-02 .resume-header h1 {
+  font-family: Consolas, Monaco, "Courier New", monospace;
+  letter-spacing: -0.5px;
+}
+
+.tpl-technical-02 .professional-title {
+  font-family: Consolas, Monaco, "Courier New", monospace;
+  color: #0284c7;
+}
+
+/* technical-03: Technical Dense - Cobalt Blue, Compact Rhythm */
+.tpl-technical-03 {
+  --font-family: Segoe UI, Arial, sans-serif;
+  --accent-color: #1d4ed8;
+  --heading-color: #1e40af;
+  --text-color: #1e293b;
+  --muted-color: #475569;
+  --rule-color: #bfdbfe;
+  --font-size-body: 9.5pt;
+  --font-size-heading: 11pt;
+  --font-size-name: 21pt;
+  --section-gap: 10px;
+  --item-gap: 7px;
+}
+
+/* technical-04: Technical Structured - Cyan Accent, Left Border Bar, Pill Skill Chips */
+.tpl-technical-04 {
+  --font-family: Inter, Arial, sans-serif;
+  --accent-color: #0e7490;
+  --heading-color: #155e75;
+  --text-color: #1e293b;
+  --muted-color: #475569;
+  --rule-color: #a5f3fc;
+  --chip-bg: #ecfeff;
+  --chip-color: #155e75;
+  --chip-border: #a5f3fc;
+  --font-size-body: 10pt;
+  --font-size-heading: 11.5pt;
+  --font-size-name: 22pt;
+  --section-gap: 12px;
+  --item-gap: 8px;
+}
+

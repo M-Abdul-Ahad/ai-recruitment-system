@@ -3,58 +3,91 @@
  * Premium, higher-whitespace variants of the same structural rules.
  */
 
-/* executive-01: Georgia, deep navy accent, rule-below headings, centered header */
+/* executive-01: Executive Classic - Midnight Navy & Gold, Callout Headings, Centered Header */
 .tpl-executive-01 {
-  --font-family: Georgia, "Times New Roman", serif;
-  --accent-color: #14213d;
-  --heading-color: #14213d;
-  --text-color: #1a1a1a;
-  --muted-color: #4a4a4a;
-  --rule-color: #c3c8d1;
-  --font-size-body: 11pt;
+  --font-family: Garamond, Georgia, serif;
+  --accent-color: #0f172a;
+  --heading-color: #0f172a;
+  --text-color: #1e293b;
+  --muted-color: #475569;
+  --rule-color: #b45309;
+  --font-size-body: 10.5pt;
   --font-size-name: 26pt;
+  --font-size-title: 13pt;
   --section-gap: 18px;
   --item-gap: 12px;
 }
 
-/* executive-02: Cambria/Georgia, underline headings, left header */
+.tpl-executive-01 .resume-header {
+  border-top: 3px solid #b45309;
+  border-bottom: 1px solid #cbd5e1;
+  padding: 12px 0 10px 0;
+}
+
+/* executive-02: Executive Left - Charcoal Slate, Sleek Role Banner */
 .tpl-executive-02 {
   --font-family: Cambria, Georgia, serif;
-  --accent-color: #3a3a3a;
-  --heading-color: #202020;
-  --text-color: #1c1c1c;
-  --muted-color: #545454;
-  --rule-color: #cfcfcf;
-  --font-size-body: 11pt;
+  --accent-color: #1e293b;
+  --heading-color: #0f172a;
+  --text-color: #1e293b;
+  --muted-color: #475569;
+  --rule-color: #cbd5e1;
+  --font-size-body: 10.5pt;
   --font-size-name: 25pt;
   --section-gap: 17px;
   --item-gap: 11px;
 }
 
-/* executive-03: Times New Roman, boxed-label headings, centered header, uppercase name */
+.tpl-executive-02 .resume-header {
+  border-left: 4px solid #1e293b;
+  padding-left: 14px;
+}
+
+.tpl-executive-02 .summary-text {
+  background: #f8fafc;
+  border-left: 3px solid #64748b;
+  padding: 8px 12px;
+  border-radius: 0 4px 4px 0;
+}
+
+/* executive-03: Executive Formal - Deep Wine / Purple Accent, Boxed Headings */
 .tpl-executive-03 {
   --font-family: "Times New Roman", Times, serif;
-  --accent-color: #262626;
-  --heading-color: #1e1e1e;
-  --text-color: #1a1a1a;
-  --muted-color: #4d4d4d;
-  --rule-color: #cccccc;
-  --font-size-body: 11pt;
+  --accent-color: #581c87;
+  --heading-color: #3b0764;
+  --text-color: #1e293b;
+  --muted-color: #581c87;
+  --rule-color: #e9d5ff;
+  --font-size-body: 10.5pt;
   --font-size-name: 25pt;
   --section-gap: 17px;
   --item-gap: 11px;
 }
 
-/* executive-04: Book Antiqua/Georgia, uppercase-spaced headings, left header */
+.tpl-executive-03 .heading-boxed-label {
+  background: #faf5ff;
+  border-color: var(--accent-color);
+  font-weight: 700;
+}
+
+/* executive-04: Executive Warm - Warm Bronze / Espresso Accent, Warm Banner */
 .tpl-executive-04 {
   --font-family: "Book Antiqua", Georgia, serif;
-  --accent-color: #3d2b1f;
-  --heading-color: #2a2a2a;
-  --text-color: #1a1a1a;
-  --muted-color: #514236;
-  --rule-color: #d3c9bd;
-  --font-size-body: 11pt;
+  --accent-color: #451a03;
+  --heading-color: #451a03;
+  --text-color: #1c1917;
+  --muted-color: #78350f;
+  --rule-color: #fde68a;
+  --font-size-body: 10.5pt;
   --font-size-name: 25pt;
   --section-gap: 17px;
   --item-gap: 11px;
 }
+
+.tpl-executive-04 .resume-header {
+  background: #fffbeb;
+  border-left: 4px solid #b45309;
+  padding: 10px 14px;
+  border-radius: 0 6px 6px 0;
+}
+

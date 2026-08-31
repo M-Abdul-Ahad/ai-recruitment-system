@@ -26,7 +26,9 @@ export default function Section({
 
   return (
     <section className="resume-section">
-      <h2 className={`section-heading heading-${headingStyle}`}>{title}</h2>
+      <h2 className={`section-heading heading-${headingStyle}`}>
+        {headingStyle === "tech-code-block" ? `// ${title}` : title}
+      </h2>
       <div className="section-body">{children}</div>
     </section>
   );

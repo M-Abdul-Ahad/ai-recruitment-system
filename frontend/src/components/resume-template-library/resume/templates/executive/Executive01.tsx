@@ -8,7 +8,7 @@ const theme: ThemeConfig = {
   className: "tpl-executive-01",
   headerAlign: "center",
   nameCase: "uppercase",
-  sectionHeadingStyle: "rule-below",
+  sectionHeadingStyle: "executive-callout",
   skillsLayout: "categorized-block",
   showHeaderRule: true,
   contactSeparator: "dot",

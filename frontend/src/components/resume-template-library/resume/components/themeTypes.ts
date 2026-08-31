@@ -18,14 +18,20 @@ export type SectionHeadingStyle =
   | "rule-below" // full-width horizontal rule under the heading
   | "uppercase-spaced" // uppercase, letter-spaced, no rule
   | "boxed-label" // small bordered label box, common in executive styles
-  | "bold-caps"; // bold, uppercase, tight, no rule (dense technical look)
+  | "bold-caps" // bold, uppercase, tight, no rule (dense technical look)
+  | "left-border-bar" // solid accent bar on left of heading text
+  | "pill-tag" // subtle pill background chip for headings
+  | "gradient-rule" // modern accent rule under heading
+  | "tech-code-block" // monospace bracketed title e.g. // SECTION
+  | "executive-callout"; // executive top-accent header bar
 
 export type HeaderAlign = "left" | "center";
 
 export type SkillsLayout =
   | "categorized-block" // "Category: skill, skill, skill" stacked lines
   | "categorized-columns" // category label left, skills right, single line
-  | "flat-list"; // one flat comma-separated list (used when no categories)
+  | "flat-list" // one flat comma-separated list (used when no categories)
+  | "pill-chips"; // subtle pill tags for skill keywords
 
 export interface ThemeConfig {
   /** Unique root class name used for CSS scoping, e.g. "tpl-classic-01". */
@@ -41,3 +47,4 @@ export interface ThemeConfig {
   /** Divider line between date and other experience meta text. */
   dateStyle: "inline" | "block";
 }
+

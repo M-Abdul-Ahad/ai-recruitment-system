@@ -9,7 +9,7 @@ const theme: ThemeConfig = {
   headerAlign: "left",
   nameCase: "normal",
   sectionHeadingStyle: "bold-caps",
-  skillsLayout: "categorized-columns",
+  skillsLayout: "pill-chips",
   showHeaderRule: false,
   contactSeparator: "dot",
   dateStyle: "inline",

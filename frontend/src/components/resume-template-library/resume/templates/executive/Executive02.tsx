@@ -8,7 +8,7 @@ const theme: ThemeConfig = {
   className: "tpl-executive-02",
   headerAlign: "left",
   nameCase: "normal",
-  sectionHeadingStyle: "underline",
+  sectionHeadingStyle: "left-border-bar",
   skillsLayout: "categorized-columns",
   showHeaderRule: false,
   contactSeparator: "pipe",

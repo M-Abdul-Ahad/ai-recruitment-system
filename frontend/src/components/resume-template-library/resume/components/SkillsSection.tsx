@@ -19,6 +19,25 @@ export default function SkillsSection({ groups, theme }: SkillsSectionProps) {
     return <p className="skills-flat">{allSkills.join(", ")}</p>;
   }
 
+  if (theme.skillsLayout === "pill-chips") {
+    return (
+      <div className="skills-pill-chips">
+        {groups.map((group, i) => (
+          <div key={i} className="skills-group-row">
+            <span className="skills-category-label">{group.category}: </span>
+            <div className="skills-chips-wrapper">
+              {group.skills.map((skill, idx) => (
+                <span key={idx} className="skill-pill-chip">
+                  {skill}
+                </span>
+              ))}
+            </div>
+          </div>
+        ))}
+      </div>
+    );
+  }
+
   return (
     <div className={`skills-${theme.skillsLayout}`}>
       {groups.map((group, i) => (

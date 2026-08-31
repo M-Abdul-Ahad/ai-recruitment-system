@@ -157,6 +157,48 @@
   font-weight: 800;
 }
 
+.heading-left-border-bar {
+  border-left: 4px solid var(--accent-color);
+  padding-left: 8px;
+  font-weight: 700;
+}
+
+.heading-pill-tag {
+  display: inline-block;
+  background: var(--pill-bg, #f1f5f9);
+  color: var(--accent-color);
+  padding: 3px 10px;
+  border-radius: 6px;
+  font-size: calc(var(--font-size-heading) - 1.5pt);
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.heading-gradient-rule {
+  border-bottom: 2px solid var(--accent-color);
+  padding-bottom: 3px;
+  width: 100%;
+}
+
+.heading-tech-code-block {
+  font-family: Consolas, Monaco, "Courier New", monospace;
+  font-size: calc(var(--font-size-heading) - 1pt);
+  letter-spacing: 0.5px;
+  color: var(--accent-color);
+  border-bottom: 1px dashed var(--rule-color);
+  padding-bottom: 3px;
+}
+
+.heading-executive-callout {
+  text-transform: uppercase;
+  letter-spacing: 2px;
+  border-bottom: 2px double var(--accent-color);
+  padding-bottom: 3px;
+  font-weight: 800;
+}
+
+
 /* ---------- Items (experience / education / volunteer) ---------- */
 
 .experience-item,
@@ -261,6 +303,44 @@
 .skills-flat {
   margin: 0;
 }
+
+.skills-pill-chips {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.skills-group-row {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.skills-category-label {
+  font-weight: 700;
+  font-size: 10pt;
+  color: var(--heading-color);
+  min-width: 90px;
+}
+
+.skills-chips-wrapper {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 6px;
+}
+
+.skill-pill-chip {
+  display: inline-block;
+  background: var(--chip-bg, #f1f5f9);
+  color: var(--chip-color, var(--text-color));
+  border: 1px solid var(--chip-border, var(--rule-color));
+  padding: 1.5px 7px;
+  border-radius: 4px;
+  font-size: 9.5pt;
+  font-weight: 500;
+}
+
 
 /* ---------- Certifications / Awards / Publications / Memberships ---------- */
 
