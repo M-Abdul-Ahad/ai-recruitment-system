@@ -141,7 +141,44 @@ export const DEFAULT_SECTION_ORDER = [
 
 export type SectionKey = (typeof DEFAULT_SECTION_ORDER)[number];
 
-/** Small helper: true when an array field has at least one entry. */
+/** Small helper: true when an array field has at least one entry with non-empty content. */
 export function hasItems<T>(arr: T[] | undefined | null): arr is T[] {
-  return Array.isArray(arr) && arr.length > 0;
+  if (!Array.isArray(arr) || arr.length === 0) return false;
+  return arr.some((item) => {
+    if (!item) return false;
+    if (typeof item === "string") return item.trim().length > 0;
+    if (typeof item === "object") {
+      return Object.values(item).some((val) => {
+        if (typeof val === "string") return val.trim().length > 0;
+        if (Array.isArray(val)) return val.some((v) => typeof v === "string" && v.trim().length > 0);
+        return Boolean(val);
+      });
+    }
+    return true;
+  });
 }
+
+/** Fresh empty resume data default state. */
+export const emptyResumeData: ResumeData = {
+  personal: {
+    fullName: "",
+    professionalTitle: "",
+    email: "",
+    phone: "",
+    location: "",
+    linkedin: "",
+    github: "",
+    portfolio: "",
+  },
+  summary: "",
+  experience: [],
+  education: [],
+  skills: [],
+  projects: [],
+  certifications: [],
+  awards: [],
+  volunteerExperience: [],
+  languages: [],
+  memberships: [],
+};
+
