@@ -1,0 +1,102 @@
+/**
+ * Creative & Colorful category styles.
+ * Eye-catching modern themes with rich accent colors, vibrant pill tags,
+ * and high-contrast section anchors while maintaining 100% ATS safety.
+ */
+
+/* vibrant-01: Emerald Studio - Emerald Green Accent, Solid Left Bar, Mint Chips */
+.tpl-vibrant-01 {
+  --font-family: Inter, Helvetica, Arial, sans-serif;
+  --accent-color: #059669;
+  --heading-color: #065f46;
+  --text-color: #1f2937;
+  --muted-color: #4b5563;
+  --rule-color: #a7f3d0;
+  --pill-bg: #d1fae5;
+  --chip-bg: #ecfdf5;
+  --chip-color: #065f46;
+  --chip-border: #6ee7b7;
+  --font-size-body: 10pt;
+  --font-size-heading: 12pt;
+  --font-size-name: 24pt;
+  --section-gap: 15px;
+}
+
+.tpl-vibrant-01 .heading-left-border-bar {
+  background: #f0fdf4;
+  padding: 4px 10px;
+  border-radius: 0 6px 6px 0;
+  border-left: 4px solid #059669;
+}
+
+/* vibrant-02: Sapphire Luxe - Royal Blue Header Top Bar, Pill-Tag Headings */
+.tpl-vibrant-02 {
+  --font-family: "Segoe UI", Roboto, Arial, sans-serif;
+  --accent-color: #2563eb;
+  --heading-color: #1e40af;
+  --text-color: #1e293b;
+  --muted-color: #475569;
+  --rule-color: #bfdbfe;
+  --pill-bg: #dbeafe;
+  --chip-bg: #eff6ff;
+  --chip-color: #1e40af;
+  --chip-border: #93c5fd;
+  --font-size-body: 10pt;
+  --font-size-name: 24pt;
+  --section-gap: 15px;
+}
+
+.tpl-vibrant-02 {
+  border-top: 5px solid #2563eb;
+  padding-top: calc(var(--page-margin) - 5px);
+}
+
+.tpl-vibrant-02 .resume-header h1 {
+  color: #1e40af;
+}
+
+/* vibrant-03: Sunset Violet - Rich Violet & Warm Amber Highlight Tags */
+.tpl-vibrant-03 {
+  --font-family: Outfit, Inter, Arial, sans-serif;
+  --accent-color: #7c3aed;
+  --heading-color: #5b21b6;
+  --text-color: #1f2937;
+  --muted-color: #4b5563;
+  --rule-color: #ddd6fe;
+  --pill-bg: #f3e8ff;
+  --chip-bg: #fef3c7;
+  --chip-color: #92400e;
+  --chip-border: #fde68a;
+  --font-size-body: 10pt;
+  --font-size-name: 24pt;
+  --section-gap: 15px;
+}
+
+.tpl-vibrant-03 .resume-header {
+  border-bottom: 2px solid #7c3aed;
+  padding-bottom: 8px;
+}
+
+/* vibrant-04: Rose Crimson - Rose Accent, Gradient Underline Headings, Rose Chips */
+.tpl-vibrant-04 {
+  --font-family: Inter, Helvetica, sans-serif;
+  --accent-color: #e11d48;
+  --heading-color: #9f1239;
+  --text-color: #1e293b;
+  --muted-color: #475569;
+  --rule-color: #fecdd3;
+  --pill-bg: #ffe4e6;
+  --chip-bg: #fff1f2;
+  --chip-color: #be123c;
+  --chip-border: #fda4af;
+  --font-size-body: 10pt;
+  --font-size-name: 24pt;
+  --section-gap: 15px;
+}
+
+.tpl-vibrant-04 .heading-left-border-bar {
+  background: #fff1f2;
+  padding: 4px 10px;
+  border-radius: 0 6px 6px 0;
+  border-left: 4px solid #e11d48;
+}

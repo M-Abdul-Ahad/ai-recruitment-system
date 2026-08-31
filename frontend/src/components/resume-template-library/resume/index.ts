@@ -31,3 +31,9 @@ export { default as Technical01 } from "./templates/technical/Technical01";
 export { default as Technical02 } from "./templates/technical/Technical02";
 export { default as Technical03 } from "./templates/technical/Technical03";
 export { default as Technical04 } from "./templates/technical/Technical04";
+
+export { default as Vibrant01 } from "./templates/vibrant/Vibrant01";
+export { default as Vibrant02 } from "./templates/vibrant/Vibrant02";
+export { default as Vibrant03 } from "./templates/vibrant/Vibrant03";
+export { default as Vibrant04 } from "./templates/vibrant/Vibrant04";
+

@@ -8,14 +8,14 @@ import { ResumeData } from "./resumeTypes";
  */
 export const sampleResume: ResumeData = {
   personal: {
-    fullName: "Sarah Chen",
+    fullName: "ABDUL AHAD",
     professionalTitle: "Senior Product Manager",
-    email: "sarah.chen@example.com",
+    email: "abdul.ahad@example.com",
     phone: "+1 (415) 555-0142",
     location: "San Francisco, CA",
-    linkedin: "linkedin.com/in/sarahchen",
-    github: "github.com/sarahchen",
-    portfolio: "sarahchen.dev",
+    linkedin: "linkedin.com/in/abdulahad",
+    github: "github.com/abdulahad",
+    portfolio: "abdulahad.dev",
   },
 
   summary:

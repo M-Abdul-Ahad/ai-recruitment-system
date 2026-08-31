@@ -21,7 +21,12 @@ import Technical02 from "./templates/technical/Technical02";
 import Technical03 from "./templates/technical/Technical03";
 import Technical04 from "./templates/technical/Technical04";
 
-export type TemplateCategory = "classic" | "modern" | "executive" | "technical";
+import Vibrant01 from "./templates/vibrant/Vibrant01";
+import Vibrant02 from "./templates/vibrant/Vibrant02";
+import Vibrant03 from "./templates/vibrant/Vibrant03";
+import Vibrant04 from "./templates/vibrant/Vibrant04";
+
+export type TemplateCategory = "classic" | "modern" | "executive" | "technical" | "creative";
 
 export interface TemplateMeta {
   id: string;
@@ -223,6 +228,52 @@ export const resumeTemplates: TemplateMeta[] = [
     recommendedFor: "Technical professionals and researchers",
     component: Technical04,
   },
+
+  // ---------------- Creative / Colorful ----------------
+  {
+    id: "creative-01",
+    name: "Emerald Studio",
+    category: "creative",
+    description:
+      "Emerald green header theme with mint pill skill chips and solid left accent bar headings.",
+    bestFor: ["UX/UI Design", "Product", "Creative Tech", "Frontend"],
+    atsScore: "high",
+    recommendedFor: "Designers and creative tech professionals",
+    component: Vibrant01,
+  },
+  {
+    id: "creative-02",
+    name: "Sapphire Luxe",
+    category: "creative",
+    description:
+      "Vivid royal blue top border banner with pill-tag section headers and sapphire skill badges.",
+    bestFor: ["Marketing", "Growth", "Product Design", "Consulting"],
+    atsScore: "high",
+    recommendedFor: "Candidates wanting a bold, modern, colorful look",
+    component: Vibrant02,
+  },
+  {
+    id: "creative-03",
+    name: "Sunset Violet",
+    category: "creative",
+    description:
+      "Rich violet section headers with warm amber pill skill badges for an energetic presentation.",
+    bestFor: ["Media", "Branding", "Content", "Strategy"],
+    atsScore: "high",
+    recommendedFor: "Creative strategists and brand leaders",
+    component: Vibrant03,
+  },
+  {
+    id: "creative-04",
+    name: "Rose Crimson",
+    category: "creative",
+    description:
+      "Crimson rose section highlights with dark slate typography and pink chip tags.",
+    bestFor: ["Design", "Communications", "Product Leadership"],
+    atsScore: "high",
+    recommendedFor: "Professionals seeking a vibrant modern aesthetic",
+    component: Vibrant04,
+  },
 ];
 
 export function getTemplateById(id: string): TemplateMeta | undefined {
@@ -243,4 +294,6 @@ export const TEMPLATE_CATEGORIES: {
   { id: "modern", label: "Modern Professional" },
   { id: "executive", label: "Executive / Senior Professional" },
   { id: "technical", label: "Technical / Minimal" },
+  { id: "creative", label: "Creative & Colorful" },
 ];
+

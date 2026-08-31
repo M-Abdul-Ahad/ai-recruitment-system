@@ -63,23 +63,24 @@ const ZoomOutIcon = () => (
 const ResumeBuilder = () => {
   const { user } = useContext(AuthContext);
 
-  // Active Category Tab: "all" | "classic" | "modern" | "executive" | "technical"
+  // Active Category Tab: "all" | "classic" | "modern" | "executive" | "technical" | "creative"
   const [activeCategory, setActiveCategory] = useState("all");
 
   // Active Selected Template ID (null = viewing gallery, string = building resume)
   const [selectedTemplateId, setSelectedTemplateId] = useState(null);
 
-  // Modal Preview Template ID
-  const [modalTemplateId, setModalTemplateId] = useState(null);
+  // Dedicated Full-Page Preview Template ID (null = gallery/editor, string = preview page view)
+  const [previewTemplateId, setPreviewTemplateId] = useState(null);
 
-  // Modal Zoom Scale
-  const [modalScale, setModalScale] = useState(100);
+  // Preview Page Zoom Scale
+  const [previewScale, setPreviewScale] = useState(100);
 
-  // Editable Resume Data (initialized with user email & sample resume as fallback)
+  // Editable Resume Data (initialized with candidate name ABDUL AHAD & sample resume)
   const [resumeData, setResumeData] = useState(() => ({
     ...sampleResume,
     personal: {
       ...sampleResume.personal,
+      fullName: sampleResume.personal.fullName || "ABDUL AHAD",
       email: user?.email || sampleResume.personal.email,
     },
   }));
@@ -168,8 +169,8 @@ const ResumeBuilder = () => {
   const currentTemplate = selectedTemplateId ? getTemplateById(selectedTemplateId) : null;
   const SelectedComponent = currentTemplate ? currentTemplate.component : null;
 
-  const modalTemplate = modalTemplateId ? getTemplateById(modalTemplateId) : null;
-  const ModalComponent = modalTemplate ? modalTemplate.component : null;
+  const previewTemplate = previewTemplateId ? getTemplateById(previewTemplateId) : null;
+  const PreviewComponent = previewTemplate ? previewTemplate.component : null;
 
   return (
     <div className="apl-animate-fade space-y-6">
@@ -196,572 +197,590 @@ const ResumeBuilder = () => {
         }
       `}</style>
 
-      {/* ── PAGE HEADER ── */}
-      <div className="border-b border-[#D3D6C4] dark:border-[#383D28] pb-5 no-print flex flex-col md:flex-row md:items-center justify-between gap-4">
-        <div>
-          <span className="text-xs font-bold uppercase tracking-widest text-[#8A8F76] dark:text-[#9CA485]">
-            AI Generation Studio
-          </span>
-          <h1 className="text-2xl sm:text-3xl font-extrabold text-[#22241B] dark:text-[#EBF0DA] tracking-tight mt-1">
-            ATS Resume Builder & Template Library
-          </h1>
-          <p className="text-xs sm:text-sm text-[#52564A] dark:text-[#9CA485] mt-1">
-            Select an ATS-engineered template, customize your info, polish bullet points with AI, and download as a formatted PDF.
-          </p>
-        </div>
+      {/* ── VIEW A: FULL-PAGE DEDICATED PREVIEW PAGE ── */}
+      {previewTemplateId ? (
+        <div className="space-y-6 no-print">
+          {/* STICKY TOP PAGE NAVIGATION BAR */}
+          <div className="sticky top-0 z-40 bg-white/95 dark:bg-[#171911]/95 backdrop-blur-md p-4 rounded-2xl border border-[#D3D6C4] dark:border-[#383D28] shadow-md flex flex-col md:flex-row md:items-center justify-between gap-4">
+            <div className="flex items-center gap-3">
+              <button
+                type="button"
+                onClick={() => setPreviewTemplateId(null)}
+                className="apl-btn bg-[#ECEEDF] dark:bg-[#2A2E1E] text-[#52564A] dark:text-[#9CA485] hover:bg-[#D3D6C4] flex items-center gap-2"
+              >
+                <ArrowLeftIcon />
+                <span>Back to Template Gallery</span>
+              </button>
+              <div>
+                <div className="flex items-center gap-2">
+                  <h2 className="text-lg font-bold text-[#22241B] dark:text-[#EBF0DA]">
+                    {previewTemplate?.name}
+                  </h2>
+                  <span className="px-2 py-0.5 rounded text-[10px] uppercase font-bold bg-[#3D4127] text-[#D4DE95] dark:bg-[#D4DE95] dark:text-[#3D4127]">
+                    {previewTemplate?.category}
+                  </span>
+                </div>
+                <p className="text-xs text-[#52564A] dark:text-[#9CA485]">
+                  Full Page Layout Preview & Inspection
+                </p>
+              </div>
+            </div>
 
-        {selectedTemplateId && (
-          <div className="flex items-center gap-3">
+            <div className="flex items-center gap-3 self-end md:self-auto">
+              {/* ZOOM CONTROLS */}
+              <div className="flex items-center bg-[#ECEEDF] dark:bg-[#2A2E1E] rounded-xl p-1 border border-[#D3D6C4] dark:border-[#383D28]">
+                <button
+                  type="button"
+                  title="Zoom Out"
+                  onClick={() => setPreviewScale((prev) => Math.max(70, prev - 10))}
+                  className="p-1.5 rounded-lg text-[#52564A] dark:text-[#9CA485] hover:bg-[#D3D6C4] dark:hover:bg-[#383D28] transition"
+                >
+                  <ZoomOutIcon />
+                </button>
+                <span className="text-xs font-bold px-2.5 text-[#3D4127] dark:text-[#EBF0DA] min-w-[46px] text-center">
+                  {previewScale}%
+                </span>
+                <button
+                  type="button"
+                  title="Zoom In"
+                  onClick={() => setPreviewScale((prev) => Math.min(130, prev + 10))}
+                  className="p-1.5 rounded-lg text-[#52564A] dark:text-[#9CA485] hover:bg-[#D3D6C4] dark:hover:bg-[#383D28] transition"
+                >
+                  <ZoomInIcon />
+                </button>
+              </div>
+
+              <button
+                type="button"
+                onClick={() => {
+                  setSelectedTemplateId(previewTemplateId);
+                  setPreviewTemplateId(null);
+                }}
+                className="apl-btn apl-btn-primary shadow-md flex items-center gap-2"
+              >
+                <CheckIcon />
+                <span>Use This Template</span>
+              </button>
+            </div>
+          </div>
+
+          {/* DEDICATED FULL PAGE CANVAS */}
+          <div className="p-6 sm:p-12 bg-[#F4F6F0] dark:bg-[#11130C] rounded-3xl border border-[#D3D6C4] dark:border-[#383D28] flex justify-center items-start min-h-[850px] overflow-x-auto">
+            <div
+              className="bg-white rounded-xl shadow-2xl border border-[#D3D6C4] transition-transform duration-200 origin-top overflow-hidden"
+              style={{
+                transform: `scale(${previewScale / 100})`,
+                width: "100%",
+                maxWidth: "840px",
+              }}
+            >
+              {PreviewComponent && <PreviewComponent resume={resumeData} />}
+            </div>
+          </div>
+
+          {/* BOTTOM ACTION BAR */}
+          <div className="flex items-center justify-between p-4 rounded-2xl bg-[#ECEEDF] dark:bg-[#2A2E1E] border border-[#D3D6C4] dark:border-[#383D28]">
             <button
               type="button"
-              onClick={() => setSelectedTemplateId(null)}
-              className="apl-btn bg-[#ECEEDF] dark:bg-[#2A2E1E] text-[#52564A] dark:text-[#9CA485] hover:bg-[#D3D6C4]"
+              onClick={() => setPreviewTemplateId(null)}
+              className="apl-btn bg-white dark:bg-[#171911] text-[#52564A] dark:text-[#9CA485] hover:bg-[#D3D6C4]"
             >
               <ArrowLeftIcon />
-              <span>Back to Templates</span>
+              <span>Back to Template Gallery</span>
             </button>
             <button
               type="button"
-              onClick={handlePrint}
-              className="apl-btn apl-btn-primary shadow-md"
+              onClick={() => {
+                setSelectedTemplateId(previewTemplateId);
+                setPreviewTemplateId(null);
+              }}
+              className="apl-btn apl-btn-primary shadow-md flex items-center gap-2"
             >
-              <PrinterIcon />
-              <span>Download / Print PDF</span>
+              <CheckIcon />
+              <span>Select & Start Building</span>
             </button>
           </div>
-        )}
-      </div>
+        </div>
+      ) : (
+        <>
+          {/* ── PAGE HEADER ── */}
+          <div className="border-b border-[#D3D6C4] dark:border-[#383D28] pb-5 no-print flex flex-col md:flex-row md:items-center justify-between gap-4">
+            <div>
+              <span className="text-xs font-bold uppercase tracking-widest text-[#8A8F76] dark:text-[#9CA485]">
+                AI Generation Studio
+              </span>
+              <h1 className="text-2xl sm:text-3xl font-extrabold text-[#22241B] dark:text-[#EBF0DA] tracking-tight mt-1">
+                ATS Resume Builder & Template Library
+              </h1>
+              <p className="text-xs sm:text-sm text-[#52564A] dark:text-[#9CA485] mt-1">
+                Select an ATS-engineered template, customize your info, polish bullet points with AI, and download as a formatted PDF.
+              </p>
+            </div>
 
-      {/* ── VIEW 1: TEMPLATE GALLERY & CATEGORIES ── */}
-      {!selectedTemplateId ? (
-        <div className="space-y-6 no-print">
-          {/* CATEGORY TABS */}
-          <div className="flex items-center gap-2 overflow-x-auto pb-2 border-b border-[#D3D6C4] dark:border-[#383D28]">
-            <button
-              type="button"
-              onClick={() => setActiveCategory("all")}
-              className={`px-4 py-2 rounded-xl text-xs font-bold transition whitespace-nowrap ${
-                activeCategory === "all"
-                  ? "bg-[#3D4127] text-[#D4DE95] dark:bg-[#D4DE95] dark:text-[#3D4127] shadow-sm"
-                  : "bg-[#ECEEDF] dark:bg-[#2A2E1E] text-[#52564A] dark:text-[#9CA485] hover:bg-[#D4DE95]/50"
-              }`}
-            >
-              All Templates ({resumeTemplates.length})
-            </button>
-
-            {TEMPLATE_CATEGORIES.map((cat) => {
-              const count = resumeTemplates.filter((t) => t.category === cat.id).length;
-              return (
+            {selectedTemplateId && (
+              <div className="flex items-center gap-3">
                 <button
-                  key={cat.id}
                   type="button"
-                  onClick={() => setActiveCategory(cat.id)}
+                  onClick={() => setSelectedTemplateId(null)}
+                  className="apl-btn bg-[#ECEEDF] dark:bg-[#2A2E1E] text-[#52564A] dark:text-[#9CA485] hover:bg-[#D3D6C4]"
+                >
+                  <ArrowLeftIcon />
+                  <span>Back to Templates</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={handlePrint}
+                  className="apl-btn apl-btn-primary shadow-md"
+                >
+                  <PrinterIcon />
+                  <span>Download / Print PDF</span>
+                </button>
+              </div>
+            )}
+          </div>
+
+          {/* ── VIEW 1: TEMPLATE GALLERY & CATEGORIES ── */}
+          {!selectedTemplateId ? (
+            <div className="space-y-6 no-print">
+              {/* CATEGORY TABS */}
+              <div className="flex items-center gap-2 overflow-x-auto pb-2 border-b border-[#D3D6C4] dark:border-[#383D28]">
+                <button
+                  type="button"
+                  onClick={() => setActiveCategory("all")}
                   className={`px-4 py-2 rounded-xl text-xs font-bold transition whitespace-nowrap ${
-                    activeCategory === cat.id
+                    activeCategory === "all"
                       ? "bg-[#3D4127] text-[#D4DE95] dark:bg-[#D4DE95] dark:text-[#3D4127] shadow-sm"
                       : "bg-[#ECEEDF] dark:bg-[#2A2E1E] text-[#52564A] dark:text-[#9CA485] hover:bg-[#D4DE95]/50"
                   }`}
                 >
-                  {cat.label} ({count})
+                  All Templates ({resumeTemplates.length})
                 </button>
-              );
-            })}
-          </div>
 
-          {/* TEMPLATE CARDS GRID */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {filteredTemplates.map((template) => {
-              const TemplateComp = template.component;
-              return (
-                <div
-                  key={template.id}
-                  className="apl-card apl-card-hover flex flex-col justify-between space-y-4 group border border-[#D3D6C4] dark:border-[#383D28] overflow-hidden"
-                >
-                  {/* TOP CARD HEADER */}
-                  <div>
-                    <div className="flex items-center justify-between gap-2 mb-2">
-                      <span className="px-2 py-0.5 rounded text-[10px] uppercase tracking-wider font-bold bg-[#3D4127] text-[#D4DE95] dark:bg-[#D4DE95] dark:text-[#3D4127]">
-                        {template.category}
-                      </span>
-                      <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300 flex items-center gap-1">
-                        <span>✓</span> 99% ATS Pass Rate
-                      </span>
-                    </div>
-
-                    <h3 className="text-lg font-bold text-[#22241B] dark:text-[#EBF0DA]">
-                      {template.name}
-                    </h3>
-                    <p className="text-xs text-[#52564A] dark:text-[#9CA485] mt-1 line-clamp-2 leading-relaxed">
-                      {template.description}
-                    </p>
-                  </div>
-
-                  {/* MINI SCALED PREVIEW BOX */}
-                  <div className="relative w-full h-56 bg-white rounded-lg border border-[#D3D6C4] overflow-hidden select-none pointer-events-none shadow-inner group-hover:border-[#3D4127] transition">
-                    <div
-                      className="absolute top-0 left-0 w-[800px] origin-top-left transform scale-[0.38] bg-white p-4"
-                      style={{ height: "600px" }}
+                {TEMPLATE_CATEGORIES.map((cat) => {
+                  const count = resumeTemplates.filter((t) => t.category === cat.id).length;
+                  return (
+                    <button
+                      key={cat.id}
+                      type="button"
+                      onClick={() => setActiveCategory(cat.id)}
+                      className={`px-4 py-2 rounded-xl text-xs font-bold transition whitespace-nowrap ${
+                        activeCategory === cat.id
+                          ? "bg-[#3D4127] text-[#D4DE95] dark:bg-[#D4DE95] dark:text-[#3D4127] shadow-sm"
+                          : "bg-[#ECEEDF] dark:bg-[#2A2E1E] text-[#52564A] dark:text-[#9CA485] hover:bg-[#D4DE95]/50"
+                      }`}
                     >
-                      <TemplateComp resume={resumeData} />
+                      {cat.label} ({count})
+                    </button>
+                  );
+                })}
+              </div>
+
+              {/* TEMPLATE CARDS GRID */}
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {filteredTemplates.map((template) => {
+                  const TemplateComp = template.component;
+                  return (
+                    <div
+                      key={template.id}
+                      className="apl-card apl-card-hover flex flex-col justify-between space-y-4 group border border-[#D3D6C4] dark:border-[#383D28] overflow-hidden"
+                    >
+                      {/* TOP CARD HEADER */}
+                      <div>
+                        <div className="flex items-center justify-between gap-2 mb-2">
+                          <span className="px-2 py-0.5 rounded text-[10px] uppercase tracking-wider font-bold bg-[#3D4127] text-[#D4DE95] dark:bg-[#D4DE95] dark:text-[#3D4127]">
+                            {template.category}
+                          </span>
+                          <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300 flex items-center gap-1">
+                            <span>✓</span> 99% ATS Pass Rate
+                          </span>
+                        </div>
+
+                        <h3 className="text-lg font-bold text-[#22241B] dark:text-[#EBF0DA]">
+                          {template.name}
+                        </h3>
+                        <p className="text-xs text-[#52564A] dark:text-[#9CA485] mt-1 line-clamp-2 leading-relaxed">
+                          {template.description}
+                        </p>
+                      </div>
+
+                      {/* MINI SCALED PREVIEW BOX */}
+                      <div className="relative w-full h-56 bg-white rounded-lg border border-[#D3D6C4] overflow-hidden select-none pointer-events-none shadow-inner group-hover:border-[#3D4127] transition">
+                        <div
+                          className="absolute top-0 left-0 w-[800px] origin-top-left transform scale-[0.38] bg-white p-4"
+                          style={{ height: "600px" }}
+                        >
+                          <TemplateComp resume={resumeData} />
+                        </div>
+                      </div>
+
+                      {/* BEST FOR TAGS */}
+                      <div className="flex flex-wrap gap-1">
+                        {template.bestFor.slice(0, 3).map((tag, i) => (
+                          <span
+                            key={i}
+                            className="text-[10px] font-medium px-2 py-0.5 rounded bg-[#ECEEDF] dark:bg-[#2A2E1E] text-[#52564A] dark:text-[#9CA485]"
+                          >
+                            {tag}
+                          </span>
+                        ))}
+                      </div>
+
+                      {/* ACTIONS */}
+                      <div className="flex items-center gap-2 pt-2 border-t border-[#D3D6C4] dark:border-[#383D28]">
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setPreviewScale(100);
+                            setPreviewTemplateId(template.id);
+                          }}
+                          className="flex-1 py-2 px-3 rounded-lg text-xs font-bold border border-[#8A8F76] text-[#3D4127] dark:text-[#EBF0DA] hover:bg-[#ECEEDF] dark:hover:bg-[#2A2E1E] transition flex items-center justify-center gap-1.5"
+                        >
+                          <EyeIcon />
+                          <span>Preview</span>
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setSelectedTemplateId(template.id)}
+                          className="flex-1 py-2 px-3 rounded-lg text-xs font-bold bg-[#3D4127] text-[#D4DE95] hover:bg-[#2C301B] dark:bg-[#D4DE95] dark:text-[#3D4127] transition flex items-center justify-center gap-1.5 shadow-sm"
+                        >
+                          <CheckIcon />
+                          <span>Use Template</span>
+                        </button>
+                      </div>
                     </div>
+                  );
+                })}
+              </div>
+            </div>
+          ) : (
+            /* ── VIEW 2: BUILDER & LIVE PREVIEW EDITOR ── */
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
+              {/* LEFT: FORM EDITOR & AI ENHANCER (5 cols) */}
+              <div className="lg:col-span-5 space-y-6 no-print">
+                {/* TEMPLATE INFO BANNER */}
+                <div className="p-4 rounded-2xl bg-[#ECEEDF] dark:bg-[#2A2E1E] border border-[#D3D6C4] dark:border-[#383D28] flex items-center justify-between">
+                  <div>
+                    <span className="text-[10px] uppercase font-bold text-[#8A8F76]">Active Template</span>
+                    <h4 className="text-base font-bold text-[#22241B] dark:text-[#EBF0DA]">
+                      {currentTemplate?.name}
+                    </h4>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setSelectedTemplateId(null)}
+                    className="text-xs font-bold text-[#636B2F] dark:text-[#D4DE95] underline hover:opacity-80"
+                  >
+                    Change Template
+                  </button>
+                </div>
+
+                {/* AI ENHANCER CARD */}
+                <div className="apl-card space-y-4 border-2 border-[#D4DE95] dark:border-[#3D4127]">
+                  <div className="flex items-center justify-between border-b border-[#D3D6C4] dark:border-[#383D28] pb-3">
+                    <div className="flex items-center gap-2">
+                      <div className="w-7 h-7 rounded-lg bg-[#D4DE95] text-[#3D4127] flex items-center justify-center">
+                        <SparklesIcon />
+                      </div>
+                      <h3 className="text-sm font-bold text-[#22241B] dark:text-[#EBF0DA]">
+                        AI Content Enhancer
+                      </h3>
+                    </div>
+                    <span className="apl-pill apl-pill-accent text-[10px]">Gemini AI</span>
                   </div>
 
-                  {/* BEST FOR TAGS */}
-                  <div className="flex flex-wrap gap-1">
-                    {template.bestFor.slice(0, 3).map((tag, i) => (
-                      <span
-                        key={i}
-                        className="text-[10px] font-medium px-2 py-0.5 rounded bg-[#ECEEDF] dark:bg-[#2A2E1E] text-[#52564A] dark:text-[#9CA485]"
+                  {aiSuccessMsg && (
+                    <div className="p-3 rounded-lg bg-[#E2E8D5] text-[#3D4127] text-xs font-semibold flex items-center gap-2">
+                      <span>✓</span>
+                      <span>{aiSuccessMsg}</span>
+                    </div>
+                  )}
+
+                  <div className="space-y-3">
+                    <div>
+                      <label className="apl-label text-xs">Target Job Title / Role</label>
+                      <input
+                        type="text"
+                        value={aiPromptRole}
+                        onChange={(e) => setAiPromptRole(e.target.value)}
+                        placeholder="e.g. Senior Software Engineer"
+                        className="apl-input text-xs"
+                      />
+                    </div>
+                    <div>
+                      <label className="apl-label text-xs">Key Tech Stack / Competencies</label>
+                      <input
+                        type="text"
+                        value={aiPromptSkills}
+                        onChange={(e) => setAiPromptSkills(e.target.value)}
+                        placeholder="e.g. React, Node.js, Python, AWS"
+                        className="apl-input text-xs"
+                      />
+                    </div>
+                    <button
+                      type="button"
+                      onClick={handleAiEnhance}
+                      disabled={isEnhancing}
+                      className="apl-btn apl-btn-primary w-full py-2.5 text-xs shadow-sm flex items-center justify-center gap-2"
+                    >
+                      <SparklesIcon />
+                      <span>{isEnhancing ? "Enhancing Resume..." : "Auto-Enhance Resume with AI"}</span>
+                    </button>
+                  </div>
+                </div>
+
+                {/* EDITOR TABS */}
+                <div className="apl-card space-y-5">
+                  <div className="flex items-center gap-1 overflow-x-auto pb-2 border-b border-[#D3D6C4] dark:border-[#383D28]">
+                    {["personal", "summary", "experience", "education", "skills"].map((tab) => (
+                      <button
+                        key={tab}
+                        type="button"
+                        onClick={() => setEditorTab(tab)}
+                        className={`px-3 py-1.5 rounded-lg text-xs font-bold capitalize transition ${
+                          editorTab === tab
+                            ? "bg-[#3D4127] text-[#D4DE95] dark:bg-[#D4DE95] dark:text-[#3D4127]"
+                            : "text-[#52564A] dark:text-[#9CA485] hover:bg-[#ECEEDF] dark:hover:bg-[#2A2E1E]"
+                        }`}
                       >
-                        {tag}
-                      </span>
+                        {tab}
+                      </button>
                     ))}
                   </div>
 
-                  {/* ACTIONS */}
-                  <div className="flex items-center gap-2 pt-2 border-t border-[#D3D6C4] dark:border-[#383D28]">
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setModalScale(100);
-                        setModalTemplateId(template.id);
-                      }}
-                      className="flex-1 py-2 px-3 rounded-lg text-xs font-bold border border-[#8A8F76] text-[#3D4127] dark:text-[#EBF0DA] hover:bg-[#ECEEDF] dark:hover:bg-[#2A2E1E] transition flex items-center justify-center gap-1.5"
-                    >
-                      <EyeIcon />
-                      <span>Preview</span>
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setSelectedTemplateId(template.id)}
-                      className="flex-1 py-2 px-3 rounded-lg text-xs font-bold bg-[#3D4127] text-[#D4DE95] hover:bg-[#2C301B] dark:bg-[#D4DE95] dark:text-[#3D4127] transition flex items-center justify-center gap-1.5 shadow-sm"
-                    >
-                      <CheckIcon />
-                      <span>Use Template</span>
-                    </button>
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        </div>
-      ) : (
-        /* ── VIEW 2: BUILDER & LIVE PREVIEW EDITOR ── */
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
-          {/* LEFT: FORM EDITOR & AI ENHANCER (5 cols) */}
-          <div className="lg:col-span-5 space-y-6 no-print">
-            {/* TEMPLATE INFO BANNER */}
-            <div className="p-4 rounded-2xl bg-[#ECEEDF] dark:bg-[#2A2E1E] border border-[#D3D6C4] dark:border-[#383D28] flex items-center justify-between">
-              <div>
-                <span className="text-[10px] uppercase font-bold text-[#8A8F76]">Active Template</span>
-                <h4 className="text-base font-bold text-[#22241B] dark:text-[#EBF0DA]">
-                  {currentTemplate?.name}
-                </h4>
-              </div>
-              <button
-                type="button"
-                onClick={() => setSelectedTemplateId(null)}
-                className="text-xs font-bold text-[#636B2F] dark:text-[#D4DE95] underline hover:opacity-80"
-              >
-                Change Template
-              </button>
-            </div>
-
-            {/* AI ENHANCER CARD */}
-            <div className="apl-card space-y-4 border-2 border-[#D4DE95] dark:border-[#3D4127]">
-              <div className="flex items-center justify-between border-b border-[#D3D6C4] dark:border-[#383D28] pb-3">
-                <div className="flex items-center gap-2">
-                  <div className="w-7 h-7 rounded-lg bg-[#D4DE95] text-[#3D4127] flex items-center justify-center">
-                    <SparklesIcon />
-                  </div>
-                  <h3 className="text-sm font-bold text-[#22241B] dark:text-[#EBF0DA]">
-                    AI Content Enhancer
-                  </h3>
-                </div>
-                <span className="apl-pill apl-pill-accent text-[10px]">Gemini AI</span>
-              </div>
-
-              {aiSuccessMsg && (
-                <div className="p-3 rounded-lg bg-[#E2E8D5] text-[#3D4127] text-xs font-semibold flex items-center gap-2">
-                  <span>✓</span>
-                  <span>{aiSuccessMsg}</span>
-                </div>
-              )}
-
-              <div className="space-y-3">
-                <div>
-                  <label className="apl-label text-xs">Target Job Title / Role</label>
-                  <input
-                    type="text"
-                    value={aiPromptRole}
-                    onChange={(e) => setAiPromptRole(e.target.value)}
-                    placeholder="e.g. Senior Software Engineer"
-                    className="apl-input text-xs"
-                  />
-                </div>
-                <div>
-                  <label className="apl-label text-xs">Key Tech Stack / Competencies</label>
-                  <input
-                    type="text"
-                    value={aiPromptSkills}
-                    onChange={(e) => setAiPromptSkills(e.target.value)}
-                    placeholder="e.g. React, Node.js, Python, AWS"
-                    className="apl-input text-xs"
-                  />
-                </div>
-                <button
-                  type="button"
-                  onClick={handleAiEnhance}
-                  disabled={isEnhancing}
-                  className="apl-btn apl-btn-primary w-full py-2.5 text-xs shadow-sm flex items-center justify-center gap-2"
-                >
-                  <SparklesIcon />
-                  <span>{isEnhancing ? "Enhancing Resume..." : "Auto-Enhance Resume with AI"}</span>
-                </button>
-              </div>
-            </div>
-
-            {/* EDITOR TABS */}
-            <div className="apl-card space-y-5">
-              <div className="flex items-center gap-1 overflow-x-auto pb-2 border-b border-[#D3D6C4] dark:border-[#383D28]">
-                {["personal", "summary", "experience", "education", "skills"].map((tab) => (
-                  <button
-                    key={tab}
-                    type="button"
-                    onClick={() => setEditorTab(tab)}
-                    className={`px-3 py-1.5 rounded-lg text-xs font-bold capitalize transition ${
-                      editorTab === tab
-                        ? "bg-[#3D4127] text-[#D4DE95] dark:bg-[#D4DE95] dark:text-[#3D4127]"
-                        : "text-[#52564A] dark:text-[#9CA485] hover:bg-[#ECEEDF] dark:hover:bg-[#2A2E1E]"
-                    }`}
-                  >
-                    {tab}
-                  </button>
-                ))}
-              </div>
-
-              {/* SECTION 1: PERSONAL INFO */}
-              {editorTab === "personal" && (
-                <div className="space-y-3">
-                  <div>
-                    <label className="apl-label text-xs">Full Name</label>
-                    <input
-                      type="text"
-                      name="fullName"
-                      value={resumeData.personal.fullName}
-                      onChange={handlePersonalChange}
-                      className="apl-input text-xs"
-                    />
-                  </div>
-                  <div>
-                    <label className="apl-label text-xs">Professional Title</label>
-                    <input
-                      type="text"
-                      name="professionalTitle"
-                      value={resumeData.personal.professionalTitle || ""}
-                      onChange={handlePersonalChange}
-                      className="apl-input text-xs"
-                    />
-                  </div>
-                  <div className="grid grid-cols-2 gap-3">
-                    <div>
-                      <label className="apl-label text-xs">Email</label>
-                      <input
-                        type="email"
-                        name="email"
-                        value={resumeData.personal.email || ""}
-                        onChange={handlePersonalChange}
-                        className="apl-input text-xs"
-                      />
-                    </div>
-                    <div>
-                      <label className="apl-label text-xs">Phone</label>
-                      <input
-                        type="text"
-                        name="phone"
-                        value={resumeData.personal.phone || ""}
-                        onChange={handlePersonalChange}
-                        className="apl-input text-xs"
-                      />
-                    </div>
-                  </div>
-                  <div className="grid grid-cols-2 gap-3">
-                    <div>
-                      <label className="apl-label text-xs">Location</label>
-                      <input
-                        type="text"
-                        name="location"
-                        value={resumeData.personal.location || ""}
-                        onChange={handlePersonalChange}
-                        className="apl-input text-xs"
-                      />
-                    </div>
-                    <div>
-                      <label className="apl-label text-xs">LinkedIn</label>
-                      <input
-                        type="text"
-                        name="linkedin"
-                        value={resumeData.personal.linkedin || ""}
-                        onChange={handlePersonalChange}
-                        className="apl-input text-xs"
-                      />
-                    </div>
-                  </div>
-                </div>
-              )}
-
-              {/* SECTION 2: SUMMARY */}
-              {editorTab === "summary" && (
-                <div className="space-y-3">
-                  <label className="apl-label text-xs">Professional Summary</label>
-                  <textarea
-                    rows={6}
-                    value={resumeData.summary || ""}
-                    onChange={handleSummaryChange}
-                    className="apl-textarea text-xs"
-                    placeholder="Write a compelling executive summary..."
-                  />
-                </div>
-              )}
-
-              {/* SECTION 3: EXPERIENCE */}
-              {editorTab === "experience" && (
-                <div className="space-y-4">
-                  {resumeData.experience?.map((exp, index) => (
-                    <div
-                      key={index}
-                      className="p-3 rounded-xl border border-[#D3D6C4] dark:border-[#383D28] space-y-2 bg-[#F8F9F1] dark:bg-[#171911]"
-                    >
-                      <span className="text-[10px] font-bold uppercase text-[#8A8F76]">
-                        Position #{index + 1}
-                      </span>
-                      <div className="grid grid-cols-2 gap-2">
+                  {/* SECTION 1: PERSONAL INFO */}
+                  {editorTab === "personal" && (
+                    <div className="space-y-3">
+                      <div>
+                        <label className="apl-label text-xs">Full Name</label>
                         <input
                           type="text"
-                          value={exp.position}
-                          onChange={(e) => {
-                            const newExp = [...resumeData.experience];
-                            newExp[index].position = e.target.value;
-                            setResumeData({ ...resumeData, experience: newExp });
-                          }}
-                          placeholder="Position Title"
-                          className="apl-input text-xs"
-                        />
-                        <input
-                          type="text"
-                          value={exp.company}
-                          onChange={(e) => {
-                            const newExp = [...resumeData.experience];
-                            newExp[index].company = e.target.value;
-                            setResumeData({ ...resumeData, experience: newExp });
-                          }}
-                          placeholder="Company Name"
+                          name="fullName"
+                          value={resumeData.personal.fullName}
+                          onChange={handlePersonalChange}
                           className="apl-input text-xs"
                         />
                       </div>
                       <div>
-                        <label className="apl-label text-[11px] mt-1">Bullet Achievements (one per line)</label>
-                        <textarea
-                          rows={4}
-                          value={exp.bullets.join("\n")}
-                          onChange={(e) => {
-                            const newExp = [...resumeData.experience];
-                            newExp[index].bullets = e.target.value.split("\n");
-                            setResumeData({ ...resumeData, experience: newExp });
-                          }}
-                          className="apl-textarea text-xs"
-                        />
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
-
-              {/* SECTION 4: EDUCATION */}
-              {editorTab === "education" && (
-                <div className="space-y-4">
-                  {resumeData.education?.map((edu, index) => (
-                    <div
-                      key={index}
-                      className="p-3 rounded-xl border border-[#D3D6C4] dark:border-[#383D28] space-y-2 bg-[#F8F9F1] dark:bg-[#171911]"
-                    >
-                      <div className="grid grid-cols-2 gap-2">
+                        <label className="apl-label text-xs">Professional Title</label>
                         <input
                           type="text"
-                          value={edu.degree}
-                          onChange={(e) => {
-                            const newEdu = [...resumeData.education];
-                            newEdu[index].degree = e.target.value;
-                            setResumeData({ ...resumeData, education: newEdu });
-                          }}
-                          placeholder="Degree"
-                          className="apl-input text-xs"
-                        />
-                        <input
-                          type="text"
-                          value={edu.institution}
-                          onChange={(e) => {
-                            const newEdu = [...resumeData.education];
-                            newEdu[index].institution = e.target.value;
-                            setResumeData({ ...resumeData, education: newEdu });
-                          }}
-                          placeholder="Institution"
+                          name="professionalTitle"
+                          value={resumeData.personal.professionalTitle || ""}
+                          onChange={handlePersonalChange}
                           className="apl-input text-xs"
                         />
                       </div>
+                      <div className="grid grid-cols-2 gap-3">
+                        <div>
+                          <label className="apl-label text-xs">Email</label>
+                          <input
+                            type="email"
+                            name="email"
+                            value={resumeData.personal.email || ""}
+                            onChange={handlePersonalChange}
+                            className="apl-input text-xs"
+                          />
+                        </div>
+                        <div>
+                          <label className="apl-label text-xs">Phone</label>
+                          <input
+                            type="text"
+                            name="phone"
+                            value={resumeData.personal.phone || ""}
+                            onChange={handlePersonalChange}
+                            className="apl-input text-xs"
+                          />
+                        </div>
+                      </div>
+                      <div className="grid grid-cols-2 gap-3">
+                        <div>
+                          <label className="apl-label text-xs">Location</label>
+                          <input
+                            type="text"
+                            name="location"
+                            value={resumeData.personal.location || ""}
+                            onChange={handlePersonalChange}
+                            className="apl-input text-xs"
+                          />
+                        </div>
+                        <div>
+                          <label className="apl-label text-xs">LinkedIn</label>
+                          <input
+                            type="text"
+                            name="linkedin"
+                            value={resumeData.personal.linkedin || ""}
+                            onChange={handlePersonalChange}
+                            className="apl-input text-xs"
+                          />
+                        </div>
+                      </div>
                     </div>
-                  ))}
-                </div>
-              )}
+                  )}
 
-              {/* SECTION 5: SKILLS */}
-              {editorTab === "skills" && (
-                <div className="space-y-4">
-                  {resumeData.skills?.map((sg, index) => (
-                    <div
-                      key={index}
-                      className="p-3 rounded-xl border border-[#D3D6C4] dark:border-[#383D28] space-y-2 bg-[#F8F9F1] dark:bg-[#171911]"
-                    >
-                      <input
-                        type="text"
-                        value={sg.category}
-                        onChange={(e) => {
-                          const newSkills = [...resumeData.skills];
-                          newSkills[index].category = e.target.value;
-                          setResumeData({ ...resumeData, skills: newSkills });
-                        }}
-                        placeholder="Category Name"
-                        className="apl-input text-xs font-bold"
-                      />
-                      <input
-                        type="text"
-                        value={sg.skills.join(", ")}
-                        onChange={(e) => {
-                          const newSkills = [...resumeData.skills];
-                          newSkills[index].skills = e.target.value.split(",").map((s) => s.trim());
-                          setResumeData({ ...resumeData, skills: newSkills });
-                        }}
-                        placeholder="Skills (comma separated)"
-                        className="apl-input text-xs"
+                  {/* SECTION 2: SUMMARY */}
+                  {editorTab === "summary" && (
+                    <div className="space-y-3">
+                      <label className="apl-label text-xs">Professional Summary</label>
+                      <textarea
+                        rows={6}
+                        value={resumeData.summary || ""}
+                        onChange={handleSummaryChange}
+                        className="apl-textarea text-xs"
+                        placeholder="Write a compelling executive summary..."
                       />
                     </div>
-                  ))}
-                </div>
-              )}
-            </div>
-          </div>
+                  )}
 
-          {/* RIGHT: LIVE PRINTABLE TEMPLATE PREVIEW (7 cols) */}
-          <div className="lg:col-span-7 space-y-4">
-            <div className="flex items-center justify-between no-print">
-              <span className="text-xs font-bold uppercase tracking-widest text-[#8A8F76]">
-                Live ATS Resume Preview
-              </span>
-              <span className="text-xs font-semibold text-emerald-600 dark:text-emerald-400 flex items-center gap-1">
-                <span>✓</span> 99% ATS Pass Rate
-              </span>
-            </div>
+                  {/* SECTION 3: EXPERIENCE */}
+                  {editorTab === "experience" && (
+                    <div className="space-y-4">
+                      {resumeData.experience?.map((exp, index) => (
+                        <div
+                          key={index}
+                          className="p-3 rounded-xl border border-[#D3D6C4] dark:border-[#383D28] space-y-2 bg-[#F8F9F1] dark:bg-[#171911]"
+                        >
+                          <span className="text-[10px] font-bold uppercase text-[#8A8F76]">
+                            Position #{index + 1}
+                          </span>
+                          <div className="grid grid-cols-2 gap-2">
+                            <input
+                              type="text"
+                              value={exp.position}
+                              onChange={(e) => {
+                                const newExp = [...resumeData.experience];
+                                newExp[index].position = e.target.value;
+                                setResumeData({ ...resumeData, experience: newExp });
+                              }}
+                              placeholder="Position Title"
+                              className="apl-input text-xs"
+                            />
+                            <input
+                              type="text"
+                              value={exp.company}
+                              onChange={(e) => {
+                                const newExp = [...resumeData.experience];
+                                newExp[index].company = e.target.value;
+                                setResumeData({ ...resumeData, experience: newExp });
+                              }}
+                              placeholder="Company Name"
+                              className="apl-input text-xs"
+                            />
+                          </div>
+                          <div>
+                            <label className="apl-label text-[11px] mt-1">Bullet Achievements (one per line)</label>
+                            <textarea
+                              rows={4}
+                              value={exp.bullets.join("\n")}
+                              onChange={(e) => {
+                                const newExp = [...resumeData.experience];
+                                newExp[index].bullets = e.target.value.split("\n");
+                                setResumeData({ ...resumeData, experience: newExp });
+                              }}
+                              className="apl-textarea text-xs"
+                            />
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
 
-            {/* PREVIEW CONTAINER */}
-            <div
-              id="printable-resume"
-              ref={printRef}
-              className="bg-white p-6 sm:p-10 rounded-2xl shadow-xl border border-[#D3D6C4] min-h-[800px]"
-            >
-              {SelectedComponent && <SelectedComponent resume={resumeData} />}
-            </div>
-          </div>
-        </div>
-      )}
+                  {/* SECTION 4: EDUCATION */}
+                  {editorTab === "education" && (
+                    <div className="space-y-4">
+                      {resumeData.education?.map((edu, index) => (
+                        <div
+                          key={index}
+                          className="p-3 rounded-xl border border-[#D3D6C4] dark:border-[#383D28] space-y-2 bg-[#F8F9F1] dark:bg-[#171911]"
+                        >
+                          <div className="grid grid-cols-2 gap-2">
+                            <input
+                              type="text"
+                              value={edu.degree}
+                              onChange={(e) => {
+                                const newEdu = [...resumeData.education];
+                                newEdu[index].degree = e.target.value;
+                                setResumeData({ ...resumeData, education: newEdu });
+                              }}
+                              placeholder="Degree"
+                              className="apl-input text-xs"
+                            />
+                            <input
+                              type="text"
+                              value={edu.institution}
+                              onChange={(e) => {
+                                const newEdu = [...resumeData.education];
+                                newEdu[index].institution = e.target.value;
+                                setResumeData({ ...resumeData, education: newEdu });
+                              }}
+                              placeholder="Institution"
+                              className="apl-input text-xs"
+                            />
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
 
-      {/* ── ENHANCED PREVIEW MODAL ── */}
-      {modalTemplateId && (
-        <div className="fixed inset-0 z-50 bg-slate-900/40 backdrop-blur-md dark:bg-black/60 flex items-center justify-center p-3 sm:p-6 no-print">
-          <div className="bg-white dark:bg-[#171911] rounded-2xl max-w-5xl w-full max-h-[92vh] flex flex-col shadow-2xl border border-[#D3D6C4] dark:border-[#383D28] overflow-hidden">
-            {/* MODAL HEADER */}
-            <div className="px-6 py-4 bg-[#F8F9F1] dark:bg-[#1A1D13] border-b border-[#D3D6C4] dark:border-[#383D28] flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-xl bg-[#3D4127] text-[#D4DE95] dark:bg-[#D4DE95] dark:text-[#3D4127] flex items-center justify-center font-bold shadow-sm">
-                  <EyeIcon />
-                </div>
-                <div>
-                  <div className="flex items-center gap-2">
-                    <h3 className="text-lg font-bold text-[#22241B] dark:text-[#EBF0DA]">
-                      {modalTemplate?.name}
-                    </h3>
-                    <span className="px-2 py-0.5 rounded-md text-[10px] font-bold uppercase tracking-wider bg-[#3D4127] text-[#D4DE95] dark:bg-[#D4DE95] dark:text-[#3D4127]">
-                      {modalTemplate?.category}
-                    </span>
-                    <span className="hidden md:inline-flex items-center gap-1 text-[11px] font-semibold px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300">
-                      ✓ 99% ATS Pass Rate
-                    </span>
-                  </div>
-                  <p className="text-xs text-[#52564A] dark:text-[#9CA485] mt-0.5">
-                    {modalTemplate?.description}
-                  </p>
+                  {/* SECTION 5: SKILLS */}
+                  {editorTab === "skills" && (
+                    <div className="space-y-4">
+                      {resumeData.skills?.map((sg, index) => (
+                        <div
+                          key={index}
+                          className="p-3 rounded-xl border border-[#D3D6C4] dark:border-[#383D28] space-y-2 bg-[#F8F9F1] dark:bg-[#171911]"
+                        >
+                          <input
+                            type="text"
+                            value={sg.category}
+                            onChange={(e) => {
+                              const newSkills = [...resumeData.skills];
+                              newSkills[index].category = e.target.value;
+                              setResumeData({ ...resumeData, skills: newSkills });
+                            }}
+                            placeholder="Category Name"
+                            className="apl-input text-xs font-bold"
+                          />
+                          <input
+                            type="text"
+                            value={sg.skills.join(", ")}
+                            onChange={(e) => {
+                              const newSkills = [...resumeData.skills];
+                              newSkills[index].skills = e.target.value.split(",").map((s) => s.trim());
+                              setResumeData({ ...resumeData, skills: newSkills });
+                            }}
+                            placeholder="Skills (comma separated)"
+                            className="apl-input text-xs"
+                          />
+                        </div>
+                      ))}
+                    </div>
+                  )}
                 </div>
               </div>
 
-              <div className="flex items-center gap-2 self-end sm:self-auto">
-                {/* ZOOM CONTROLS */}
-                <div className="flex items-center bg-[#ECEEDF] dark:bg-[#2A2E1E] rounded-lg p-1 border border-[#D3D6C4] dark:border-[#383D28] mr-2">
-                  <button
-                    type="button"
-                    title="Zoom Out"
-                    onClick={() => setModalScale((prev) => Math.max(70, prev - 10))}
-                    className="p-1.5 rounded text-[#52564A] dark:text-[#9CA485] hover:bg-[#D3D6C4] dark:hover:bg-[#383D28] transition"
-                  >
-                    <ZoomOutIcon />
-                  </button>
-                  <span className="text-[11px] font-bold px-2 text-[#3D4127] dark:text-[#EBF0DA] min-w-[42px] text-center">
-                    {modalScale}%
+              {/* RIGHT: LIVE PRINTABLE TEMPLATE PREVIEW (7 cols) */}
+              <div className="lg:col-span-7 space-y-4">
+                <div className="flex items-center justify-between no-print">
+                  <span className="text-xs font-bold uppercase tracking-widest text-[#8A8F76]">
+                    Live ATS Resume Preview
                   </span>
-                  <button
-                    type="button"
-                    title="Zoom In"
-                    onClick={() => setModalScale((prev) => Math.min(130, prev + 10))}
-                    className="p-1.5 rounded text-[#52564A] dark:text-[#9CA485] hover:bg-[#D3D6C4] dark:hover:bg-[#383D28] transition"
-                  >
-                    <ZoomInIcon />
-                  </button>
+                  <span className="text-xs font-semibold text-emerald-600 dark:text-emerald-400 flex items-center gap-1">
+                    <span>✓</span> 99% ATS Pass Rate
+                  </span>
                 </div>
 
-                <button
-                  type="button"
-                  onClick={() => {
-                    setSelectedTemplateId(modalTemplateId);
-                    setModalTemplateId(null);
-                  }}
-                  className="apl-btn apl-btn-primary py-2 px-4 text-xs shadow-md flex items-center gap-1.5"
+                {/* PREVIEW CONTAINER */}
+                <div
+                  id="printable-resume"
+                  ref={printRef}
+                  className="bg-white p-6 sm:p-10 rounded-2xl shadow-xl border border-[#D3D6C4] min-h-[800px]"
                 >
-                  <CheckIcon />
-                  <span>Use Template</span>
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setModalTemplateId(null)}
-                  className="px-3 py-2 rounded-xl text-xs font-bold bg-[#ECEEDF] dark:bg-[#2A2E1E] text-[#52564A] dark:text-[#9CA485] hover:bg-rose-100 hover:text-rose-700 dark:hover:bg-rose-950 dark:hover:text-rose-300 transition"
-                >
-                  ✕
-                </button>
+                  {SelectedComponent && <SelectedComponent resume={resumeData} />}
+                </div>
               </div>
             </div>
-
-            {/* CANVAS CONTAINER */}
-            <div className="p-6 sm:p-10 overflow-y-auto bg-[#F4F6F0] dark:bg-[#11130C] flex justify-center items-start min-h-[500px]">
-              <div
-                className="bg-white rounded-xl shadow-2xl border border-[#D3D6C4] transition-all duration-200 origin-top overflow-hidden"
-                style={{
-                  transform: `scale(${modalScale / 100})`,
-                  width: "100%",
-                  maxWidth: "820px",
-                }}
-              >
-                {ModalComponent && <ModalComponent resume={resumeData} />}
-              </div>
-            </div>
-          </div>
-        </div>
+          )}
+        </>
       )}
     </div>
   );
