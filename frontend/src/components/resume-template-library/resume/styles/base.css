@@ -400,15 +400,28 @@
 /* ---------- Print ---------- */
 
 @page {
-  size: A4;
-  margin: 0.5in;
+  size: A4 portrait;
+  margin: 0;
 }
 
 @media print {
+  html, body {
+    margin: 0 !important;
+    padding: 0 !important;
+    background: #ffffff !important;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+
   .resume-root {
-    max-width: 100%;
-    padding: 0;
-    margin: 0;
+    width: 100% !important;
+    max-width: 100% !important;
+    padding: 0.5in !important;
+    margin: 0 !important;
+    border: none !important;
+    border-radius: 0 !important;
+    box-shadow: none !important;
+    background: #ffffff !important;
   }
 
   a {
@@ -427,3 +440,4 @@
     width: 8.5in;
   }
 }
+

@@ -446,6 +446,17 @@ RETURN STRICTLY VALID JSON ONLY:
       {/* ── PRINT ONLY STYLES ── */}
       <style>{`
         @media print {
+          @page {
+            size: A4 portrait;
+            margin: 0;
+          }
+          html, body {
+            margin: 0 !important;
+            padding: 0 !important;
+            background: #ffffff !important;
+            -webkit-print-color-adjust: exact !important;
+            print-color-adjust: exact !important;
+          }
           body * {
             visibility: hidden;
           }
@@ -453,12 +464,23 @@ RETURN STRICTLY VALID JSON ONLY:
             visibility: visible;
           }
           #printable-resume {
-            position: absolute;
-            left: 0;
-            top: 0;
-            width: 100%;
-            margin: 0;
-            padding: 0;
+            position: absolute !important;
+            left: 0 !important;
+            top: 0 !important;
+            width: 100% !important;
+            max-width: 100% !important;
+            margin: 0 !important;
+            padding: 0 !important;
+            border: none !important;
+            border-radius: 0 !important;
+            box-shadow: none !important;
+            background: #ffffff !important;
+            min-height: auto !important;
+          }
+          #printable-resume, #printable-resume * {
+            box-shadow: none !important;
+            text-shadow: none !important;
+            border-radius: 0 !important;
           }
           .no-print {
             display: none !important;
@@ -1490,38 +1512,15 @@ RETURN STRICTLY VALID JSON ONLY:
                 </div>
 
                 {/* ── AI GENERATION SECTION AT END OF FORM ── */}
-                <div className="p-5 rounded-2xl border-2 border-emerald-500/40 bg-gradient-to-br from-emerald-50/80 via-teal-50/60 to-white dark:from-emerald-950/30 dark:via-teal-950/20 dark:to-[#171911] shadow-lg space-y-3 relative overflow-hidden">
-                  <div className="flex items-center justify-between border-b border-emerald-200 dark:border-emerald-900 pb-3">
-                    <div className="flex items-center gap-2">
-                      <div className="w-8 h-8 rounded-xl bg-emerald-600 text-white flex items-center justify-center shadow-md">
-                        <SparklesIcon />
-                      </div>
-                      <div>
-                        <h3 className="text-sm font-extrabold text-[#22241B] dark:text-[#EBF0DA]">
-                          Gemini AI Resume Generator
-                        </h3>
-                        <p className="text-[11px] text-[#52564A] dark:text-[#9CA485]">
-                          Formats 2-3 line executive summary & 99% ATS bullet points
-                        </p>
-                      </div>
-                    </div>
-                    <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-200 text-emerald-900 dark:bg-emerald-900 dark:text-emerald-200">
-                      Connected to Gemini API
-                    </span>
-                  </div>
-
-                  <p className="text-xs text-[#4b5563] dark:text-[#9ca3af] leading-relaxed">
-                    Fill in your details in the tabs above, then click below. Gemini AI will analyze your information and generate a 2-3 line summary and high-impact ATS bullet points.
-                  </p>
-
+                <div className="pt-2">
                   <button
                     type="button"
                     onClick={handleGenerateWithGeminiAI}
                     disabled={isAiGenerating}
-                    className="w-full py-3.5 px-5 rounded-xl text-xs font-extrabold text-white bg-gradient-to-r from-emerald-600 via-teal-600 to-emerald-700 hover:from-emerald-500 hover:to-teal-500 shadow-md hover:shadow-lg transition flex items-center justify-center gap-2 disabled:opacity-50"
+                    className="w-full py-3.5 px-5 rounded-2xl text-sm font-extrabold text-white bg-gradient-to-r from-emerald-600 via-teal-600 to-emerald-700 hover:from-emerald-500 hover:to-teal-500 shadow-md hover:shadow-lg transition flex items-center justify-center gap-2 disabled:opacity-50 cursor-pointer"
                   >
                     <SparklesIcon />
-                    <span>{isAiGenerating ? "Synthesizing with Gemini AI..." : "Generate Professional ATS Resume with Gemini AI"}</span>
+                    <span>{isAiGenerating ? "Synthesizing with AI..." : "Generate Professional ATS resume with AI"}</span>
                   </button>
                 </div>
               </div>
