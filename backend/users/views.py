@@ -2,6 +2,7 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
 from rest_framework.permissions import IsAuthenticated
+from rest_framework.parsers import MultiPartParser, FormParser, JSONParser
 from .serializers import (
     SignupSerializer, CustomTokenObtainPairSerializer, UserSerializer,
     AdminUserSerializer, RoleSerializer,
@@ -15,6 +16,8 @@ class CustomTokenObtainPairView(TokenObtainPairView):
     serializer_class = CustomTokenObtainPairSerializer
 
 class SignupView(APIView):
+    parser_classes = [MultiPartParser, FormParser, JSONParser]
+
     def post(self, request):
         serializer = SignupSerializer(data=request.data)
         if serializer.is_valid():

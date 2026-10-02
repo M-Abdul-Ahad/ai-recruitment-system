@@ -16,6 +16,32 @@ class Company(models.Model):
     phone = models.CharField(max_length=50, blank=True, default="")
     address = models.TextField(blank=True, default="")
     logo = models.ImageField(upload_to="company_logos/", blank=True, null=True)
+
+    class VerificationStatus(models.TextChoices):
+        UNVERIFIED = "unverified", "Unverified"
+        PENDING = "pending", "Pending Verification"
+        VERIFIED = "verified", "Verified"
+        REJECTED = "rejected", "Rejected"
+
+    tax_id = models.CharField(
+        max_length=100,
+        blank=True,
+        default="",
+        help_text="National Tax Number (NTN), EIN, or Business Registration ID",
+    )
+    registration_document = models.FileField(
+        upload_to="verification/company_docs/",
+        blank=True,
+        null=True,
+        help_text="Uploaded official business registration / incorporation certificate",
+    )
+    verification_status = models.CharField(
+        max_length=20,
+        choices=VerificationStatus.choices,
+        default=VerificationStatus.UNVERIFIED,
+        help_text="Company business verification status",
+    )
+
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
