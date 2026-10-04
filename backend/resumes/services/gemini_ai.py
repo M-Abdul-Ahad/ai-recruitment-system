@@ -100,103 +100,144 @@ def tailor_resume_for_job_ai(resume_data: dict, job_title: str, job_description:
     """
 
     prompt = f"""
-You are an elite ATS (Applicant Tracking System) Resume Optimization Specialist & Senior Technical Recruiter.
+    You are an expert ATS Resume Optimizer and Senior Technical Recruiter.
 
-YOUR OBJECTIVE:
-Tailor and optimize the candidate's resume specifically for the target Job Posting below to achieve maximum ATS keyword match score and recruiter shortlisting.
+    TASK:
+    Tailor the candidate's resume for the target role using ONLY facts supported by the original resume. Make it highly ATS-friendly, precise, professional, and naturally aligned with the JD.
 
-============================================================
-TARGET JOB DETAILS:
-Job Title: {job_title}
-Job Description:
-{job_description}
+    TARGET ROLE: {job_title}
 
-Requirements / Qualifications:
-{requirements}
-============================================================
+    JOB DESCRIPTION:
+    {job_description}
 
-CANDIDATE'S ORIGINAL RESUME DATA:
-{json.dumps(resume_data, indent=2)}
-============================================================
+    REQUIREMENTS:
+    {requirements}
 
-OPTIMIZATION RULES & GUARDRAILS:
-1. AUTHENTICITY GUARDRAIL: Keep all actual company names, job titles, education, dates, institutions, and core project names intact. DO NOT fabricate non-existent companies or fake degrees.
-2. PROFESSIONAL SUMMARY: Rewrite the summary (3-4 impactful sentences) laser-focused on the target job title, highlighting the candidate's strongest matching skills, experience depth, and value proposition using primary JD keywords.
-3. EXPERIENCE BULLETS (STAR METHOD):
-   - Refine and polish each experience bullet point to emphasize relevant achievements, technical tools, architectures, problem-solving, and metrics that align with the target JD.
-   - Weave in high-impact ATS action verbs and target keywords (e.g. system design, performance optimization, REST APIs, agile, CI/CD, automation) based on what the candidate worked on.
-   - Keep 3-5 concise, impactful bullet points per experience item.
-4. PROJECTS:
-   - Enhance project bullet points and listed technologies to highlight features and capabilities most relevant to the target job requirements.
-5. SKILLS ALIGNMENT:
-   - Organize and prioritize skills so the most critical technical and domain skills required by the JD appear prominently first.
-6. FORMAT: Return strictly valid JSON adhering exactly to the structure below.
+    ORIGINAL RESUME:
+    {json.dumps(resume_data, indent=2)}
 
-OUTPUT JSON STRUCTURE:
-{{
-  "personal": {{
-    "fullName": "...",
-    "email": "...",
-    "phone": "...",
-    "address": "...",
-    "title": "{job_title}",
-    "linkedin": "...",
-    "github": "...",
-    "portfolio": "..."
-  }},
-  "summary": "...",
-  "education": [
+    RULES:
+    1. AUTHENTICITY FIRST:
+    - Never invent companies, titles, dates, degrees, projects, technologies, responsibilities, achievements, certifications, or metrics.
+    - Do not claim a skill simply because it appears in the JD.
+    - Only use a JD keyword when it is explicitly supported by the resume or can be truthfully inferred from existing work.
+    - Preserve factual identity, employment history, education, dates, and project names.
+
+    2. JD ALIGNMENT:
+    - Identify the most important skills, technologies, responsibilities, domain terms, and ATS keywords in the JD.
+    - Naturally embed supported JD terminology into the summary, experience, projects, and skills.
+    - Prefer the JD's terminology when it accurately describes existing candidate experience.
+    - Prioritize the most relevant existing experience instead of adding irrelevant content.
+    - The final resume should read like a resume genuinely written for this role, not a keyword dump.
+
+    3. SUMMARY:
+    - Write 3-4 concise, high-impact sentences.
+    - Lead with the candidate's strongest experience relevant to the target role.
+    - Include important supported JD keywords naturally.
+    - Emphasize expertise, technical strengths, relevant domain experience, and value.
+
+    4. EXPERIENCE:
+    - Preserve every real company, position, location, date, and employment status.
+    - Rewrite bullets to emphasize responsibilities and achievements most relevant to the JD.
+    - Use strong action verbs and concrete technical context.
+    - Preserve existing metrics; never manufacture metrics.
+    - Prefer 2-4 highly relevant bullets per company. Use fewer if the role has limited relevant content.
+    - Keep each bullet concise and information-dense; avoid generic filler.
+    - Do not force STAR formatting when it makes a bullet unnatural.
+
+    5. PROJECTS:
+    - Keep only factual project information from the original resume.
+    - Prioritize projects relevant to the target role.
+    - Rewrite descriptions/bullets to emphasize JD-relevant functionality, architecture, technologies, and outcomes.
+    - Do not add technologies merely because they appear in the JD.
+
+    6. SKILLS:
+    - Reorder existing skills so the strongest JD-relevant skills appear first.
+    - Group skills logically by category.
+    - Add no new skill unless supported by the original resume.
+    - Avoid duplicate or overly generic skills.
+
+    7. LENGTH & PRECISION:
+    - Optimize for a concise professional resume, not maximum text.
+    - Summary: approximately 3-4 sentences.
+    - Each experience/company: approximately 2-4 concise bullets depending on relevance.
+    - Projects: approximately 1-3 concise bullets each.
+    - Keep bullets generally to one compact sentence; combine related information when useful.
+    - Do not pad sections to meet an artificial line count.
+    - Every sentence should contribute evidence, relevance, or ATS value.
+
+    8. ATS:
+    - Use exact or close JD terminology where truthful.
+    - Include important acronyms and their expanded forms when supported and useful.
+    - Favor standard job titles, technologies, methodologies, tools, and domain terminology.
+    - Avoid keyword stuffing, repetition, vague claims, and unnatural phrasing.
+    - Optimize for both ATS matching and human recruiter readability.
+
+    9. PRIORITIZATION:
+    Rank information by:
+    JD relevance > demonstrated candidate strength > measurable impact > technical specificity > general information.
+
+    Return ONLY valid JSON using exactly this structure:
+
     {{
-      "degree": "...",
-      "institution": "...",
-      "field": "...",
-      "location": "...",
-      "startDate": "...",
-      "endDate": "..."
+      "personal": {{
+        "fullName": "...",
+        "email": "...",
+        "phone": "...",
+        "address": "...",
+        "title": "{job_title}",
+        "linkedin": "...",
+        "github": "...",
+        "portfolio": "..."
+      }},
+      "summary": "...",
+      "education": [
+        {{
+          "degree": "...",
+          "institution": "...",
+          "field": "...",
+          "location": "...",
+          "startDate": "...",
+          "endDate": "..."
+        }}
+      ],
+      "experience": [
+        {{
+          "company": "...",
+          "position": "...",
+          "location": "...",
+          "startDate": "...",
+          "endDate": "...",
+          "current": false,
+          "bullets": ["..."]
+        }}
+      ],
+      "skills": [
+        {{
+          "category": "Technical & Professional Skills",
+          "skills": ["skill1", "skill2"]
+        }}
+      ],
+      "projects": [
+        {{
+          "name": "...",
+          "description": "...",
+          "technologies": ["..."],
+          "bullets": ["..."]
+        }}
+      ],
+      "certifications": [],
+      "awards": [],
+      "volunteerExperience": [],
+      "languages": [],
+      "memberships": [],
+      "ats_optimization_notes": {{
+        "target_role": "{job_title}",
+        "matching_keywords": ["..."],
+        "key_improvements": ["..."]
+      }}
     }}
-  ],
-  "experience": [
-    {{
-      "company": "...",
-      "position": "...",
-      "location": "...",
-      "startDate": "...",
-      "endDate": "...",
-      "current": false,
-      "bullets": ["..."]
-    }}
-  ],
-  "skills": [
-    {{
-      "category": "Technical & Professional Skills",
-      "skills": ["skill1", "skill2", "..."]
-    }}
-  ],
-  "projects": [
-    {{
-      "name": "...",
-      "description": "...",
-      "technologies": ["tech1", "tech2"],
-      "bullets": ["..."]
-    }}
-  ],
-  "certifications": [],
-  "awards": [],
-  "volunteerExperience": [],
-  "languages": [],
-  "memberships": [],
-  "ats_optimization_notes": {{
-    "target_role": "{job_title}",
-    "matching_keywords": ["keyword1", "keyword2", "keyword3"],
-    "key_improvements": ["improvement 1", "improvement 2"]
-  }}
-}}
-
-STRICT RULES:
-- Output only valid JSON.
-- No markdown formatting fences around JSON if possible, or clean standard JSON.
-- No conversational text or preamble.
-"""
+    """
 
     response = client.models.generate_content(
         model="gemini-3-flash-preview",
