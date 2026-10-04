@@ -1,5 +1,6 @@
-import { useContext, useState, useRef } from "react";
+import { useContext, useState, useRef, useEffect } from "react";
 import { AuthContext } from "../auth/AuthContext";
+import api from "../api/axios";
 import {
   TEMPLATE_CATEGORIES,
   resumeTemplates,
@@ -10,6 +11,14 @@ import {
 import "../components/resume-template-library/resume/styles/base.css";
 
 /* Inline Icons */
+const DatabaseIcon = () => (
+  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <ellipse cx="12" cy="5" rx="9" ry="3"/>
+    <path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"/>
+    <path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/>
+  </svg>
+);
+
 const SparklesIcon = () => (
   <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
     <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
@@ -114,7 +123,91 @@ const ResumeBuilder = () => {
   const [aiStatusStep, setAiStatusStep] = useState("");
   const [aiSuccessMsg, setAiSuccessMsg] = useState("");
 
+  // Fetch DB Data state
+  const [isFetchingData, setIsFetchingData] = useState(false);
+  const [fetchErrorMsg, setFetchErrorMsg] = useState("");
+
+  // Multi-Page count tracking
+  const [pageCount, setPageCount] = useState(1);
+
   const printRef = useRef(null);
+
+  // Measure content height and calculate actual A4 pages
+  useEffect(() => {
+    if (!printRef.current) return;
+    const A4_PAGE_HEIGHT = 1056; // Standard A4 at 96 DPI
+
+    const calculatePages = () => {
+      if (printRef.current) {
+        const height = printRef.current.scrollHeight;
+        const count = Math.max(1, Math.ceil(height / A4_PAGE_HEIGHT));
+        setPageCount(count);
+      }
+    };
+
+    const resizeObserver = new ResizeObserver(() => {
+      calculatePages();
+    });
+
+    resizeObserver.observe(printRef.current);
+    calculatePages();
+
+    return () => resizeObserver.disconnect();
+  }, [resumeData, selectedTemplateId]);
+
+
+  // Handle fetching parsed resume data from DB
+  const handleFetchDataFromDB = async () => {
+    setIsFetchingData(true);
+    setFetchErrorMsg("");
+    setAiSuccessMsg("");
+
+    try {
+      const res = await api.get("/resumes/latest/");
+      const { builder_data } = res.data;
+
+      if (builder_data) {
+        setResumeData((prev) => ({
+          ...prev,
+          personal: {
+            ...prev.personal,
+            fullName: builder_data.personal?.fullName || prev.personal?.fullName || (user?.email ? user.email.split("@")[0] : ""),
+            email: builder_data.personal?.email || prev.personal?.email || user?.email || "",
+            professionalTitle: builder_data.personal?.professionalTitle || prev.personal?.professionalTitle || "",
+            phone: builder_data.personal?.phone || prev.personal?.phone || "",
+            location: builder_data.personal?.location || prev.personal?.location || "",
+            linkedin: builder_data.personal?.linkedin || prev.personal?.linkedin || "",
+            github: builder_data.personal?.github || prev.personal?.github || "",
+            portfolio: builder_data.personal?.portfolio || prev.personal?.portfolio || "",
+          },
+          summary: builder_data.summary || prev.summary || "",
+          education: (builder_data.education && builder_data.education.length > 0)
+            ? builder_data.education
+            : prev.education,
+          experience: (builder_data.experience && builder_data.experience.length > 0)
+            ? builder_data.experience
+            : prev.experience,
+          skills: (builder_data.skills && builder_data.skills.length > 0)
+            ? builder_data.skills
+            : prev.skills,
+          projects: (builder_data.projects && builder_data.projects.length > 0)
+            ? builder_data.projects
+            : prev.projects,
+        }));
+
+        setAiSuccessMsg("📥 Successfully fetched & populated resume data (Contact, Projects, Experience, Skills, Education) from your uploaded resume in the database!");
+        setTimeout(() => setAiSuccessMsg(""), 6000);
+      }
+    } catch (err) {
+      console.error("Error fetching latest resume from DB:", err);
+      const msg = err.response?.data?.error || "No uploaded resume found in database. Please upload your resume in the Resume Analysis tab first.";
+      setFetchErrorMsg(msg);
+      setTimeout(() => setFetchErrorMsg(""), 7000);
+    } finally {
+      setIsFetchingData(false);
+    }
+  };
+
 
   // Filter templates by active category
   const filteredTemplates = activeCategory === "all"
@@ -432,7 +525,13 @@ RETURN STRICTLY VALID JSON ONLY:
 
   // Trigger Print / Export to PDF
   const handlePrint = () => {
+    const originalTitle = document.title;
+    const candidateName = resumeData.personal?.fullName?.trim() || "Candidate";
+    document.title = `${candidateName} - Resume`;
     window.print();
+    setTimeout(() => {
+      document.title = originalTitle;
+    }, 1500);
   };
 
   const currentTemplate = selectedTemplateId ? getTemplateById(selectedTemplateId) : null;
@@ -443,13 +542,13 @@ RETURN STRICTLY VALID JSON ONLY:
 
   return (
     <div className="apl-animate-fade space-y-6">
-      {/* ── PRINT ONLY STYLES ── */}
+      {/* ── PRINT ONLY STYLES (REMOVES BROWSER HEADER / FOOTER / DATES) ── */}
       <style>{`
+        @page {
+          size: A4 portrait;
+          margin: 0 !important; /* Removes browser default headers, dates, and URLs */
+        }
         @media print {
-          @page {
-            size: A4 portrait;
-            margin: 0;
-          }
           html, body {
             margin: 0 !important;
             padding: 0 !important;
@@ -470,20 +569,39 @@ RETURN STRICTLY VALID JSON ONLY:
             width: 100% !important;
             max-width: 100% !important;
             margin: 0 !important;
-            padding: 0 !important;
+            padding: 0.38in 0.38in !important;
             border: none !important;
             border-radius: 0 !important;
             box-shadow: none !important;
             background: #ffffff !important;
             min-height: auto !important;
           }
+          #printable-resume .resume-root {
+            padding: 0 !important;
+            margin: 0 !important;
+            max-width: 100% !important;
+          }
           #printable-resume, #printable-resume * {
             box-shadow: none !important;
             text-shadow: none !important;
             border-radius: 0 !important;
           }
-          .no-print {
+          .no-print, .resume-page-break-indicator {
             display: none !important;
+          }
+          .resume-section {
+            break-inside: avoid !important;
+            page-break-inside: avoid !important;
+          }
+          .experience-item,
+          .education-item,
+          .project-item,
+          .volunteer-item,
+          .certification-item,
+          .award-item,
+          .publication-item {
+            break-inside: avoid !important;
+            page-break-inside: avoid !important;
           }
         }
       `}</style>
@@ -760,7 +878,17 @@ RETURN STRICTLY VALID JSON ONLY:
                     </button>
                   </div>
 
-                  <div className="flex items-center gap-2 pt-2 border-t border-[#D3D6C4] dark:border-[#383D28]">
+                  <div className="flex flex-wrap items-center gap-2 pt-2 border-t border-[#D3D6C4] dark:border-[#383D28]">
+                    <button
+                      type="button"
+                      onClick={handleFetchDataFromDB}
+                      disabled={isFetchingData}
+                      className="px-2.5 py-1 rounded-lg bg-[#3D4127] text-[#D4DE95] dark:bg-[#D4DE95] dark:text-[#3D4127] text-[11px] font-bold hover:opacity-90 transition flex items-center gap-1.5 shadow-sm disabled:opacity-50"
+                    >
+                      <DatabaseIcon />
+                      <span>{isFetchingData ? "Fetching from DB..." : "Fetch Data from DB"}</span>
+                    </button>
+                    <span className="text-gray-300 dark:text-gray-600">•</span>
                     <button
                       type="button"
                       onClick={() => setResumeData(sampleResume)}
@@ -781,13 +909,22 @@ RETURN STRICTLY VALID JSON ONLY:
                   </div>
                 </div>
 
-                {/* AI SUCCESS NOTIFICATION BANNER */}
+                {/* DB ERROR NOTIFICATION BANNER */}
+                {fetchErrorMsg && (
+                  <div className="p-3.5 rounded-xl bg-amber-50 text-amber-900 border border-amber-300 dark:bg-amber-950 dark:text-amber-200 dark:border-amber-800 text-xs font-semibold flex items-center gap-2 animate-fade-in shadow-sm">
+                    <span className="text-base">⚠️</span>
+                    <span>{fetchErrorMsg}</span>
+                  </div>
+                )}
+
+                {/* AI / DB SUCCESS NOTIFICATION BANNER */}
                 {aiSuccessMsg && (
                   <div className="p-3.5 rounded-xl bg-emerald-50 text-emerald-900 border border-emerald-300 dark:bg-emerald-950 dark:text-emerald-200 dark:border-emerald-800 text-xs font-semibold flex items-center gap-2 animate-fade-in shadow-sm">
                     <span className="text-base">✨</span>
                     <span>{aiSuccessMsg}</span>
                   </div>
                 )}
+
 
                 {/* EDITOR TABS */}
                 <div className="apl-card space-y-5 border border-[#D3D6C4] dark:border-[#383D28]">
@@ -1528,21 +1665,40 @@ RETURN STRICTLY VALID JSON ONLY:
               {/* RIGHT: LIVE PRINTABLE TEMPLATE PREVIEW (7 cols) */}
               <div className="lg:col-span-7 space-y-4">
                 <div className="flex items-center justify-between no-print">
-                  <span className="text-xs font-bold uppercase tracking-widest text-[#8A8F76]">
-                    Live ATS Resume Preview
-                  </span>
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs font-bold uppercase tracking-widest text-[#8A8F76]">
+                      Live ATS Resume Preview
+                    </span>
+                    {pageCount > 1 ? (
+                      <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-[#3D4127] text-[#D4DE95] dark:bg-[#D4DE95] dark:text-[#3D4127] flex items-center gap-1 shadow-sm">
+                        <span>📄</span> Multi-Page ({pageCount} Pages)
+                      </span>
+                    ) : (
+                      <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300">
+                        1 Page Fit
+                      </span>
+                    )}
+                  </div>
                   <span className="text-xs font-semibold text-emerald-600 dark:text-emerald-400 flex items-center gap-1">
                     <span>✓</span> 99% ATS Pass Rate
                   </span>
                 </div>
 
-                {/* PREVIEW CONTAINER */}
-                <div
-                  id="printable-resume"
-                  ref={printRef}
-                  className="bg-white p-6 sm:p-10 rounded-2xl shadow-xl border border-[#D3D6C4] min-h-[800px]"
-                >
-                  {SelectedComponent && <SelectedComponent resume={resumeData} />}
+                {/* PREVIEW CONTAINER WITH CLEAN CANVAS */}
+                <div className="p-3 sm:p-6 bg-[#ECEEDF] dark:bg-[#11130C] rounded-3xl border border-[#D3D6C4] dark:border-[#383D28] overflow-x-auto flex flex-col items-center">
+                  <div
+                    id="printable-resume"
+                    ref={printRef}
+                    className="relative bg-white rounded-xl shadow-2xl border border-[#D3D6C4] w-full max-w-[800px] transition-all"
+                  >
+                    {SelectedComponent && <SelectedComponent resume={resumeData} />}
+                  </div>
+
+                  {pageCount > 1 && (
+                    <div className="mt-4 px-4 py-2 rounded-xl bg-white/80 dark:bg-[#171911]/80 border border-[#D3D6C4] dark:border-[#383D28] text-xs font-bold text-[#52564A] dark:text-[#9CA485] flex items-center gap-2 no-print shadow-sm">
+                      <span>📄 Multi-Page Document: Content spans {pageCount} pages. Each page automatically includes 0.35in top and bottom margins upon PDF export.</span>
+                    </div>
+                  )}
                 </div>
               </div>
             </div>

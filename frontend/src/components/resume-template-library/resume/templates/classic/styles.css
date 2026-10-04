@@ -13,14 +13,15 @@
   --text-color: #1e293b;
   --muted-color: #475569;
   --rule-color: #cbd5e1;
-  --font-size-body: 10.5pt;
-  --font-size-name: 24pt;
-  --section-gap: 16px;
+  --font-size-body: 9pt;
+  --font-size-name: 18pt;
+  --section-gap: 9px;
+  --item-gap: 5px;
 }
 
 .tpl-classic-01 .resume-header {
-  border-bottom: 2px double var(--accent-color);
-  padding-bottom: 8px;
+  border-bottom: 1.5px double var(--accent-color);
+  padding-bottom: 5px;
 }
 
 /* classic-02: Traditional Serif - Georgia, Charcoal Accent, Left Header with Border Accent */
@@ -31,14 +32,15 @@
   --text-color: #262626;
   --muted-color: #525252;
   --rule-color: #d4d4d4;
-  --font-size-body: 10.5pt;
-  --font-size-name: 23pt;
-  --section-gap: 15px;
+  --font-size-body: 9pt;
+  --font-size-name: 18pt;
+  --section-gap: 8px;
+  --item-gap: 5px;
 }
 
 .tpl-classic-02 .resume-header {
-  border-left: 4px solid var(--accent-color);
-  padding-left: 14px;
+  border-left: 3px solid var(--accent-color);
+  padding-left: 10px;
 }
 
 /* classic-03: Traditional Formal - Burgundy Accent, Uppercase Spaced Headings */
@@ -49,13 +51,14 @@
   --text-color: #1c1917;
   --muted-color: #57534e;
   --rule-color: #e7e5e4;
-  --font-size-body: 11pt;
-  --font-size-name: 24pt;
-  --section-gap: 15px;
+  --font-size-body: 9pt;
+  --font-size-name: 18pt;
+  --section-gap: 8px;
+  --item-gap: 5px;
 }
 
 .tpl-classic-03 .resume-header h1 {
-  letter-spacing: 2px;
+  letter-spacing: 1.2px;
 }
 
 /* classic-04: Corporate Structured - Slate Corporate, Boxed Section Headings */
@@ -66,10 +69,11 @@
   --text-color: #334155;
   --muted-color: #64748b;
   --rule-color: #cbd5e1;
-  --font-size-body: 10pt;
-  --font-size-heading: 11.5pt;
-  --font-size-name: 22pt;
-  --section-gap: 15px;
+  --font-size-body: 8.5pt;
+  --font-size-heading: 9.5pt;
+  --font-size-name: 17pt;
+  --section-gap: 8px;
+  --item-gap: 5px;
 }
 
 .tpl-classic-04 .heading-boxed-label {

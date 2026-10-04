@@ -11,6 +11,16 @@ export default function ProjectItem({ entry }: ProjectItemProps) {
       ? `${entry.startDate} - ${entry.endDate}`
       : entry.endDate || entry.startDate || "";
 
+  // Prevent duplicate rendering if description already matches a bullet
+  const hasBullets = Array.isArray(entry.bullets) && entry.bullets.length > 0;
+  const isDescriptionInBullets =
+    hasBullets &&
+    entry.description &&
+    entry.bullets.some(
+      (b) => b.trim().toLowerCase() === entry.description?.trim().toLowerCase()
+    );
+  const showDescription = entry.description && !isDescriptionInBullets;
+
   return (
     <article className="project-item avoid-break">
       <div className="item-heading-row">
@@ -28,7 +38,7 @@ export default function ProjectItem({ entry }: ProjectItemProps) {
         </div>
         {dateRange && <div className="item-dates">{dateRange}</div>}
       </div>
-      {entry.description && (
+      {showDescription && (
         <p className="item-description">{entry.description}</p>
       )}
       {entry.technologies && entry.technologies.length > 0 && (
@@ -37,7 +47,7 @@ export default function ProjectItem({ entry }: ProjectItemProps) {
           {entry.technologies.join(", ")}
         </p>
       )}
-      {entry.bullets && entry.bullets.length > 0 && (
+      {hasBullets && (
         <ul className="item-bullets">
           {entry.bullets.map((bullet, i) => (
             <li key={i}>{bullet}</li>

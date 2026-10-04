@@ -46,10 +46,17 @@ const ResumeAnalysis = () => {
     formData.append('file', file);
 
     try {
+      const token = localStorage.getItem("access");
+      const headers = {};
+      if (token) {
+        headers["Authorization"] = `Bearer ${token}`;
+      }
+
       const response = await fetch(
         `${API_URL}/api/resumes/upload/`,
         {
           method: 'POST',
+          headers,
           body: formData,
         }
       );
@@ -102,13 +109,19 @@ const ResumeAnalysis = () => {
     setAiError(null);
 
     try {
+      const token = localStorage.getItem("access");
+      const headers = {
+        'Content-Type': 'application/json'
+      };
+      if (token) {
+        headers["Authorization"] = `Bearer ${token}`;
+      }
+
       const response = await fetch(
         `${API_URL}/api/resumes/ai-feedback/${aiResumeId}/`,
         {
           method: 'POST',
-          headers: {
-            'Content-Type': 'application/json'
-          }
+          headers
         }
       );
 

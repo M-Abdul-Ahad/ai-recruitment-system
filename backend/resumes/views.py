@@ -1,4 +1,5 @@
 import os
+import re
 
 from rest_framework.views import APIView
 from rest_framework.response import Response
@@ -11,6 +12,8 @@ from .serializers import ResumeDetailSerializer, ResumeUploadSerializer
 from .utils import (
     extract_text_from_pdf,
     extract_text_from_docx,
+    extract_contact_info,
+    extract_projects,
 )
 from resumes.services.resume_parser import parse_and_store_resume_data
 from .services.gemini_ai import generate_ai_resume_feedback
@@ -139,3 +142,102 @@ def my_resumes(request):
     resumes = Resume.objects.filter(user=request.user).order_by('-uploaded_at')
     serializer = ResumeUploadSerializer(resumes, many=True)
     return Response(serializer.data)
+
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def latest_resume(request):
+    """GET /api/resumes/latest/ → get the latest uploaded and parsed resume formatted for the resume builder."""
+    resume = Resume.objects.filter(user=request.user).order_by('-uploaded_at').first()
+    if not resume:
+        # Fallback to the most recent uploaded resume in the system
+        resume = Resume.objects.order_by('-uploaded_at').first()
+
+    if not resume:
+        return Response(
+            {"error": "No resume found in the database. Please upload a resume in the Resume Analysis tab first."},
+            status=status.HTTP_404_NOT_FOUND
+        )
+
+
+    # 1. Contact & Personal Info
+    contact_data = extract_contact_info(resume.extracted_text) if resume.extracted_text else {}
+    personal_info = {
+        "fullName": contact_data.get("fullName") or request.user.get_full_name() or request.user.username or "",
+        "email": contact_data.get("email") or request.user.email or "",
+        "phone": contact_data.get("phone") or "",
+        "location": "",
+        "professionalTitle": contact_data.get("professionalTitle") or "",
+        "linkedin": contact_data.get("linkedin") or "",
+        "github": contact_data.get("github") or "",
+        "portfolio": "",
+    }
+
+    # 2. Skills
+    skills_list = [s.name for s in resume.skills.all()]
+
+    # 3. Education
+    education_list = [
+        {
+            "degree": e.degree,
+            "institution": e.institution,
+            "field": "",
+            "location": "",
+            "startDate": "",
+            "endDate": e.year or "",
+        }
+        for e in resume.education.all()
+    ]
+
+    # 4. Experience
+    experience_list = []
+    for exp in resume.experience.all():
+        desc = exp.description or ""
+        raw_bullets = [b.strip() for b in re.split(r'[\n\r]+', desc) if b.strip()] if desc else []
+        cleaned_bullets = [re.sub(r'^[-•*–>·]\s*', '', b).strip() for b in raw_bullets if b.strip()]
+        # Remove empty or duplicate bullets while preserving order
+        seen = set()
+        final_bullets = []
+        for b in cleaned_bullets:
+            if b and b.lower() not in seen:
+                seen.add(b.lower())
+                final_bullets.append(b)
+
+        experience_list.append({
+            "company": exp.company or "",
+            "position": exp.job_title or "",
+            "location": "",
+            "startDate": exp.duration or "",
+            "endDate": "",
+            "current": False,
+            "bullets": final_bullets if final_bullets else ([desc] if desc else []),
+        })
+
+
+    # 5. Projects
+    projects_list = extract_projects(resume.extracted_text) if resume.extracted_text else []
+
+    builder_data = {
+        "personal": personal_info,
+        "summary": resume.ai_feedback or "",
+        "education": education_list,
+        "experience": experience_list,
+        "skills": [{"category": "Technical & Professional Skills", "skills": skills_list}] if skills_list else [],
+        "projects": projects_list,
+        "certifications": [],
+        "awards": [],
+        "volunteerExperience": [],
+        "languages": [],
+        "memberships": [],
+    }
+
+    detail_data = ResumeDetailSerializer(resume).data
+
+    return Response({
+        "resume_id": resume.id,
+        "uploaded_at": resume.uploaded_at,
+        "builder_data": builder_data,
+        "detail_data": detail_data,
+    }, status=status.HTTP_200_OK)
+
+

@@ -16,11 +16,11 @@
   --chip-bg: #ecfdf5;
   --chip-color: #065f46;
   --chip-border: #a7f3d0;
-  --font-size-body: 10pt;
-  --font-size-heading: 11.5pt;
-  --font-size-name: 22pt;
-  --section-gap: 12px;
-  --item-gap: 8px;
+  --font-size-body: 8.5pt;
+  --font-size-heading: 9.5pt;
+  --font-size-name: 17pt;
+  --section-gap: 7px;
+  --item-gap: 4px;
 }
 
 /* technical-02: Technical Mono - Monospace Headings, Code Block Section Titles */
@@ -34,11 +34,11 @@
   --chip-bg: #f1f5f9;
   --chip-color: #0f172a;
   --chip-border: #cbd5e1;
-  --font-size-body: 10pt;
-  --font-size-heading: 11pt;
-  --font-size-name: 22pt;
-  --section-gap: 12px;
-  --item-gap: 8px;
+  --font-size-body: 8.5pt;
+  --font-size-heading: 9.5pt;
+  --font-size-name: 17pt;
+  --section-gap: 7px;
+  --item-gap: 4px;
 }
 
 .tpl-technical-02 .resume-header h1 {
@@ -59,11 +59,11 @@
   --text-color: #1e293b;
   --muted-color: #475569;
   --rule-color: #bfdbfe;
-  --font-size-body: 9.5pt;
-  --font-size-heading: 11pt;
-  --font-size-name: 21pt;
-  --section-gap: 10px;
-  --item-gap: 7px;
+  --font-size-body: 8pt;
+  --font-size-heading: 9pt;
+  --font-size-name: 16pt;
+  --section-gap: 6px;
+  --item-gap: 4px;
 }
 
 /* technical-04: Technical Structured - Cyan Accent, Left Border Bar, Pill Skill Chips */
@@ -77,10 +77,10 @@
   --chip-bg: #ecfeff;
   --chip-color: #155e75;
   --chip-border: #a5f3fc;
-  --font-size-body: 10pt;
-  --font-size-heading: 11.5pt;
-  --font-size-name: 22pt;
-  --section-gap: 12px;
-  --item-gap: 8px;
+  --font-size-body: 8.5pt;
+  --font-size-heading: 9.5pt;
+  --font-size-name: 17pt;
+  --section-gap: 7px;
+  --item-gap: 4px;
 }
 

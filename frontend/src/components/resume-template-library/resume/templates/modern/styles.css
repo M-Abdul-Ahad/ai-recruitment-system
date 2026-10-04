@@ -14,9 +14,10 @@
   --chip-bg: #eff6ff;
   --chip-color: #1e40af;
   --chip-border: #bfdbfe;
-  --font-size-body: 10pt;
-  --font-size-name: 23pt;
-  --section-gap: 15px;
+  --font-size-body: 8.5pt;
+  --font-size-name: 18pt;
+  --section-gap: 8px;
+  --item-gap: 5px;
 }
 
 /* modern-02: Modern Rule - Slate Theme, Gradient Rule Headings */
@@ -27,14 +28,15 @@
   --text-color: #1e293b;
   --muted-color: #64748b;
   --rule-color: #cbd5e1;
-  --font-size-body: 10pt;
-  --font-size-name: 22pt;
-  --section-gap: 15px;
+  --font-size-body: 8.5pt;
+  --font-size-name: 17pt;
+  --section-gap: 8px;
+  --item-gap: 5px;
 }
 
 .tpl-modern-02 {
-  border-top: 4px solid #334155;
-  padding-top: calc(var(--page-margin) - 4px);
+  border-top: 3px solid #334155;
+  padding-top: calc(var(--page-margin) - 3px);
 }
 
 /* modern-03: Modern Bold - Violet Royal Accent, Pill-Tag Headings */
@@ -49,10 +51,11 @@
   --chip-bg: #f5f3ff;
   --chip-color: #3730a3;
   --chip-border: #c7d2fe;
-  --font-size-body: 10pt;
-  --font-size-heading: 11pt;
-  --font-size-name: 24pt;
-  --section-gap: 14px;
+  --font-size-body: 8.5pt;
+  --font-size-heading: 9.5pt;
+  --font-size-name: 18pt;
+  --section-gap: 8px;
+  --item-gap: 5px;
 }
 
 /* modern-04: Modern Centered - Teal Accent, Pill Headings, Centered Header */
@@ -67,8 +70,9 @@
   --chip-bg: #f0fdf4;
   --chip-color: #115e59;
   --chip-border: #99f6e4;
-  --font-size-body: 10pt;
-  --font-size-name: 23pt;
-  --section-gap: 15px;
+  --font-size-body: 8.5pt;
+  --font-size-name: 18pt;
+  --section-gap: 8px;
+  --item-gap: 5px;
 }
 

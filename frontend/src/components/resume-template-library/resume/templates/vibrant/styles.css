@@ -16,17 +16,18 @@
   --chip-bg: #ecfdf5;
   --chip-color: #065f46;
   --chip-border: #6ee7b7;
-  --font-size-body: 10pt;
-  --font-size-heading: 12pt;
-  --font-size-name: 24pt;
-  --section-gap: 15px;
+  --font-size-body: 8.5pt;
+  --font-size-heading: 10pt;
+  --font-size-name: 18pt;
+  --section-gap: 8px;
+  --item-gap: 5px;
 }
 
 .tpl-vibrant-01 .heading-left-border-bar {
   background: #f0fdf4;
-  padding: 4px 10px;
-  border-radius: 0 6px 6px 0;
-  border-left: 4px solid #059669;
+  padding: 2px 8px;
+  border-radius: 0 4px 4px 0;
+  border-left: 3px solid #059669;
 }
 
 /* vibrant-02: Sapphire Luxe - Royal Blue Header Top Bar, Pill-Tag Headings */
@@ -41,14 +42,16 @@
   --chip-bg: #eff6ff;
   --chip-color: #1e40af;
   --chip-border: #93c5fd;
-  --font-size-body: 10pt;
-  --font-size-name: 24pt;
-  --section-gap: 15px;
+  --font-size-body: 8.5pt;
+  --font-size-heading: 9.5pt;
+  --font-size-name: 18pt;
+  --section-gap: 8px;
+  --item-gap: 5px;
 }
 
 .tpl-vibrant-02 {
-  border-top: 5px solid #2563eb;
-  padding-top: calc(var(--page-margin) - 5px);
+  border-top: 3px solid #2563eb;
+  padding-top: calc(var(--page-margin) - 3px);
 }
 
 .tpl-vibrant-02 .resume-header h1 {
@@ -67,14 +70,16 @@
   --chip-bg: #fef3c7;
   --chip-color: #92400e;
   --chip-border: #fde68a;
-  --font-size-body: 10pt;
-  --font-size-name: 24pt;
-  --section-gap: 15px;
+  --font-size-body: 8.5pt;
+  --font-size-heading: 9.5pt;
+  --font-size-name: 18pt;
+  --section-gap: 8px;
+  --item-gap: 5px;
 }
 
 .tpl-vibrant-03 .resume-header {
-  border-bottom: 2px solid #7c3aed;
-  padding-bottom: 8px;
+  border-bottom: 1.5px solid #7c3aed;
+  padding-bottom: 5px;
 }
 
 /* vibrant-04: Rose Crimson - Rose Accent, Gradient Underline Headings, Rose Chips */
@@ -89,14 +94,16 @@
   --chip-bg: #fff1f2;
   --chip-color: #be123c;
   --chip-border: #fda4af;
-  --font-size-body: 10pt;
-  --font-size-name: 24pt;
-  --section-gap: 15px;
+  --font-size-body: 8.5pt;
+  --font-size-heading: 9.5pt;
+  --font-size-name: 18pt;
+  --section-gap: 8px;
+  --item-gap: 5px;
 }
 
 .tpl-vibrant-04 .heading-left-border-bar {
   background: #fff1f2;
-  padding: 4px 10px;
-  border-radius: 0 6px 6px 0;
-  border-left: 4px solid #e11d48;
+  padding: 2px 8px;
+  border-radius: 0 4px 4px 0;
+  border-left: 3px solid #e11d48;
 }
