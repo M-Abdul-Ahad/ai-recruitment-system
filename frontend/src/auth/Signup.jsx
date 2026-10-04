@@ -41,6 +41,9 @@ const I = {
   briefcase: <><rect width="20" height="14" x="2" y="7" rx="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></>,
   users:     <><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></>,
   layers:    <><path d="m12.83 2.18a2 2 0 0 0-1.66 0L2.6 6.08a1 1 0 0 0 0 1.83l8.58 3.91a2 2 0 0 0 1.66 0l8.58-3.9a1 1 0 0 0 0-1.83Z"/><path d="m22 17.65-9.17 4.16a2 2 0 0 1-1.66 0L2 17.65"/><path d="m22 12.65-9.17 4.16a2 2 0 0 1-1.66 0L2 12.65"/></>,
+  shield:    <><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></>,
+  idCard:    <><rect width="20" height="14" x="2" y="5" rx="2"/><circle cx="8" cy="12" r="2.5"/><path d="M14 10h4"/><path d="M14 14h3"/></>,
+  fileText:  <><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><line x1="10" y1="9" x2="8" y2="9"/></>,
 };
 
 /* ── Styled input ────────────────────────────────────────────── */
@@ -79,8 +82,16 @@ export default function Signup() {
   const [error, setError] = useState("");
   const [showPw, setShowPw] = useState(false);
   const [showConfirmPw, setShowConfirmPw] = useState(false);
+
+  // Company logo
   const [logoPreview, setLogoPreview] = useState(null);
   const [logoFile, setLogoFile] = useState(null);
+
+  // Security verification files
+  const [cnicFile, setCnicFile] = useState(null);
+  const [cnicPreview, setCnicPreview] = useState(null);
+  const [regDocFile, setRegDocFile] = useState(null);
+  const [regDocFileName, setRegDocFileName] = useState("");
 
   /* ── Applicant form state ─────────────────────────────────── */
   const [applicantForm, setApplicantForm] = useState({
@@ -88,6 +99,7 @@ export default function Signup() {
     email: "",
     password: "",
     confirmPassword: "",
+    cnicNumber: "",
   });
 
   /* ── Company form state ──────────────────────────────────── */
@@ -98,6 +110,7 @@ export default function Signup() {
     industry: "",
     address: "",
     phone: "",
+    taxId: "",
     ownerName: "",
     ownerEmail: "",
     password: "",
@@ -115,30 +128,61 @@ export default function Signup() {
     }
   };
 
+  /* ── CNIC file pick ───────────────────────────────────────── */
+  const handleCnicChange = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      if (file.size > 5 * 1024 * 1024) {
+        setError("CNIC image size must not exceed 5MB.");
+        return;
+      }
+      setCnicFile(file);
+      const reader = new FileReader();
+      reader.onload = (ev) => setCnicPreview(ev.target.result);
+      reader.readAsDataURL(file);
+    }
+  };
+
+  /* ── Company Doc file pick ────────────────────────────────── */
+  const handleRegDocChange = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      if (file.size > 10 * 1024 * 1024) {
+        setError("Company document size must not exceed 10MB.");
+        return;
+      }
+      setRegDocFile(file);
+      setRegDocFileName(file.name);
+    }
+  };
+
   /* ── Applicant submit ────────────────────────────────────── */
   const handleApplicantSubmit = async (e) => {
     e.preventDefault();
     setError("");
-    console.log("Current formData state:", applicantForm);
-    console.log("Current role value:", "applicant");
 
     if (applicantForm.password !== applicantForm.confirmPassword) {
       setError("Passwords do not match.");
       return;
     }
 
-    const payload = {
-      username: applicantForm.username,
-      email: applicantForm.email,
-      password: applicantForm.password,
-      role: "applicant",
-    };
-    console.log("API Payload before call:", payload);
+    const formData = new FormData();
+    formData.append("role", "applicant");
+    formData.append("username", applicantForm.username);
+    formData.append("email", applicantForm.email);
+    formData.append("password", applicantForm.password);
+
+    if (applicantForm.cnicNumber?.trim()) {
+      formData.append("cnic_number", applicantForm.cnicNumber.trim());
+    }
+    if (cnicFile) {
+      formData.append("cnic_image", cnicFile);
+    }
 
     setLoading(true);
     try {
-      await signup(payload);
-      alert("Signup successful! Please login.");
+      await signup(formData);
+      alert("Applicant account created successfully! Please login.");
       navigate("/login");
     } catch (err) {
       console.error("API Error during signup:", err);
@@ -160,7 +204,6 @@ export default function Signup() {
   const handleCompanySubmit = async (e) => {
     e.preventDefault();
     setError("");
-    console.log("Current formData state:", companyForm);
 
     if (companyForm.password !== companyForm.confirmPassword) {
       setError("Passwords do not match.");
@@ -172,42 +215,32 @@ export default function Signup() {
       return;
     }
 
-    let payload;
-    if (logoFile) {
-      const formData = new FormData();
-      formData.append("role", "company_admin");
-      formData.append("username", companyForm.ownerName);
-      formData.append("email", companyForm.ownerEmail);
-      formData.append("password", companyForm.password);
-      formData.append("company_name", companyForm.companyName);
-      formData.append("company_email", companyForm.companyEmail);
-      formData.append("website", companyForm.website);
-      formData.append("industry", companyForm.industry);
-      formData.append("phone", companyForm.phone);
-      formData.append("address", companyForm.address);
-      formData.append("logo", logoFile);
-      payload = formData;
-    } else {
-      payload = {
-        role: "company_admin",
-        username: companyForm.ownerName,
-        email: companyForm.ownerEmail,
-        password: companyForm.password,
-        company_name: companyForm.companyName,
-        company_email: companyForm.companyEmail,
-        website: companyForm.website,
-        industry: companyForm.industry,
-        phone: companyForm.phone,
-        address: companyForm.address,
-      };
-    }
+    const formData = new FormData();
+    formData.append("role", "company_admin");
+    formData.append("username", companyForm.ownerName);
+    formData.append("email", companyForm.ownerEmail);
+    formData.append("password", companyForm.password);
+    formData.append("company_name", companyForm.companyName);
+    formData.append("company_email", companyForm.companyEmail);
+    formData.append("website", companyForm.website);
+    formData.append("industry", companyForm.industry);
+    formData.append("phone", companyForm.phone);
+    formData.append("address", companyForm.address);
 
-    console.log("API Payload before call:", payload);
+    if (logoFile) {
+      formData.append("logo", logoFile);
+    }
+    if (companyForm.taxId?.trim()) {
+      formData.append("tax_id", companyForm.taxId.trim());
+    }
+    if (regDocFile) {
+      formData.append("registration_document", regDocFile);
+    }
 
     setLoading(true);
     try {
-      await signup(payload);
-      alert("Company account created! Please login.");
+      await signup(formData);
+      alert("Company account registered successfully! Please login.");
       navigate("/login");
     } catch (err) {
       console.error("API Error during signup:", err);
@@ -456,6 +489,73 @@ export default function Signup() {
                 </div>
               </div>
 
+              {/* Security & Identity Verification */}
+              <div className="auth-section-divider">Identity Verification & Security</div>
+
+              <div className="auth-info-box">
+                <Icon size={15} d={I.shield} />
+                <span>
+                  <strong>Candidate Verification:</strong> Provide your CNIC / National ID for enhanced profile security and verified candidate status.
+                </span>
+              </div>
+
+              <AuthInput
+                id="apl-cnic"
+                label="CNIC / National ID Number"
+                icon={I.idCard}
+                placeholder="e.g. 42101-1234567-1"
+                value={applicantForm.cnicNumber}
+                onChange={(e) => setApplicantForm({ ...applicantForm, cnicNumber: e.target.value })}
+              />
+
+              <div className="auth-field">
+                <label className="auth-label">CNIC / ID Card Photo</label>
+                <label className="auth-logo-upload" htmlFor="apl-cnic-file" title="Upload CNIC photo">
+                  <div className="auth-logo-upload-preview">
+                    {cnicPreview ? (
+                      <img src={cnicPreview} alt="CNIC preview" />
+                    ) : (
+                      <Icon size={20} d={I.idCard} />
+                    )}
+                  </div>
+                  <div className="auth-logo-upload-text" style={{ flex: 1 }}>
+                    <div className="auth-logo-upload-label">
+                      {cnicFile ? cnicFile.name : "Upload CNIC Photo"}
+                    </div>
+                    <div className="auth-logo-upload-hint">JPG, PNG or WEBP · Max 5MB · Encrypted storage</div>
+                  </div>
+                  {cnicFile && (
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        setCnicFile(null);
+                        setCnicPreview(null);
+                      }}
+                      style={{
+                        background: "none",
+                        border: "none",
+                        color: "var(--danger)",
+                        cursor: "pointer",
+                        fontSize: 12,
+                        fontWeight: 600,
+                        padding: "4px 8px",
+                      }}
+                    >
+                      Remove
+                    </button>
+                  )}
+                  <input
+                    id="apl-cnic-file"
+                    type="file"
+                    accept="image/png,image/jpeg,image/webp"
+                    style={{ display: "none" }}
+                    onChange={handleCnicChange}
+                  />
+                </label>
+              </div>
+
               <button type="submit" className="auth-submit" disabled={loading}>
                 {loading
                   ? <><span className="auth-spinner" /><span>Creating account…</span></>
@@ -572,6 +672,69 @@ export default function Signup() {
                     accept="image/png,image/jpeg,image/svg+xml"
                     style={{ display: "none" }}
                     onChange={handleLogoChange}
+                  />
+                </label>
+              </div>
+
+              {/* Company Legal & Security Verification */}
+              <div className="auth-section-divider">Company Legal & Security Verification</div>
+
+              <div className="auth-info-box">
+                <Icon size={15} d={I.shield} />
+                <span>
+                  <strong>Employer Verification:</strong> Provide your Business Tax ID / NTN and upload official registration or incorporation documents for verified status.
+                </span>
+              </div>
+
+              <AuthInput
+                id="co-tax-id"
+                label="Tax / Business Registration ID (NTN / EIN)"
+                icon={I.fileText}
+                placeholder="e.g. 1234567-8 or EIN / Trade License"
+                value={companyForm.taxId}
+                onChange={(e) => setCompanyForm({ ...companyForm, taxId: e.target.value })}
+              />
+
+              <div className="auth-field">
+                <label className="auth-label">Business Registration / Tax Certificate</label>
+                <label className="auth-logo-upload" htmlFor="co-reg-doc" title="Upload company document">
+                  <div className="auth-logo-upload-preview">
+                    <Icon size={20} d={I.fileText} />
+                  </div>
+                  <div className="auth-logo-upload-text" style={{ flex: 1 }}>
+                    <div className="auth-logo-upload-label">
+                      {regDocFileName || "Upload Registration Document"}
+                    </div>
+                    <div className="auth-logo-upload-hint">PDF, PNG, JPG or WEBP · Max 10MB</div>
+                  </div>
+                  {regDocFile && (
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        setRegDocFile(null);
+                        setRegDocFileName("");
+                      }}
+                      style={{
+                        background: "none",
+                        border: "none",
+                        color: "var(--danger)",
+                        cursor: "pointer",
+                        fontSize: 12,
+                        fontWeight: 600,
+                        padding: "4px 8px",
+                      }}
+                    >
+                      Remove
+                    </button>
+                  )}
+                  <input
+                    id="co-reg-doc"
+                    type="file"
+                    accept=".pdf,image/png,image/jpeg,image/webp"
+                    style={{ display: "none" }}
+                    onChange={handleRegDocChange}
                   />
                 </label>
               </div>

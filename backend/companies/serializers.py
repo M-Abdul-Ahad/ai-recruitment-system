@@ -11,6 +11,8 @@ if TYPE_CHECKING:
     from users.models import User
     from django.contrib.auth.models import UserManager  # for create_user typing
 
+from users.validators import validate_company_document
+
 _User = get_user_model()
 
 
@@ -26,8 +28,16 @@ class CompanySerializer(serializers.ModelSerializer):
 
     class Meta:  # type: ignore[override]
         model = Company
-        fields = ["id", "name", "email", "description", "website", "industry", "phone", "address", "logo", "created_at", "updated_at", "recruiters"]
-        read_only_fields = ["id", "name", "email", "description", "website", "industry", "phone", "address", "logo", "created_at", "updated_at", "recruiters"]
+        fields = [
+            "id", "name", "email", "description", "website", "industry",
+            "phone", "address", "logo", "tax_id", "registration_document",
+            "verification_status", "created_at", "updated_at", "recruiters"
+        ]
+        read_only_fields = [
+            "id", "name", "email", "description", "website", "industry",
+            "phone", "address", "logo", "tax_id", "registration_document",
+            "verification_status", "created_at", "updated_at", "recruiters"
+        ]
 
 
 class CompanyCreateSerializer(serializers.ModelSerializer):
@@ -42,7 +52,15 @@ class CompanyCreateSerializer(serializers.ModelSerializer):
 
     class Meta:  # type: ignore[override]
         model = Company
-        fields = ["name", "email", "description", "website", "industry", "phone", "address", "logo"]
+        fields = [
+            "name", "email", "description", "website", "industry",
+            "phone", "address", "logo", "tax_id", "registration_document"
+        ]
+
+    def validate_registration_document(self, value):
+        if value:
+            validate_company_document(value)
+        return value
 
     def validate_name(self, value):
         qs = Company.objects.filter(name__iexact=value)
