@@ -91,6 +91,21 @@ const RefreshIcon = () => (
   </svg>
 );
 
+const TargetIcon = () => (
+  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <circle cx="12" cy="12" r="10"/>
+    <circle cx="12" cy="12" r="6"/>
+    <circle cx="12" cy="12" r="2"/>
+  </svg>
+);
+
+const BriefcaseIcon = () => (
+  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <rect x="2" y="7" width="20" height="14" rx="2" ry="2"/>
+    <path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/>
+  </svg>
+);
+
 const ResumeBuilder = () => {
   const { user } = useContext(AuthContext);
 
@@ -127,10 +142,34 @@ const ResumeBuilder = () => {
   const [isFetchingData, setIsFetchingData] = useState(false);
   const [fetchErrorMsg, setFetchErrorMsg] = useState("");
 
+  // Active Jobs & ATS Tailoring state
+  const [activeJobs, setActiveJobs] = useState([]);
+  const [selectedJobId, setSelectedJobId] = useState("");
+  const [isCustomJob, setIsCustomJob] = useState(false);
+  const [customJobTitle, setCustomJobTitle] = useState("");
+  const [customJobDescription, setCustomJobDescription] = useState("");
+  const [isTailoring, setIsTailoring] = useState(false);
+  const [tailorStatusStep, setTailorStatusStep] = useState("");
+  const [atsNotes, setAtsNotes] = useState(null);
+
   // Multi-Page count tracking
   const [pageCount, setPageCount] = useState(1);
 
   const printRef = useRef(null);
+
+  // Load active jobs for ATS Targeting
+  useEffect(() => {
+    const loadJobs = async () => {
+      try {
+        const res = await api.get("/jobs/");
+        const jobs = Array.isArray(res.data) ? res.data : (res.data.results || []);
+        setActiveJobs(jobs.filter((j) => j.status === "ACTIVE" || !j.status));
+      } catch (err) {
+        console.error("Failed to load active jobs for ATS tailoring:", err);
+      }
+    };
+    loadJobs();
+  }, []);
 
   // Measure content height and calculate actual A4 pages
   useEffect(() => {
@@ -154,7 +193,6 @@ const ResumeBuilder = () => {
 
     return () => resizeObserver.disconnect();
   }, [resumeData, selectedTemplateId]);
-
 
   // Handle fetching parsed resume data from DB
   const handleFetchDataFromDB = async () => {
@@ -207,6 +245,83 @@ const ResumeBuilder = () => {
       setIsFetchingData(false);
     }
   };
+
+  // Handle AI ATS Job Tailoring
+  const handleTailorForJob = async () => {
+    setFetchErrorMsg("");
+    setAiSuccessMsg("");
+
+    if (isCustomJob) {
+      if (!customJobTitle.trim() && !customJobDescription.trim()) {
+        setFetchErrorMsg("Please provide a Job Title or paste a Job Description to optimize against.");
+        return;
+      }
+    } else {
+      if (!selectedJobId) {
+        setFetchErrorMsg("Please select a target job from the dropdown or choose 'Custom Job Description'.");
+        return;
+      }
+    }
+
+    setIsTailoring(true);
+    setTailorStatusStep("Analyzing Target Job & Extracting Key ATS Keywords...");
+
+    try {
+      const payload = {
+        resume_data: resumeData,
+      };
+
+      if (isCustomJob) {
+        payload.job_title = customJobTitle;
+        payload.job_description = customJobDescription;
+      } else {
+        payload.job_id = selectedJobId;
+      }
+
+      const timer1 = setTimeout(() => {
+        setTailorStatusStep("Aligning Experience, Projects & STAR Bullet Points...");
+      }, 1500);
+
+      const timer2 = setTimeout(() => {
+        setTailorStatusStep("Reordering Skills & Maximizing ATS Match Score...");
+      }, 3200);
+
+      const res = await api.post("/resumes/tailor-for-job/", payload);
+      clearTimeout(timer1);
+      clearTimeout(timer2);
+
+      const { tailored_resume_data, ats_notes, job_title } = res.data;
+
+      if (tailored_resume_data) {
+        setResumeData((prev) => ({
+          ...prev,
+          personal: {
+            ...prev.personal,
+            ...(tailored_resume_data.personal || {}),
+            email: tailored_resume_data.personal?.email || prev.personal?.email || user?.email || "",
+          },
+          summary: tailored_resume_data.summary || prev.summary,
+          education: tailored_resume_data.education?.length ? tailored_resume_data.education : prev.education,
+          experience: tailored_resume_data.experience?.length ? tailored_resume_data.experience : prev.experience,
+          skills: tailored_resume_data.skills?.length ? tailored_resume_data.skills : prev.skills,
+          projects: tailored_resume_data.projects?.length ? tailored_resume_data.projects : prev.projects,
+        }));
+
+        setAtsNotes(ats_notes || null);
+        setAiSuccessMsg(`🎯 Resume successfully tailored & optimized for "${job_title || 'Target Job'}" with maximum ATS keyword alignment!`);
+        setTimeout(() => setAiSuccessMsg(""), 7000);
+      }
+    } catch (err) {
+      console.error("Error tailoring resume for job:", err);
+      const msg = err.response?.data?.error || "Failed to tailor resume for the selected job. Please try again.";
+      setFetchErrorMsg(msg);
+      setTimeout(() => setFetchErrorMsg(""), 7000);
+    } finally {
+      setIsTailoring(false);
+      setTailorStatusStep("");
+    }
+  };
+
 
 
   // Filter templates by active category
@@ -909,6 +1024,147 @@ RETURN STRICTLY VALID JSON ONLY:
                   </div>
                 </div>
 
+                {/* 🎯 TARGET JOB & ATS OPTIMIZER CARD */}
+                <div className="p-4 rounded-2xl bg-gradient-to-br from-[#F4F6F0] via-[#ECEEDF] to-[#E5E9D5] dark:from-[#232717] dark:via-[#1E2214] dark:to-[#171A0E] border border-[#C6CBAE] dark:border-[#3E452B] shadow-sm space-y-3">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <div className="p-1.5 rounded-lg bg-[#3D4127] text-[#D4DE95] dark:bg-[#D4DE95] dark:text-[#3D4127]">
+                        <TargetIcon />
+                      </div>
+                      <div>
+                        <h4 className="text-xs sm:text-sm font-bold text-[#22241B] dark:text-[#EBF0DA] flex items-center gap-1.5">
+                          <span>Target Job & ATS Optimizer</span>
+                          <span className="px-1.5 py-0.2 rounded text-[9px] font-extrabold uppercase bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300">
+                            AI Powered
+                          </span>
+                        </h4>
+                        <p className="text-[11px] text-[#52564A] dark:text-[#9CA485]">
+                          Select an active opening or paste JD to maximize ATS keyword alignment.
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* SELECTOR & ACTION BUTTON */}
+                  <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
+                    <div className="flex-1">
+                      <select
+                        value={isCustomJob ? "custom" : selectedJobId}
+                        onChange={(e) => {
+                          if (e.target.value === "custom") {
+                            setIsCustomJob(true);
+                            setSelectedJobId("");
+                          } else {
+                            setIsCustomJob(false);
+                            setSelectedJobId(e.target.value);
+                          }
+                        }}
+                        className="w-full text-xs font-semibold px-3 py-2 rounded-xl bg-white dark:bg-[#171911] border border-[#C6CBAE] dark:border-[#3E452B] text-[#22241B] dark:text-[#EBF0DA] focus:outline-none focus:ring-2 focus:ring-[#636B2F]"
+                      >
+                        <option value="">-- Select Active Target Job --</option>
+                        {activeJobs.map((j) => (
+                          <option key={j.id} value={j.id}>
+                            {j.title} {j.company_name ? `• ${j.company_name}` : ""}
+                          </option>
+                        ))}
+                        <option value="custom">✍️ Custom Job Description (Paste JD)...</option>
+                      </select>
+                    </div>
+
+                    <button
+                      type="button"
+                      onClick={handleTailorForJob}
+                      disabled={isTailoring || (!selectedJobId && !isCustomJob)}
+                      className="px-3.5 py-2 rounded-xl bg-[#3D4127] text-[#D4DE95] dark:bg-[#D4DE95] dark:text-[#3D4127] text-xs font-bold hover:opacity-90 transition flex items-center justify-center gap-1.5 shadow-md disabled:opacity-40 disabled:cursor-not-allowed"
+                    >
+                      {isTailoring ? (
+                        <>
+                          <div className="w-3.5 h-3.5 border-2 border-current border-t-transparent rounded-full animate-spin" />
+                          <span>Optimizing...</span>
+                        </>
+                      ) : (
+                        <>
+                          <SparklesIcon />
+                          <span>Tailor for Job (ATS)</span>
+                        </>
+                      )}
+                    </button>
+                  </div>
+
+                  {/* EXPANDABLE CUSTOM JOB FORM */}
+                  {isCustomJob && (
+                    <div className="p-3 rounded-xl bg-white/70 dark:bg-[#171911]/70 border border-[#D3D6C4] dark:border-[#383D28] space-y-2 text-xs animate-fade-in">
+                      <div>
+                        <label className="block text-[11px] font-bold text-[#52564A] dark:text-[#9CA485] mb-1">
+                          Target Job Title
+                        </label>
+                        <input
+                          type="text"
+                          placeholder="e.g. Senior Full Stack Engineer"
+                          value={customJobTitle}
+                          onChange={(e) => setCustomJobTitle(e.target.value)}
+                          className="apl-input text-xs py-1.5"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-[11px] font-bold text-[#52564A] dark:text-[#9CA485] mb-1">
+                          Target Job Description / Requirements
+                        </label>
+                        <textarea
+                          rows={3}
+                          placeholder="Paste key responsibilities, requirements, and required technologies..."
+                          value={customJobDescription}
+                          onChange={(e) => setCustomJobDescription(e.target.value)}
+                          className="apl-input text-xs py-1.5 resize-none"
+                        />
+                      </div>
+                    </div>
+                  )}
+
+                  {/* TAILORING PROGRESS STEP */}
+                  {isTailoring && (
+                    <div className="p-2.5 rounded-xl bg-[#3D4127]/10 dark:bg-[#D4DE95]/10 border border-[#3D4127]/20 dark:border-[#D4DE95]/20 flex items-center gap-2 text-xs font-semibold text-[#3D4127] dark:text-[#D4DE95] animate-pulse">
+                      <div className="w-3.5 h-3.5 border-2 border-current border-t-transparent rounded-full animate-spin" />
+                      <span>{tailorStatusStep || "Aligning candidate experience with target job..."}</span>
+                    </div>
+                  )}
+
+                  {/* ATS OPTIMIZATION HIGHLIGHTS */}
+                  {atsNotes && !isTailoring && (
+                    <div className="p-3 rounded-xl bg-emerald-50/80 dark:bg-emerald-950/40 border border-emerald-300 dark:border-emerald-800 text-xs space-y-1.5 animate-fade-in">
+                      <div className="flex items-center justify-between">
+                        <span className="font-bold text-emerald-900 dark:text-emerald-300 flex items-center gap-1">
+                          <span>🎯</span> ATS Keyword Highlights:
+                        </span>
+                        <span className="text-[10px] uppercase font-extrabold text-emerald-700 dark:text-emerald-400">
+                          {atsNotes.target_role || "Role Optimized"}
+                        </span>
+                      </div>
+
+                      {atsNotes.matching_keywords && atsNotes.matching_keywords.length > 0 && (
+                        <div className="flex flex-wrap gap-1 pt-1">
+                          {atsNotes.matching_keywords.map((kw, idx) => (
+                            <span
+                              key={idx}
+                              className="px-2 py-0.5 rounded-md bg-emerald-100 dark:bg-emerald-900 text-emerald-900 dark:text-emerald-200 text-[10px] font-semibold"
+                            >
+                              ✓ {kw}
+                            </span>
+                          ))}
+                        </div>
+                      )}
+
+                      {atsNotes.key_improvements && atsNotes.key_improvements.length > 0 && (
+                        <ul className="list-disc list-inside text-[11px] text-emerald-800 dark:text-emerald-300 pt-1 space-y-0.5">
+                          {atsNotes.key_improvements.map((imp, idx) => (
+                            <li key={idx}>{imp}</li>
+                          ))}
+                        </ul>
+                      )}
+                    </div>
+                  )}
+                </div>
+
                 {/* DB ERROR NOTIFICATION BANNER */}
                 {fetchErrorMsg && (
                   <div className="p-3.5 rounded-xl bg-amber-50 text-amber-900 border border-amber-300 dark:bg-amber-950 dark:text-amber-200 dark:border-amber-800 text-xs font-semibold flex items-center gap-2 animate-fade-in shadow-sm">
@@ -925,9 +1181,9 @@ RETURN STRICTLY VALID JSON ONLY:
                   </div>
                 )}
 
-
                 {/* EDITOR TABS */}
                 <div className="apl-card space-y-5 border border-[#D3D6C4] dark:border-[#383D28]">
+
                   <div className="flex items-center gap-1 overflow-x-auto pb-2 border-b border-[#D3D6C4] dark:border-[#383D28]">
                     {[
                       "personal",

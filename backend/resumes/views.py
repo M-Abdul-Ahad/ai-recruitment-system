@@ -241,3 +241,134 @@ def latest_resume(request):
     }, status=status.HTTP_200_OK)
 
 
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def tailor_resume_for_job(request):
+    """
+    AI-powered endpoint that tailors a resume (either provided in request or fetched from DB)
+    to maximize ATS score and relevancy for a specific target job.
+    """
+    from jobs.models import Job
+    from .services.gemini_ai import tailor_resume_for_job_ai
+
+    job_id = request.data.get('job_id')
+    custom_title = request.data.get('job_title', '').strip()
+    custom_desc = request.data.get('job_description', '').strip()
+    custom_reqs = request.data.get('requirements', '').strip()
+    input_resume_data = request.data.get('resume_data')
+
+    job_title = custom_title
+    job_description = custom_desc
+    requirements = custom_reqs
+
+    if job_id:
+        try:
+            job = Job.objects.prefetch_related('skills').get(id=job_id)
+            job_title = job.title
+            job_description = job.description
+            job_skills = ", ".join([s.name for s in job.skills.all()])
+            requirements = f"Experience required: {job.experience_required} years. Key skills: {job_skills}"
+        except Job.DoesNotExist:
+            return Response(
+                {"error": "Target job not found"},
+                status=status.HTTP_404_NOT_FOUND
+            )
+
+    if not job_title and not job_description:
+        return Response(
+            {"error": "Please provide a target job or job description to tailor the resume against."},
+            status=status.HTTP_400_BAD_REQUEST
+        )
+
+    # If user provided resume_data from their current builder state, use it
+    # Otherwise fallback to their latest resume in database
+    target_resume_data = input_resume_data
+    if not target_resume_data or not (
+        target_resume_data.get('experience') or
+        target_resume_data.get('education') or
+        target_resume_data.get('skills')
+    ):
+        resume = Resume.objects.filter(applicant=request.user).order_by('-uploaded_at').first()
+        if not resume:
+            return Response(
+                {"error": "No resume data found to tailor. Please upload your resume or fill in your details first."},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        contact_data = extract_contact_info(resume.extracted_text) if resume.extracted_text else {}
+        skills_list = [s.name for s in resume.skills.all()]
+        education_list = [
+            {
+                "degree": e.degree,
+                "institution": e.institution,
+                "field": "",
+                "location": "",
+                "startDate": "",
+                "endDate": e.year or "",
+            }
+            for e in resume.education.all()
+        ]
+        experience_list = []
+        for exp in resume.experience.all():
+            desc = exp.description or ""
+            raw_bullets = [b.strip() for b in re.split(r'[\n\r]+', desc) if b.strip()] if desc else []
+            cleaned_bullets = [re.sub(r'^[-•*–>·]\s*', '', b).strip() for b in raw_bullets if b.strip()]
+            seen = set()
+            final_bullets = [b for b in cleaned_bullets if b and b.lower() not in seen and not seen.add(b.lower())]
+            experience_list.append({
+                "company": exp.company or "",
+                "position": exp.job_title or "",
+                "location": "",
+                "startDate": exp.duration or "",
+                "endDate": "",
+                "current": False,
+                "bullets": final_bullets if final_bullets else ([desc] if desc else []),
+            })
+
+        projects_list = extract_projects(resume.extracted_text) if resume.extracted_text else []
+
+        target_resume_data = {
+            "personal": {
+                "fullName": contact_data.get("full_name") or request.user.username or "",
+                "email": contact_data.get("email") or request.user.email or "",
+                "phone": contact_data.get("phone") or "",
+                "address": contact_data.get("location") or "",
+                "title": job_title or "Software Engineer",
+                "linkedin": contact_data.get("linkedin") or "",
+                "github": contact_data.get("github") or "",
+                "portfolio": "",
+            },
+            "summary": resume.ai_feedback or "",
+            "education": education_list,
+            "experience": experience_list,
+            "skills": [{"category": "Technical & Professional Skills", "skills": skills_list}] if skills_list else [],
+            "projects": projects_list,
+            "certifications": [],
+            "awards": [],
+            "volunteerExperience": [],
+            "languages": [],
+            "memberships": [],
+        }
+
+    try:
+        tailored_data = tailor_resume_for_job_ai(
+            resume_data=target_resume_data,
+            job_title=job_title,
+            job_description=job_description,
+            requirements=requirements
+        )
+
+        return Response({
+            "success": True,
+            "job_title": job_title,
+            "tailored_resume_data": tailored_data,
+            "ats_notes": tailored_data.get("ats_optimization_notes", {})
+        }, status=status.HTTP_200_OK)
+
+    except Exception as e:
+        return Response(
+            {"error": f"AI ATS optimization failed: {str(e)}"},
+            status=status.HTTP_500_INTERNAL_SERVER_ERROR
+        )
+
+
