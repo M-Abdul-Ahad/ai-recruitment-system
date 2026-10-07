@@ -2,6 +2,7 @@ import { useContext, useState, useEffect } from "react";
 import { AuthContext } from "../auth/AuthContext";
 import { useNavigate } from "react-router-dom";
 import { getJobs, publishJob, closeJob, deleteJob } from "../api/jobs";
+import { useToast } from "../components/ui";
 import JobCard from "./components/JobCard";
 import ApplicantListModal from "./components/ApplicantListModal";
 import BulkUploadModal from "./components/BulkUploadModal";
@@ -9,6 +10,7 @@ import BulkUploadModal from "./components/BulkUploadModal";
 const Jobs = () => {
   const { user } = useContext(AuthContext);
   const navigate = useNavigate();
+  const toast = useToast();
 
   const [jobs, setJobs] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -40,9 +42,10 @@ const Jobs = () => {
     try {
       const response = await publishJob(jobId);
       setJobs(jobs.map(j => j.id === jobId ? response.data : j));
+      toast.success("Job published successfully! Candidates can now apply.");
     } catch (err) {
       console.error(err);
-      alert(err.response?.data?.error || "Failed to publish job.");
+      toast.error(err.response?.data?.error || "Failed to publish job.");
     }
   };
 
@@ -50,9 +53,10 @@ const Jobs = () => {
     try {
       const response = await closeJob(jobId);
       setJobs(jobs.map(j => j.id === jobId ? response.data : j));
+      toast.info("Job closed successfully.");
     } catch (err) {
       console.error(err);
-      alert("Failed to close job.");
+      toast.error("Failed to close job.");
     }
   };
 
@@ -60,9 +64,10 @@ const Jobs = () => {
     try {
       await deleteJob(jobId);
       setJobs(jobs.filter(j => j.id !== jobId));
+      toast.success("Job deleted successfully.");
     } catch (err) {
       console.error(err);
-      alert("Failed to delete job.");
+      toast.error(err.response?.data?.error || "Failed to delete job.");
     }
   };
 

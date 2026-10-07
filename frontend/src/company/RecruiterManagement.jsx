@@ -1,9 +1,11 @@
 import { useState, useEffect, useContext } from "react";
 import { AuthContext } from "../auth/AuthContext";
+import { useToast, Alert } from "../components/ui";
 import api from "../api/axios";
 
 export default function RecruiterManagement() {
   const { user: currentUser } = useContext(AuthContext);
+  const toast = useToast();
   const [members, setMembers] = useState([]);
   const [invitations, setInvitations] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -59,26 +61,26 @@ export default function RecruiterManagement() {
       const res = await api.post("/companies/invitations/", { email: inviteEmail.trim() });
       
       if (res.data && res.data.email_sent === false) {
-        setError(
-          `Invitation record created for ${inviteEmail.trim()}, but email delivery failed: ${
-            res.data.email_error || "Please check SMTP configuration"
-          }.`
-        );
+        const msg = `Invitation record created for ${inviteEmail.trim()}, but email delivery failed: ${
+          res.data.email_error || "Please check SMTP configuration"
+        }.`;
+        setError(msg);
+        toast.warning(msg);
       } else {
-        setSuccess(
-          `Invitation successfully sent to ${inviteEmail.trim()}. A password setup link has been emailed.`
-        );
+        const msg = `Invitation successfully sent to ${inviteEmail.trim()}. A password setup link has been emailed.`;
+        setSuccess(msg);
+        toast.success(msg);
       }
       setInviteEmail("");
       await fetchInvitations();
       await fetchMembers();
     } catch (err) {
       console.error("Invite recruiter error:", err);
-      setError(
-        err.response?.data?.email?.[0] ||
-          err.response?.data?.detail ||
-          "Failed to send recruiter invitation."
-      );
+      const msg = err.response?.data?.email?.[0] ||
+        err.response?.data?.detail ||
+        "Failed to send recruiter invitation.";
+      setError(msg);
+      toast.error(msg);
     } finally {
       setInviteLoading(false);
     }
@@ -94,10 +96,13 @@ export default function RecruiterManagement() {
     try {
       await api.delete(`/companies/invitations/${invitationId}/`);
       setSuccess("Invitation revoked successfully.");
+      toast.success("Invitation revoked successfully.");
       await fetchInvitations();
     } catch (err) {
       console.error("Revoke invitation error:", err);
-      setError(err.response?.data?.detail || "Failed to revoke invitation.");
+      const msg = err.response?.data?.detail || "Failed to revoke invitation.";
+      setError(msg);
+      toast.error(msg);
     }
   };
 
@@ -117,14 +122,15 @@ export default function RecruiterManagement() {
     try {
       await api.delete(`/companies/members/${memberId}/`);
       setSuccess("Recruiter deleted from database successfully.");
+      toast.success("Recruiter removed from company roster.");
       await fetchMembers();
     } catch (err) {
       console.error("Delete recruiter error:", err);
-      setError(
-        err.response?.data?.detail ||
-          err.response?.data?.error ||
-          "Failed to delete recruiter."
-      );
+      const msg = err.response?.data?.detail ||
+        err.response?.data?.error ||
+        "Failed to delete recruiter.";
+      setError(msg);
+      toast.error(msg);
     } finally {
       setDeleteLoadingId(null);
     }
@@ -146,21 +152,11 @@ export default function RecruiterManagement() {
 
       {/* Alert Messages */}
       {error && (
-        <div className="p-4 rounded-xl bg-red-500/10 border border-red-500/30 text-red-600 dark:text-red-400 text-xs font-semibold flex items-center justify-between">
-          <span>{error}</span>
-          <button onClick={() => setError("")} className="text-xs font-bold text-red-500 hover:underline">
-            Dismiss
-          </button>
-        </div>
+        <Alert type="error" message={error} onClose={() => setError("")} />
       )}
 
       {success && (
-        <div className="p-4 rounded-xl bg-green-500/10 border border-green-500/30 text-green-700 dark:text-green-400 text-xs font-semibold flex items-center justify-between">
-          <span>{success}</span>
-          <button onClick={() => setSuccess("")} className="text-xs font-bold text-green-600 hover:underline">
-            Dismiss
-          </button>
-        </div>
+        <Alert type="success" message={success} onClose={() => setSuccess("")} />
       )}
 
       {/* Card 1: Invite Recruiter via Email */}

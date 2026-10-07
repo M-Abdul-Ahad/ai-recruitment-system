@@ -2,6 +2,7 @@ import { useState, useContext } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import "./auth.css";
 import { AuthContext } from "./AuthContext";
+import { useToast, Alert } from "../components/ui";
 
 /* ── Inline icon helper ──────────────────────────────────────── */
 const Icon = ({ d, size = 18 }) => (
@@ -75,6 +76,7 @@ function AuthInput({ id, label, type = "text", icon, placeholder, value, onChang
 export default function Signup() {
   const { signup } = useContext(AuthContext);
   const navigate = useNavigate();
+  const toast = useToast();
 
   // "applicant" | "company"
   const [activeTab, setActiveTab] = useState("applicant");
@@ -194,7 +196,7 @@ export default function Signup() {
     setLoading(true);
     try {
       await signup(formData);
-      alert("Applicant account created successfully! Please login.");
+      toast.success("Applicant account created successfully! Please log in.");
       navigate("/login");
     } catch (err) {
       console.error("API Error during signup:", err);
@@ -206,7 +208,9 @@ export default function Signup() {
           errMsgs.push(`${key}: ${msg}`);
         }
       }
-      setError(errMsgs.length > 0 ? errMsgs.join(" | ") : "Signup failed. Please check your details and try again.");
+      const errMsg = errMsgs.length > 0 ? errMsgs.join(" | ") : "Signup failed. Please check your details and try again.";
+      setError(errMsg);
+      toast.error(errMsg);
     } finally {
       setLoading(false);
     }
@@ -265,7 +269,11 @@ export default function Signup() {
     setLoading(true);
     try {
       await signup(formData);
-      alert("Company registration submitted! Your legal verification document is under review. An email confirmation has been sent.");
+      toast.success({
+        title: "Registration Submitted",
+        message: "Your legal verification document is under review. A confirmation email has been sent.",
+        duration: 6000,
+      });
       navigate("/login");
     } catch (err) {
       console.error("API Error during signup:", err);
@@ -277,7 +285,9 @@ export default function Signup() {
           errMsgs.push(`${key}: ${msg}`);
         }
       }
-      setError(errMsgs.length > 0 ? errMsgs.join(" | ") : "Registration failed. Please check your details and try again.");
+      const errMsg = errMsgs.length > 0 ? errMsgs.join(" | ") : "Registration failed. Please check your details and try again.";
+      setError(errMsg);
+      toast.error(errMsg);
     } finally {
       setLoading(false);
     }
@@ -435,19 +445,12 @@ export default function Signup() {
 
           {/* Error */}
           {error && (
-            <div role="alert" style={{
-              background: "var(--danger-bg)",
-              border: "1px solid rgba(180, 69, 61, 0.25)",
-              borderRadius: "var(--r-btn)",
-              padding: "12px 16px",
-              fontSize: 13,
-              color: "var(--danger)",
-              marginBottom: "var(--sp-4)",
-              display: "flex", alignItems: "center", gap: 8,
-            }}>
-              <Icon size={15} d={<><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></>} />
-              {error}
-            </div>
+            <Alert
+              type="error"
+              message={error}
+              onClose={() => setError("")}
+              style={{ marginBottom: "var(--sp-4)" }}
+            />
           )}
 
           {/* ═══════════ APPLICANT FORM ═══════════ */}

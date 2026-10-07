@@ -1,0 +1,225 @@
+/* =====================================================================
+   NOMINATE AI — TOAST & NOTIFICATION DESIGN SYSTEM
+   Modern, Glassmorphism, Responsive & Micro-animated
+   ===================================================================== */
+
+.nominate-toast-container {
+  position: fixed;
+  top: 24px;
+  right: 24px;
+  z-index: 999999;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  pointer-events: none;
+  max-width: 420px;
+  width: calc(100vw - 32px);
+}
+
+@media (max-width: 640px) {
+  .nominate-toast-container {
+    top: 16px;
+    right: 16px;
+    left: 16px;
+    width: auto;
+  }
+}
+
+/* Individual Toast Card */
+.nominate-toast {
+  pointer-events: auto;
+  position: relative;
+  overflow: hidden;
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+  padding: 14px 16px;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  box-shadow: 
+    0 12px 32px -4px rgba(34, 36, 27, 0.14),
+    0 4px 12px rgba(34, 36, 27, 0.06),
+    0 0 0 1px rgba(211, 214, 196, 0.6);
+  color: #22241B;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  transform-origin: top right;
+  animation: nominate-toast-in 0.32s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.nominate-toast:hover {
+  transform: translateY(-2px);
+  box-shadow: 
+    0 16px 36px -4px rgba(34, 36, 27, 0.18),
+    0 6px 16px rgba(34, 36, 27, 0.08);
+}
+
+.nominate-toast.toast-exiting {
+  animation: nominate-toast-out 0.26s cubic-bezier(0.4, 0, 1, 1) forwards;
+}
+
+/* Toast Color Themes */
+.nominate-toast-success {
+  border-left: 4px solid #4E7A33;
+}
+.nominate-toast-success .nominate-toast-icon-wrap {
+  background: rgba(78, 122, 51, 0.12);
+  color: #4E7A33;
+}
+.nominate-toast-success .nominate-toast-progress-bar {
+  background: linear-gradient(90deg, #4E7A33, #6B9E49);
+}
+
+.nominate-toast-error,
+.nominate-toast-danger {
+  border-left: 4px solid #B4453D;
+}
+.nominate-toast-error .nominate-toast-icon-wrap,
+.nominate-toast-danger .nominate-toast-icon-wrap {
+  background: rgba(180, 69, 61, 0.12);
+  color: #B4453D;
+}
+.nominate-toast-error .nominate-toast-progress-bar,
+.nominate-toast-danger .nominate-toast-progress-bar {
+  background: linear-gradient(90deg, #B4453D, #D65A51);
+}
+
+.nominate-toast-warning {
+  border-left: 4px solid #C99A3E;
+}
+.nominate-toast-warning .nominate-toast-icon-wrap {
+  background: rgba(201, 154, 62, 0.12);
+  color: #C99A3E;
+}
+.nominate-toast-warning .nominate-toast-progress-bar {
+  background: linear-gradient(90deg, #C99A3E, #E2B254);
+}
+
+.nominate-toast-info {
+  border-left: 4px solid #3E7285;
+}
+.nominate-toast-info .nominate-toast-icon-wrap {
+  background: rgba(62, 114, 133, 0.12);
+  color: #3E7285;
+}
+.nominate-toast-info .nominate-toast-progress-bar {
+  background: linear-gradient(90deg, #3E7285, #5A93A8);
+}
+
+/* Icon Wrap */
+.nominate-toast-icon-wrap {
+  flex-shrink: 0;
+  width: 32px;
+  height: 32px;
+  border-radius: 9px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-top: 1px;
+}
+
+/* Content */
+.nominate-toast-content {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.nominate-toast-title {
+  font-size: 13.5px;
+  font-weight: 700;
+  color: #22241B;
+  letter-spacing: -0.2px;
+  line-height: 1.35;
+}
+
+.nominate-toast-message {
+  font-size: 12.5px;
+  color: #52564A;
+  line-height: 1.45;
+  word-break: break-word;
+}
+
+/* Close Button */
+.nominate-toast-close {
+  flex-shrink: 0;
+  background: none;
+  border: none;
+  padding: 4px;
+  margin: -4px -4px 0 0;
+  color: #8A8F76;
+  cursor: pointer;
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.15s ease;
+}
+
+.nominate-toast-close:hover {
+  background: rgba(34, 36, 27, 0.08);
+  color: #22241B;
+}
+
+/* Optional Action Button inside Toast */
+.nominate-toast-action {
+  margin-top: 6px;
+  align-self: flex-start;
+  padding: 4px 10px;
+  font-size: 11.5px;
+  font-weight: 700;
+  border-radius: 6px;
+  background: #3D4127;
+  color: #D4DE95;
+  border: none;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+.nominate-toast-action:hover {
+  background: #2E311D;
+  transform: translateY(-1px);
+}
+
+/* Progress bar */
+.nominate-toast-progress-wrap {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: rgba(34, 36, 27, 0.05);
+}
+
+.nominate-toast-progress-bar {
+  height: 100%;
+  width: 100%;
+  transform-origin: left;
+  transition: transform linear;
+}
+
+/* Animations */
+@keyframes nominate-toast-in {
+  from {
+    opacity: 0;
+    transform: translateY(-12px) scale(0.94);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes nominate-toast-out {
+  from {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+  to {
+    opacity: 0;
+    transform: translateY(-8px) scale(0.92);
+  }
+}

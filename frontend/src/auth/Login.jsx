@@ -2,6 +2,7 @@ import { useState, useContext } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import "./auth.css";
 import { AuthContext } from "./AuthContext";
+import { useToast, Alert } from "../components/ui";
 
 /* ── Inline icon helper ──────────────────────────────────────── */
 const Icon = ({ d, size = 18, viewBox = "0 0 24 24" }) => (
@@ -27,6 +28,7 @@ const BrainIcon = () => (
 export default function Login() {
   const { login } = useContext(AuthContext);
   const navigate = useNavigate();
+  const toast = useToast();
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -38,14 +40,15 @@ export default function Login() {
     e.preventDefault();
     setError("");
     setLoading(true);
-    console.log("LOGIN REQUEST:", { email, password });
     try {
       await login({ email, password });
-      console.log("REDIRECTING BASED ON ROLE");
+      toast.success("Signed in successfully. Welcome back!");
       navigate("/");
     } catch (err) {
       console.error("Login error:", err);
-      setError("Invalid email or password. Please try again.");
+      const msg = err.response?.data?.detail || err.response?.data?.error || "Invalid email or password. Please try again.";
+      setError(msg);
+      toast.error(msg);
     } finally {
       setLoading(false);
     }
@@ -149,23 +152,12 @@ export default function Login() {
           </div>
 
           {error && (
-            <div role="alert" style={{
-              background: "var(--danger-bg)",
-              border: "1px solid rgba(180, 69, 61, 0.25)",
-              borderRadius: "var(--r-btn)",
-              padding: "12px 16px",
-              fontSize: 13,
-              color: "var(--danger)",
-              marginBottom: "var(--sp-4)",
-              display: "flex",
-              alignItems: "center",
-              gap: 8,
-            }}>
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
-              </svg>
-              {error}
-            </div>
+            <Alert
+              type="error"
+              message={error}
+              onClose={() => setError("")}
+              style={{ marginBottom: "var(--sp-4)" }}
+            />
           )}
 
           <form className="auth-form" onSubmit={handleSubmit} noValidate>

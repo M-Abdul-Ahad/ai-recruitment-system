@@ -1,10 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { getApplicants, updateApplicantStatus } from '../../api/jobs';
+import { useToast } from '../../components/ui';
 
 const ApplicantListModal = ({ isOpen, onClose, job }) => {
   const [applicants, setApplicants] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const toast = useToast();
 
   useEffect(() => {
     if (isOpen && job) {
@@ -31,9 +33,10 @@ const ApplicantListModal = ({ isOpen, onClose, job }) => {
       await updateApplicantStatus(job.id, appId, newStatus);
       // Update local state
       setApplicants(prev => prev.map(app => app.id === appId ? { ...app, status: newStatus } : app));
+      toast.success(`Applicant status updated to ${newStatus.toLowerCase().replace('_', ' ')}.`);
     } catch (err) {
       console.error(err);
-      alert("Failed to update status.");
+      toast.error(err.response?.data?.error || "Failed to update status.");
     }
   };
 

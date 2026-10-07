@@ -3,6 +3,7 @@ import {
   getUsers, createUser, updateUser, deleteUser,
   getCompanies,
 } from "../api/admin";
+import { useToast } from "../components/ui";
 
 /* ── Role pill colour map ── */
 const ROLE_PILL = {
@@ -80,6 +81,7 @@ const Field = ({ label, htmlFor, children }) => (
 );
 
 export default function Users() {
+  const toast = useToast();
   const [users,      setUsers]      = useState([]);
   const [companies,  setCompanies]  = useState([]);
   const [loading,    setLoading]    = useState(true);
@@ -138,6 +140,7 @@ export default function Users() {
       setUsers((prev) => [...prev, res.data]);
       setAddForm(EMPTY_ADD_FORM);
       setShowAdd(false);
+      toast.success(`User "${res.data.username || res.data.email}" created successfully.`);
     } catch (err) {
       setAddErr(fmtErrors(err.response?.data));
     } finally {
@@ -182,6 +185,7 @@ export default function Users() {
       const res = await updateUser(editingUser.id, payload);
       setUsers((prev) => prev.map((u) => (u.id === editingUser.id ? res.data : u)));
       closeEditModal();
+      toast.success("User details updated successfully.");
     } catch (err) {
       setEditErr(fmtErrors(err.response?.data));
     } finally {
@@ -196,8 +200,9 @@ export default function Users() {
     try {
       await deleteUser(userId);
       setUsers((prev) => prev.filter((u) => u.id !== userId));
+      toast.success("User deleted successfully.");
     } catch (err) {
-      alert(err.response?.data?.error ?? "Failed to delete user.");
+      toast.error(err.response?.data?.error ?? "Failed to delete user.");
     } finally {
       setDeletingId(null);
     }

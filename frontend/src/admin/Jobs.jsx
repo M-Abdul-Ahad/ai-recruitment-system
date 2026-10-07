@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { getJobs, createJob, updateJob, deleteJob, getCompanies, getSkills, getUsers } from "../api/admin";
+import { useToast } from "../components/ui";
 
 /* ── Status pill ── */
 const STATUS_PILL = {
@@ -103,6 +104,7 @@ const SkillPicker = ({ allSkills, selected, onChange, prefix }) => {
 };
 
 export default function Jobs() {
+  const toast = useToast();
   const [jobs,       setJobs]       = useState([]);
   const [companies,  setCompanies]  = useState([]);
   const [allSkills,  setAllSkills]  = useState([]);
@@ -170,6 +172,7 @@ export default function Jobs() {
       const res = await createJob(payload);
       setJobs((prev) => [res.data, ...prev]);
       setAddForm(EMPTY_ADD); setShowAdd(false);
+      toast.success(`Job "${res.data.title}" created successfully.`);
     } catch (err) {
       setAddErr(fmtErrors(err.response?.data));
     } finally {
@@ -217,6 +220,7 @@ export default function Jobs() {
       const res = await updateJob(editingJob.id, payload);
       setJobs((prev) => prev.map((j) => (j.id === editingJob.id ? res.data : j)));
       closeEditModal();
+      toast.success("Job updated successfully.");
     } catch (err) {
       setEditErr(fmtErrors(err.response?.data));
     } finally {
@@ -231,8 +235,9 @@ export default function Jobs() {
     try {
       await deleteJob(id);
       setJobs((prev) => prev.filter((j) => j.id !== id));
+      toast.success("Job deleted successfully.");
     } catch (err) {
-      alert(err.response?.data?.error ?? "Failed to delete job.");
+      toast.error(err.response?.data?.error ?? "Failed to delete job.");
     } finally {
       setDeletingId(null);
     }

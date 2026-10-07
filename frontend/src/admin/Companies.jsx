@@ -7,6 +7,7 @@ import {
   approveCompany,
   rejectCompany,
 } from "../api/admin";
+import { useToast } from "../components/ui";
 
 /* ── Inline SVG icons ── */
 const PlusIcon = () => (
@@ -82,6 +83,7 @@ const Field = ({ label, htmlFor, children }) => (
 );
 
 export default function Companies() {
+  const toast = useToast();
   const [companies, setCompanies] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -137,6 +139,7 @@ export default function Companies() {
       const res = await createCompany(addForm);
       setCompanies((prev) => [res.data, ...prev]);
       setAddForm(EMPTY_FORM); setShowAdd(false);
+      toast.success(`Company "${res.data.name}" created successfully.`);
     } catch (err) {
       setAddErr(fmtErrors(err.response?.data));
     } finally {
@@ -173,6 +176,7 @@ export default function Companies() {
       const res = await updateCompany(editingCompany.id, editForm);
       setCompanies((prev) => prev.map((c) => (c.id === editingCompany.id ? res.data : c)));
       closeEditModal();
+      toast.success("Company updated successfully.");
     } catch (err) {
       setEditErr(fmtErrors(err.response?.data));
     } finally {
@@ -190,8 +194,13 @@ export default function Companies() {
       const res = await approveCompany(company.id);
       const updated = res.data.company || { ...company, verification_status: "verified", rejection_reason: "" };
       setCompanies((prev) => prev.map((c) => (c.id === company.id ? updated : c)));
+      toast.success({
+        title: "Company Approved & Verified",
+        message: `Verification approved for "${company.name}". Official activation email sent.`,
+        duration: 5000,
+      });
     } catch (err) {
-      alert(err.response?.data?.error || err.response?.data?.detail || "Failed to approve company.");
+      toast.error(err.response?.data?.error || err.response?.data?.detail || "Failed to approve company.");
     } finally {
       setApprovingId(null);
     }
@@ -221,6 +230,10 @@ export default function Companies() {
       const updated = res.data.company || { ...rejectingCompany, verification_status: "rejected", rejection_reason: rejectReason };
       setCompanies((prev) => prev.map((c) => (c.id === rejectingCompany.id ? updated : c)));
       closeRejectModal();
+      toast.info({
+        title: "Registration Rejected",
+        message: `Registration for "${rejectingCompany.name}" rejected. Notice sent to owner.`,
+      });
     } catch (err) {
       setRejectErr(err.response?.data?.detail || "Failed to reject company.");
     } finally {
@@ -235,8 +248,9 @@ export default function Companies() {
     try {
       await deleteCompany(id);
       setCompanies((prev) => prev.filter((c) => c.id !== id));
+      toast.success("Company deleted successfully.");
     } catch (err) {
-      alert(err.response?.data?.error ?? "Failed to delete company.");
+      toast.error(err.response?.data?.error ?? "Failed to delete company.");
     } finally {
       setDeletingId(null);
     }

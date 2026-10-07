@@ -2,6 +2,7 @@ import { useState, useEffect, useContext, useCallback, useMemo } from "react";
 import { AuthContext } from "../auth/AuthContext";
 import { Link } from "react-router-dom";
 import { getJobs, getApplicants, updateApplicationDetails, removeCandidate } from "../api/jobs";
+import { useToast } from "../components/ui";
 import ApplicantCard from "./components/ApplicantCard";
 import ResumePreviewModal from "./components/ResumePreviewModal";
 import BulkUploadModal from "./components/BulkUploadModal";
@@ -10,6 +11,7 @@ const ITEMS_PER_PAGE = 9;
 
 const CandidateManagement = () => {
   const { user } = useContext(AuthContext);
+  const toast = useToast();
 
   // Jobs
   const [jobs, setJobs] = useState([]);
@@ -71,26 +73,36 @@ const CandidateManagement = () => {
     try {
       const res = await updateApplicationDetails(selectedJobId, appId, { status: newStatus });
       setApplicants(prev => prev.map(a => a.id === appId ? { ...a, ...res.data } : a));
+      toast.success(`Candidate status updated to ${newStatus.toLowerCase().replace('_', ' ')}.`);
     } catch (err) {
       console.error(err);
-      alert(err.response?.data?.error || "Failed to update status.");
+      toast.error(err.response?.data?.error || "Failed to update status.");
     } finally { setStatusUpdating(null); }
-  }, [selectedJobId]);
+  }, [selectedJobId, toast]);
 
   // Notes change
   const handleNotesChange = useCallback(async (appId, notes) => {
     try {
       await updateApplicationDetails(selectedJobId, appId, { recruiter_notes: notes });
       setApplicants(prev => prev.map(a => a.id === appId ? { ...a, recruiter_notes: notes } : a));
-    } catch (err) { console.error(err); }
-  }, [selectedJobId]);
+      toast.success("Recruiter notes saved.");
+    } catch (err) {
+      console.error(err);
+      toast.error("Failed to save recruiter notes.");
+    }
+  }, [selectedJobId, toast]);
 
   // Remove candidate
   const handleRemove = useCallback(async (appId) => {
-    await removeCandidate(selectedJobId, appId);
-    // Remove from local state immediately on success
-    setApplicants(prev => prev.filter(a => a.id !== appId));
-  }, [selectedJobId]);
+    try {
+      await removeCandidate(selectedJobId, appId);
+      setApplicants(prev => prev.filter(a => a.id !== appId));
+      toast.success("Candidate removed from job pipeline.");
+    } catch (err) {
+      console.error(err);
+      toast.error("Failed to remove candidate.");
+    }
+  }, [selectedJobId, toast]);
 
   // Filtering + search
   const filtered = useMemo(() => {

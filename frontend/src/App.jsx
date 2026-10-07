@@ -1,5 +1,6 @@
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { AuthProvider, AuthContext } from "./auth/AuthContext";
+import { ToastProvider } from "./components/ui";
 import RoleRoute from "./auth/RoleRoute";
 import PublicRoute from "./auth/PublicRoute";
 import Login from "./auth/Login";
@@ -53,7 +54,8 @@ function FallbackRoute() {
 export default function App() {
   return (
     <AuthProvider>
-      <BrowserRouter>
+      <ToastProvider>
+        <BrowserRouter>
         <Routes>
           {/* Public */}
           <Route path="/login" element={
@@ -141,6 +143,7 @@ export default function App() {
           <Route path="*" element={<FallbackRoute />} />
         </Routes>
       </BrowserRouter>
+      </ToastProvider>
     </AuthProvider>
   );
 }

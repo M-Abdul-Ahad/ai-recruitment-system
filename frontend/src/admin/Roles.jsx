@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { getRoles, createRole, updateRole, deleteRole } from "../api/admin";
+import { useToast } from "../components/ui";
 
 /* ── Inline SVG icons ── */
 const PlusIcon = () => (
@@ -32,6 +33,7 @@ const CancelIcon = () => (
 );
 
 export default function Roles() {
+  const toast = useToast();
   const [roles, setRoles] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -72,6 +74,7 @@ export default function Roles() {
       setRoles((prev) => [...prev, res.data]);
       setNewName("");
       setShowAdd(false);
+      toast.success(`Role "${res.data.name}" created successfully.`);
     } catch (err) {
       const data = err.response?.data;
       if (data?.name) {
@@ -102,6 +105,7 @@ export default function Roles() {
       setRoles((prev) => prev.map((r) => (r.id === roleId ? res.data : r)));
       setEditId(null);
       setEditName("");
+      toast.success(`Role updated to "${res.data.name}".`);
     } catch (err) {
       const data = err.response?.data;
       if (data?.name) {
@@ -121,8 +125,9 @@ export default function Roles() {
     try {
       await deleteRole(roleId);
       setRoles((prev) => prev.filter((r) => r.id !== roleId));
+      toast.success("Role deleted successfully.");
     } catch (err) {
-      alert(err.response?.data?.error ?? "Failed to delete role.");
+      toast.error(err.response?.data?.error ?? "Failed to delete role.");
     } finally {
       setDeletingId(null);
     }
