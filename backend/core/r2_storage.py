@@ -82,6 +82,48 @@ def upload_company_document(file_obj, filename: str, company_name: str = "") -> 
     return key
 
 
+def upload_user_cnic(file_obj, filename: str, username: str = "") -> str:
+    """
+    Uploads a user's CNIC / ID photo to Cloudflare R2 under users-cnic/.
+
+    Args:
+        file_obj: File-like object (InMemoryUploadedFile / TemporaryUploadedFile)
+        filename: Original uploaded file name
+        username: Username or email of the applicant
+
+    Returns:
+        The R2 object key (e.g. 'users-cnic/1728320491_john_doe_cnic_front.jpg')
+    """
+    client = get_r2_client()
+    bucket = get_bucket_name()
+
+    slug_user = re.sub(r'[^a-zA-Z0-9_-]', '_', username.strip().lower()) if username else "user"
+    slug_user = re.sub(r'_+', '_', slug_user).strip('_')[:30]
+
+    base_name, ext = os.path.splitext(filename)
+    slug_file = re.sub(r'[^a-zA-Z0-9_-]', '_', base_name.strip().lower())
+    slug_file = re.sub(r'_+', '_', slug_file).strip('_')[:30]
+    ext = ext.lower()
+
+    timestamp = int(time.time())
+    key = f"users-cnic/{timestamp}_{slug_user}_{slug_file}{ext}"
+
+    content_type, _ = mimetypes.guess_type(filename)
+    if not content_type:
+        content_type = getattr(file_obj, "content_type", "image/jpeg")
+
+    if hasattr(file_obj, "seek"):
+        file_obj.seek(0)
+
+    logger.info("[R2 Storage] Uploading user CNIC image to bucket %s key %s (type: %s)", bucket, key, content_type)
+
+    extra_args = {"ContentType": content_type}
+    client.upload_fileobj(file_obj, bucket, key, ExtraArgs=extra_args)
+
+    logger.info("[R2 Storage] Successfully uploaded %s to R2.", key)
+    return key
+
+
 def generate_presigned_view_url(doc_key: str, expires_in: int = 3600) -> str | None:
     """
     Generates a secure temporary presigned URL for viewing/downloading the document from R2.

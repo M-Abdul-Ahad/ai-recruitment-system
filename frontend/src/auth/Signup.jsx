@@ -91,12 +91,18 @@ export default function Signup() {
   const [regDocFile, setRegDocFile] = useState(null);
   const [regDocFileName, setRegDocFileName] = useState("");
 
+  // Applicant CNIC document
+  const [cnicFile, setCnicFile] = useState(null);
+  const [cnicFileName, setCnicFileName] = useState("");
+  const [cnicPreview, setCnicPreview] = useState(null);
+
   /* ── Applicant form state ─────────────────────────────────── */
   const [applicantForm, setApplicantForm] = useState({
     username: "",
     email: "",
     password: "",
     confirmPassword: "",
+    cnicNumber: "",
   });
 
   /* ── Company form state ──────────────────────────────────── */
@@ -126,6 +132,23 @@ export default function Signup() {
     }
   };
 
+  /* ── Applicant CNIC file pick ────────────────────────────── */
+  const handleCnicChange = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      if (file.size > 5 * 1024 * 1024) {
+        setError("CNIC image size must not exceed 5MB.");
+        return;
+      }
+      setCnicFile(file);
+      setCnicFileName(file.name);
+      setError("");
+      const reader = new FileReader();
+      reader.onload = (ev) => setCnicPreview(ev.target.result);
+      reader.readAsDataURL(file);
+    }
+  };
+
   /* ── Company Doc file pick ────────────────────────────────── */
   const handleRegDocChange = (e) => {
     const file = e.target.files[0];
@@ -150,11 +173,23 @@ export default function Signup() {
       return;
     }
 
+    if (!applicantForm.cnicNumber?.trim()) {
+      setError("CNIC / National ID Number is required.");
+      return;
+    }
+
+    if (!cnicFile) {
+      setError("Please upload your CNIC document / image.");
+      return;
+    }
+
     const formData = new FormData();
     formData.append("role", "applicant");
     formData.append("username", applicantForm.username);
     formData.append("email", applicantForm.email);
     formData.append("password", applicantForm.password);
+    formData.append("cnic_number", applicantForm.cnicNumber.trim());
+    formData.append("cnic_image", cnicFile);
 
     setLoading(true);
     try {
@@ -477,6 +512,69 @@ export default function Signup() {
                   />
                   {pwToggleBtn(showConfirmPw, setShowConfirmPw)}
                 </div>
+              </div>
+
+              {/* Identity / CNIC Section */}
+              <div className="auth-section-divider">Identity Verification *</div>
+
+              <AuthInput
+                id="apl-cnic"
+                label="CNIC / National ID Number *"
+                icon={I.idCard}
+                placeholder="e.g. 42101-1234567-1"
+                value={applicantForm.cnicNumber}
+                onChange={(e) => setApplicantForm({ ...applicantForm, cnicNumber: e.target.value })}
+                required
+              />
+
+              <div className="auth-field">
+                <label className="auth-label">Upload CNIC Document / Image *</label>
+                <label className="auth-logo-upload" htmlFor="apl-cnic-file" title="Upload CNIC image">
+                  <div className="auth-logo-upload-preview">
+                    {cnicPreview ? (
+                      <img src={cnicPreview} alt="CNIC preview" />
+                    ) : (
+                      <Icon size={20} d={I.idCard} />
+                    )}
+                  </div>
+                  <div className="auth-logo-upload-text" style={{ flex: 1, minWidth: 0 }}>
+                    <div className="auth-logo-upload-label" style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", color: "var(--n900, #22241B)" }}>
+                      {cnicFileName ? cnicFileName : "Upload CNIC Image"}
+                    </div>
+                    <div className="auth-logo-upload-hint">PNG, JPG or WEBP · Max 5MB · Stored securely</div>
+                  </div>
+                  {cnicFile && (
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        setCnicFile(null);
+                        setCnicFileName("");
+                        setCnicPreview(null);
+                      }}
+                      style={{
+                        background: "none",
+                        border: "none",
+                        color: "var(--danger, #B4453D)",
+                        fontSize: "12px",
+                        fontWeight: 600,
+                        cursor: "pointer",
+                        padding: "4px 8px",
+                      }}
+                    >
+                      Remove
+                    </button>
+                  )}
+                  <input
+                    id="apl-cnic-file"
+                    type="file"
+                    accept="image/png,image/jpeg,image/webp,image/jpg"
+                    style={{ display: "none" }}
+                    onChange={handleCnicChange}
+                    required
+                  />
+                </label>
               </div>
 
               <button type="submit" className="auth-submit" disabled={loading} style={{ marginTop: "16px" }}>

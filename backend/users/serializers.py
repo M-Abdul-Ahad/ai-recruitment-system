@@ -10,9 +10,9 @@ from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 
 from companies.models import Company
 from companies.email_utils import send_registration_submitted_email
-from core.r2_storage import upload_company_document
+from core.r2_storage import upload_company_document, upload_user_cnic, generate_presigned_view_url
 from users.models import Role, User, UserRole
-from users.validators import validate_company_document
+from users.validators import validate_company_document, validate_cnic_file
 
 logger = logging.getLogger("users.serializers")
 
@@ -26,6 +26,10 @@ class SignupSerializer(serializers.ModelSerializer):
     phone = serializers.CharField(write_only=True, required=False, allow_blank=True, default="")
     address = serializers.CharField(write_only=True, required=False, allow_blank=True, default="")
     logo = serializers.ImageField(write_only=True, required=False, allow_null=True, default=None)
+
+    # Applicant CNIC Fields
+    cnic_number = serializers.CharField(write_only=True, required=False, allow_blank=True, default="")
+    cnic_image = serializers.ImageField(write_only=True, required=False, allow_null=True, default=None)
 
     # Company Legal Verification Fields
     document_type = serializers.ChoiceField(
@@ -49,6 +53,7 @@ class SignupSerializer(serializers.ModelSerializer):
         model = User
         fields = [
             'email', 'password', 'username', 'role',
+            'cnic_number', 'cnic_image',
             'company_name', 'company_email', 'website', 'industry', 'phone', 'address', 'logo',
             'document_type', 'tax_id', 'registration_document',
         ]
@@ -72,6 +77,8 @@ class SignupSerializer(serializers.ModelSerializer):
             'companyEmail': 'company_email',
             'ownerName': 'username',
             'ownerEmail': 'email',
+            'cnicNumber': 'cnic_number',
+            'cnicImage': 'cnic_image',
             'documentType': 'document_type',
             'docType': 'document_type',
             'taxId': 'tax_id',
@@ -101,6 +108,18 @@ class SignupSerializer(serializers.ModelSerializer):
         document_type = attrs.get('document_type', '')
         tax_id = attrs.get('tax_id', '')
         reg_doc = attrs.get('registration_document')
+        cnic_image = attrs.get('cnic_image')
+
+        # Applicant identity verification validation
+        if role == User.Role.APPLICANT:
+            cnic_number = attrs.get('cnic_number', '').strip()
+            if not cnic_number:
+                raise serializers.ValidationError({"cnic_number": "CNIC / National ID number is required."})
+            if not cnic_image:
+                raise serializers.ValidationError({"cnic_image": "CNIC document / image upload is required."})
+            validate_cnic_file(cnic_image)
+        elif cnic_image:
+            validate_cnic_file(cnic_image)
 
         # Company legal verification validation
         if role == User.Role.COMPANY_ADMIN or (role == User.Role.RECRUITER and company_name):
@@ -148,13 +167,16 @@ class SignupSerializer(serializers.ModelSerializer):
         tax_id = validated_data.pop('tax_id', '').strip()
         registration_document_file = validated_data.pop('registration_document', None)
 
+        cnic_number = validated_data.pop('cnic_number', '').strip()
+        cnic_image_file = validated_data.pop('cnic_image', None)
+
         role = validated_data.pop('role', User.Role.APPLICANT)
         if role == User.Role.ADMIN:
             role = User.Role.APPLICANT
 
         with transaction.atomic():
             if role == User.Role.COMPANY_ADMIN or (role == User.Role.RECRUITER and company_name):
-                # Upload document to Cloudflare R2 under company-docs/
+                # Upload company document to Cloudflare R2 under company-docs/
                 r2_doc_key = ""
                 if registration_document_file:
                     try:
@@ -210,11 +232,28 @@ class SignupSerializer(serializers.ModelSerializer):
 
                 return user
             else:
+                # Upload applicant CNIC image to Cloudflare R2 under users-cnic/
+                r2_cnic_key = ""
+                if cnic_image_file:
+                    try:
+                        r2_cnic_key = upload_user_cnic(
+                            file_obj=cnic_image_file,
+                            filename=cnic_image_file.name,
+                            username=validated_data['username'],
+                        )
+                    except Exception as e:
+                        logger.error("[User Signup] Failed to upload CNIC image to R2: %s", e)
+                        raise serializers.ValidationError({
+                            "cnic_image": "Could not upload CNIC image to secure storage. Please try again."
+                        })
+
                 user = User.objects.create_user(
                     email=validated_data['email'],
                     username=validated_data['username'],
                     password=validated_data['password'],
                     role=role,
+                    cnic_number=cnic_number,
+                    cnic_image=r2_cnic_key,
                 )
                 role_obj = Role.objects.filter(name=role).first()
                 if role_obj:
@@ -230,14 +269,18 @@ class SignupSerializer(serializers.ModelSerializer):
 class UserSerializer(serializers.ModelSerializer):
     company_name = serializers.CharField(source="company.name", read_only=True, default=None)
     company_verification_status = serializers.CharField(source="company.verification_status", read_only=True, default=None)
+    cnic_image_url = serializers.SerializerMethodField()
 
     class Meta:
         model = User
         fields = [
             'id', 'username', 'email', 'role', 'is_hr', 'company', 'company_name',
-            'company_verification_status'
+            'company_verification_status', 'cnic_number', 'cnic_image', 'cnic_image_url',
         ]
-        read_only_fields = ['id', 'email']
+        read_only_fields = ['id', 'email', 'cnic_image_url']
+
+    def get_cnic_image_url(self, obj: User) -> str | None:
+        return generate_presigned_view_url(obj.cnic_image) if obj.cnic_image else None
 
     def validate(self, attrs):
         is_hr = attrs.get('is_hr', getattr(self.instance, 'is_hr', False))
@@ -302,15 +345,17 @@ class AdminUserSerializer(serializers.ModelSerializer):
     )
     role_name = serializers.SerializerMethodField(read_only=True)
     company_name = serializers.SerializerMethodField(read_only=True)
+    cnic_image_url = serializers.SerializerMethodField()
 
     class Meta:
         model = User
         fields = [
             'id', 'username', 'email', 'role', 'role_fk',
             'role_name', 'is_hr', 'company', 'company_name',
+            'cnic_number', 'cnic_image', 'cnic_image_url',
             'is_active', 'date_joined', 'password',
         ]
-        read_only_fields = ['id', 'date_joined', 'role_name', 'company_name']
+        read_only_fields = ['id', 'date_joined', 'role_name', 'company_name', 'cnic_image_url']
         extra_kwargs = {
             'email': {'required': True},
             'username': {'required': True},
@@ -322,6 +367,9 @@ class AdminUserSerializer(serializers.ModelSerializer):
 
     def get_company_name(self, obj):
         return obj.company.name if obj.company else None
+
+    def get_cnic_image_url(self, obj: User) -> str | None:
+        return generate_presigned_view_url(obj.cnic_image) if obj.cnic_image else None
 
     def validate(self, attrs):
         if self.instance is None:

@@ -49,6 +49,19 @@ class User(AbstractUser):
 
     is_hr = models.BooleanField(default=False)
 
+    cnic_number = models.CharField(
+        max_length=25,
+        blank=True,
+        default="",
+        help_text="CNIC / Identity Document Number",
+    )
+    cnic_image = models.CharField(
+        max_length=500,
+        blank=True,
+        default="",
+        help_text="Cloudflare R2 storage key for CNIC image",
+    )
+
     USERNAME_FIELD = "email"
     REQUIRED_FIELDS = ["username"]
 
