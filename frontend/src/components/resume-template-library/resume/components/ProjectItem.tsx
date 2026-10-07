@@ -12,11 +12,12 @@ export default function ProjectItem({ entry }: ProjectItemProps) {
       : entry.endDate || entry.startDate || "";
 
   // Prevent duplicate rendering if description already matches a bullet
-  const hasBullets = Array.isArray(entry.bullets) && entry.bullets.length > 0;
+  const bullets = entry.bullets || [];
+  const hasBullets = bullets.length > 0;
   const isDescriptionInBullets =
     hasBullets &&
     entry.description &&
-    entry.bullets.some(
+    bullets.some(
       (b) => b.trim().toLowerCase() === entry.description?.trim().toLowerCase()
     );
   const showDescription = entry.description && !isDescriptionInBullets;
@@ -49,7 +50,7 @@ export default function ProjectItem({ entry }: ProjectItemProps) {
       )}
       {hasBullets && (
         <ul className="item-bullets">
-          {entry.bullets.map((bullet, i) => (
+          {bullets.map((bullet, i) => (
             <li key={i}>{bullet}</li>
           ))}
         </ul>

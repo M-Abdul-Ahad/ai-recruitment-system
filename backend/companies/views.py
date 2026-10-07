@@ -368,16 +368,22 @@ class AcceptInvitationView(APIView):
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
+from .email_utils import send_company_approved_email, send_company_rejected_email
+
+
 # ============================================================
 # ADMIN — COMPANY MANAGEMENT
 # ============================================================
 
 class AdminCompanyListCreateView(APIView):
-    """GET all companies / POST create a company — admin only."""
+    """GET all companies (optionally filtered by ?status=) / POST create a company — admin only."""
     permission_classes = [IsAuthenticated, IsAdmin]
 
     def get(self, request):
-        companies = Company.objects.all().order_by('id')
+        status_filter = request.query_params.get("status")
+        companies = Company.objects.all().order_by("-created_at")
+        if status_filter:
+            companies = companies.filter(verification_status=status_filter)
         serializer = CompanySerializer(companies, many=True, context={'request': request})
         return Response(serializer.data)
 
@@ -422,3 +428,88 @@ class AdminCompanyDetailView(APIView):
             return Response({'error': 'Company not found.'}, status=status.HTTP_404_NOT_FOUND)
         company.delete()
         return Response(status=status.HTTP_204_NO_CONTENT)
+
+
+class AdminApproveCompanyView(APIView):
+    """
+    POST /api/companies/admin/<int:pk>/approve/
+    Approves the company verification request and notifies the owner via email.
+    """
+    permission_classes = [IsAuthenticated, IsAdmin]
+
+    def post(self, request, pk):
+        try:
+            company = Company.objects.get(pk=pk)
+        except Company.DoesNotExist:
+            return Response({'error': 'Company not found.'}, status=status.HTTP_404_NOT_FOUND)
+
+        company.verification_status = Company.VerificationStatus.VERIFIED
+        company.rejection_reason = ""
+        company.save(update_fields=["verification_status", "rejection_reason"])
+
+        # Determine target owner email
+        owner = company.recruiters.filter(role="company_admin").first()
+        owner_email = owner.email if owner else company.email
+        owner_name = owner.username if owner else company.name
+
+        if owner_email:
+            try:
+                send_company_approved_email(
+                    to_email=owner_email,
+                    company_name=company.name,
+                    owner_name=owner_name,
+                )
+            except Exception as e:
+                logger.warning("[AdminApproveCompany] Failed to send approval email: %s", e)
+
+        return Response(
+            {
+                "detail": f"{company.name} has been approved successfully.",
+                "company": CompanySerializer(company, context={'request': request}).data,
+            },
+            status=status.HTTP_200_OK,
+        )
+
+
+class AdminRejectCompanyView(APIView):
+    """
+    POST /api/companies/admin/<int:pk>/reject/
+    Rejects the company registration with an optional reason and notifies the owner via email.
+    """
+    permission_classes = [IsAuthenticated, IsAdmin]
+
+    def post(self, request, pk):
+        try:
+            company = Company.objects.get(pk=pk)
+        except Company.DoesNotExist:
+            return Response({'error': 'Company not found.'}, status=status.HTTP_404_NOT_FOUND)
+
+        reason = request.data.get("reason", "").strip()
+        company.verification_status = Company.VerificationStatus.REJECTED
+        company.rejection_reason = reason
+        company.save(update_fields=["verification_status", "rejection_reason"])
+
+        # Determine target owner email
+        owner = company.recruiters.filter(role="company_admin").first()
+        owner_email = owner.email if owner else company.email
+        owner_name = owner.username if owner else company.name
+
+        if owner_email:
+            try:
+                send_company_rejected_email(
+                    to_email=owner_email,
+                    company_name=company.name,
+                    owner_name=owner_name,
+                    reason=reason,
+                )
+            except Exception as e:
+                logger.warning("[AdminRejectCompany] Failed to send rejection email: %s", e)
+
+        return Response(
+            {
+                "detail": f"{company.name} registration has been rejected.",
+                "company": CompanySerializer(company, context={'request': request}).data,
+            },
+            status=status.HTTP_200_OK,
+        )
+

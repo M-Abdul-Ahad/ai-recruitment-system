@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import logging
 from typing import Any
 
 from rest_framework import serializers
@@ -8,9 +9,12 @@ from django.db import transaction
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 
 from companies.models import Company
+from companies.email_utils import send_registration_submitted_email
+from core.r2_storage import upload_company_document
 from users.models import Role, User, UserRole
-from users.validators import validate_cnic_file, validate_company_document
+from users.validators import validate_company_document
 
+logger = logging.getLogger("users.serializers")
 
 
 class SignupSerializer(serializers.ModelSerializer):
@@ -23,9 +27,14 @@ class SignupSerializer(serializers.ModelSerializer):
     address = serializers.CharField(write_only=True, required=False, allow_blank=True, default="")
     logo = serializers.ImageField(write_only=True, required=False, allow_null=True, default=None)
 
-    # Security & Verification Fields
-    cnic_number = serializers.CharField(write_only=True, required=False, allow_blank=True, default="")
-    cnic_image = serializers.ImageField(write_only=True, required=False, allow_null=True, default=None)
+    # Company Legal Verification Fields
+    document_type = serializers.ChoiceField(
+        choices=Company.DocumentType.choices,
+        write_only=True,
+        required=False,
+        allow_blank=True,
+        default="",
+    )
     tax_id = serializers.CharField(write_only=True, required=False, allow_blank=True, default="")
     registration_document = serializers.FileField(write_only=True, required=False, allow_null=True, default=None)
 
@@ -41,7 +50,7 @@ class SignupSerializer(serializers.ModelSerializer):
         fields = [
             'email', 'password', 'username', 'role',
             'company_name', 'company_email', 'website', 'industry', 'phone', 'address', 'logo',
-            'cnic_number', 'cnic_image', 'tax_id', 'registration_document'
+            'document_type', 'tax_id', 'registration_document',
         ]
         extra_kwargs = {
             'username': {'write_only': True},
@@ -63,8 +72,8 @@ class SignupSerializer(serializers.ModelSerializer):
             'companyEmail': 'company_email',
             'ownerName': 'username',
             'ownerEmail': 'email',
-            'cnicNumber': 'cnic_number',
-            'cnicImage': 'cnic_image',
+            'documentType': 'document_type',
+            'docType': 'document_type',
             'taxId': 'tax_id',
             'taxNumber': 'tax_id',
             'registrationDocument': 'registration_document',
@@ -89,21 +98,34 @@ class SignupSerializer(serializers.ModelSerializer):
         role = attrs.get('role', getattr(self.instance, 'role', User.Role.APPLICANT))
         company = attrs.get('company', getattr(self.instance, 'company', None))
         company_name = attrs.get('company_name', '')
-
-        # Security validations
-        cnic_image = attrs.get('cnic_image')
-        if cnic_image:
-            validate_cnic_file(cnic_image)
-
+        document_type = attrs.get('document_type', '')
+        tax_id = attrs.get('tax_id', '')
         reg_doc = attrs.get('registration_document')
-        if reg_doc:
-            validate_company_document(reg_doc)
 
-        if role in (User.Role.COMPANY_ADMIN, User.Role.RECRUITER) and company_name:
+        # Company legal verification validation
+        if role == User.Role.COMPANY_ADMIN or (role == User.Role.RECRUITER and company_name):
+            if not company_name.strip():
+                raise serializers.ValidationError({"company_name": "Company name is required."})
+
             if Company.objects.filter(name__iexact=company_name.strip()).exists():
                 raise serializers.ValidationError({"company_name": "A company with this name already exists."})
-        elif role == User.Role.COMPANY_ADMIN and not company_name:
-            raise serializers.ValidationError({"company_name": "Company name is required for company registration."})
+
+            if not document_type:
+                raise serializers.ValidationError({
+                    "document_type": "Please select a legal verification document type (SECP Certificate of Incorporation or NTN Certificate)."
+                })
+
+            if not tax_id.strip():
+                raise serializers.ValidationError({
+                    "tax_id": "Registration / Tax ID (NTN or SECP CUIN number) is required for company verification."
+                })
+
+            if not reg_doc:
+                raise serializers.ValidationError({
+                    "registration_document": "Please upload an official registration document (SECP or NTN Certificate)."
+                })
+
+            validate_company_document(reg_doc)
 
         if is_hr and role not in (User.Role.RECRUITER, User.Role.COMPANY_ADMIN):
             raise serializers.ValidationError({"is_hr": "Only recruiters or company admins can be HR."})
@@ -122,11 +144,9 @@ class SignupSerializer(serializers.ModelSerializer):
         address = validated_data.pop('address', '').strip()
         logo = validated_data.pop('logo', None)
 
+        document_type = validated_data.pop('document_type', '').strip()
         tax_id = validated_data.pop('tax_id', '').strip()
-        registration_document = validated_data.pop('registration_document', None)
-
-        cnic_number = validated_data.pop('cnic_number', '').strip()
-        cnic_image = validated_data.pop('cnic_image', None)
+        registration_document_file = validated_data.pop('registration_document', None)
 
         role = validated_data.pop('role', User.Role.APPLICANT)
         if role == User.Role.ADMIN:
@@ -134,11 +154,21 @@ class SignupSerializer(serializers.ModelSerializer):
 
         with transaction.atomic():
             if role == User.Role.COMPANY_ADMIN or (role == User.Role.RECRUITER and company_name):
-                company_verification = (
-                    Company.VerificationStatus.PENDING
-                    if (registration_document or tax_id)
-                    else Company.VerificationStatus.UNVERIFIED
-                )
+                # Upload document to Cloudflare R2 under company-docs/
+                r2_doc_key = ""
+                if registration_document_file:
+                    try:
+                        r2_doc_key = upload_company_document(
+                            file_obj=registration_document_file,
+                            filename=registration_document_file.name,
+                            company_name=company_name,
+                        )
+                    except Exception as e:
+                        logger.error("[Company Signup] Failed to upload verification doc to R2: %s", e)
+                        raise serializers.ValidationError({
+                            "registration_document": "Could not upload document to secure cloud storage. Please try again."
+                        })
+
                 company = Company.objects.create(
                     name=company_name,
                     email=company_email,
@@ -147,9 +177,10 @@ class SignupSerializer(serializers.ModelSerializer):
                     phone=phone,
                     address=address,
                     logo=logo,
+                    document_type=document_type,
                     tax_id=tax_id,
-                    registration_document=registration_document,
-                    verification_status=company_verification,
+                    registration_document=r2_doc_key,
+                    verification_status=Company.VerificationStatus.PENDING,
                 )
                 user_role = User.Role.COMPANY_ADMIN
                 user = User.objects.create_user(
@@ -159,27 +190,31 @@ class SignupSerializer(serializers.ModelSerializer):
                     role=user_role,
                     company=company,
                     is_hr=True,
-                    verification_status=User.VerificationStatus.VERIFIED,  # Company Admin identity tied to company
                 )
                 role_obj = Role.objects.filter(name=user_role).first()
                 if role_obj:
                     user.role_fk = role_obj
                     user.save(update_fields=['role_fk'])
+
+                # Send email confirmation that registration is under review
+                target_email = company_email or user.email
+                recipient_name = user.username or company_name
+                try:
+                    send_registration_submitted_email(
+                        to_email=target_email,
+                        company_name=company_name,
+                        owner_name=recipient_name,
+                    )
+                except Exception as mail_exc:
+                    logger.warning("[Company Signup] Failed to send registration email: %s", mail_exc)
+
                 return user
             else:
-                user_verification = (
-                    User.VerificationStatus.PENDING
-                    if (cnic_image or cnic_number)
-                    else User.VerificationStatus.UNVERIFIED
-                )
                 user = User.objects.create_user(
                     email=validated_data['email'],
                     username=validated_data['username'],
                     password=validated_data['password'],
                     role=role,
-                    cnic_number=cnic_number,
-                    cnic_image=cnic_image,
-                    verification_status=user_verification,
                 )
                 role_obj = Role.objects.filter(name=role).first()
                 if role_obj:
@@ -193,13 +228,16 @@ class SignupSerializer(serializers.ModelSerializer):
 
 
 class UserSerializer(serializers.ModelSerializer):
+    company_name = serializers.CharField(source="company.name", read_only=True, default=None)
+    company_verification_status = serializers.CharField(source="company.verification_status", read_only=True, default=None)
+
     class Meta:
         model = User
         fields = [
-            'id', 'username', 'email', 'role', 'is_hr', 'company',
-            'cnic_number', 'cnic_image', 'verification_status'
+            'id', 'username', 'email', 'role', 'is_hr', 'company', 'company_name',
+            'company_verification_status'
         ]
-        read_only_fields = ['id', 'email', 'verification_status']
+        read_only_fields = ['id', 'email']
 
     def validate(self, attrs):
         is_hr = attrs.get('is_hr', getattr(self.instance, 'is_hr', False))
@@ -220,15 +258,15 @@ class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
 
     def validate(self, attrs):
         data = super().validate(attrs)
-        # add custom fields, leaving tokens untouched
         user: User = self.user  # type: ignore[assignment]
-        data.update(  # type: ignore[arg-type]
+        data.update(
             {
                 'user_id': user.id,
                 'email': user.email,
                 'role': user.role,
                 'is_hr': user.is_hr,
-                'verification_status': getattr(user, 'verification_status', 'unverified'),
+                'company_id': user.company_id if user.company else None,
+                'company_name': user.company.name if user.company else None,
                 'company_verification_status': getattr(user.company, 'verification_status', None) if user.company else None,
             }
         )
@@ -256,14 +294,12 @@ class RoleSerializer(serializers.ModelSerializer):
 class AdminUserSerializer(serializers.ModelSerializer):
     """Full user serializer for admin list/create/update/delete."""
 
-    # Password is only required on create, write-only always
     password = serializers.CharField(
         write_only=True,
         required=False,
         allow_blank=True,
         validators=[validate_password],
     )
-    # Read-only FK name for display in the grid
     role_name = serializers.SerializerMethodField(read_only=True)
     company_name = serializers.SerializerMethodField(read_only=True)
 
@@ -273,7 +309,6 @@ class AdminUserSerializer(serializers.ModelSerializer):
             'id', 'username', 'email', 'role', 'role_fk',
             'role_name', 'is_hr', 'company', 'company_name',
             'is_active', 'date_joined', 'password',
-            'cnic_number', 'cnic_image', 'verification_status',
         ]
         read_only_fields = ['id', 'date_joined', 'role_name', 'company_name']
         extra_kwargs = {
@@ -289,7 +324,6 @@ class AdminUserSerializer(serializers.ModelSerializer):
         return obj.company.name if obj.company else None
 
     def validate(self, attrs):
-        # On create, password is required
         if self.instance is None:
             password = attrs.get('password', '').strip()
             if not password:
@@ -305,7 +339,6 @@ class AdminUserSerializer(serializers.ModelSerializer):
             user.set_password(password)
             user.save()
 
-            # Sync role_fk with role CharField
             role_obj = Role.objects.filter(name=role).first()
             if role_obj:
                 user.role_fk = role_obj
@@ -324,10 +357,8 @@ class AdminUserSerializer(serializers.ModelSerializer):
             if password:
                 instance.set_password(password)
 
-            # Sync role_fk whenever role changes
             role_obj = Role.objects.filter(name=role).first()
             instance.role_fk = role_obj
-
             instance.save()
 
         return instance

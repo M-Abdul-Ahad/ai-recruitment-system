@@ -16,28 +16,52 @@ from users.validators import validate_company_document
 _User = get_user_model()
 
 
+from core.r2_storage import generate_presigned_view_url
+
+
 class CompanyMemberSerializer(serializers.ModelSerializer):
     class Meta:  # type: ignore[override]
         model = _User
-        fields = ["id", "username", "role", "is_hr"]
+        fields = ["id", "username", "email", "role", "is_hr"]
 
 
 class CompanySerializer(serializers.ModelSerializer):
-    """Read-only serializer for Company details."""
+    """Serializer for Company details with secure document view URL."""
     recruiters = CompanyMemberSerializer(many=True, read_only=True)
+    document_type_display = serializers.CharField(source="get_document_type_display", read_only=True)
+    document_url = serializers.SerializerMethodField()
+    owner_email = serializers.SerializerMethodField()
+    owner_name = serializers.SerializerMethodField()
 
     class Meta:  # type: ignore[override]
         model = Company
         fields = [
             "id", "name", "email", "description", "website", "industry",
-            "phone", "address", "logo", "tax_id", "registration_document",
-            "verification_status", "created_at", "updated_at", "recruiters"
+            "phone", "address", "logo", "document_type", "document_type_display",
+            "tax_id", "registration_document", "document_url",
+            "verification_status", "rejection_reason", "created_at", "updated_at",
+            "recruiters", "owner_email", "owner_name"
         ]
-        read_only_fields = [
-            "id", "name", "email", "description", "website", "industry",
-            "phone", "address", "logo", "tax_id", "registration_document",
-            "verification_status", "created_at", "updated_at", "recruiters"
-        ]
+        read_only_fields = fields
+
+    def get_document_url(self, obj: Company) -> str | None:
+        if not obj.registration_document:
+            return None
+        return generate_presigned_view_url(obj.registration_document)
+
+    def get_owner_email(self, obj: Company) -> str | None:
+        owner = obj.recruiters.filter(role="company_admin").first()
+        if owner:
+            return owner.email
+        first_user = obj.recruiters.first()
+        return first_user.email if first_user else obj.email
+
+    def get_owner_name(self, obj: Company) -> str | None:
+        owner = obj.recruiters.filter(role="company_admin").first()
+        if owner:
+            return owner.username
+        first_user = obj.recruiters.first()
+        return first_user.username if first_user else ""
 
 
 class CompanyCreateSerializer(serializers.ModelSerializer):
@@ -54,7 +78,7 @@ class CompanyCreateSerializer(serializers.ModelSerializer):
         model = Company
         fields = [
             "name", "email", "description", "website", "industry",
-            "phone", "address", "logo", "tax_id", "registration_document"
+            "phone", "address", "logo", "document_type", "tax_id", "registration_document"
         ]
 
     def validate_registration_document(self, value):

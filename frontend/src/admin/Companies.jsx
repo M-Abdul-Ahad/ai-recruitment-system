@@ -1,5 +1,12 @@
 import { useState, useEffect } from "react";
-import { getCompanies, createCompany, updateCompany, deleteCompany } from "../api/admin";
+import {
+  getCompanies,
+  createCompany,
+  updateCompany,
+  deleteCompany,
+  approveCompany,
+  rejectCompany,
+} from "../api/admin";
 
 /* ── Inline SVG icons ── */
 const PlusIcon = () => (
@@ -30,14 +37,38 @@ const CloseIcon = () => (
     <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
   </svg>
 );
+const CheckCircleIcon = () => (
+  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/>
+    <polyline points="22 4 12 14.01 9 11.01"/>
+  </svg>
+);
+const XCircleIcon = () => (
+  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <circle cx="12" cy="12" r="10"/>
+    <line x1="15" y1="9" x2="9" y2="15"/>
+    <line x1="9" y1="9" x2="15" y2="15"/>
+  </svg>
+);
+const FileTextIcon = () => (
+  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/>
+    <line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><line x1="10" y1="9" x2="8" y2="9"/>
+  </svg>
+);
+const ExternalLinkIcon = () => (
+  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/>
+  </svg>
+);
 
 const EMPTY_FORM = { name: "", email: "", description: "", website: "", industry: "", phone: "", address: "" };
 
 const ErrBanner = ({ msg }) => msg ? (
   <div style={{
     marginBottom: "14px", padding: "10px 14px",
-    background: "var(--apl-danger-bg)", border: "1px solid rgba(180,69,61,0.2)",
-    borderRadius: "8px", fontSize: "13px", color: "var(--apl-danger)",
+    background: "var(--apl-danger-bg, #fdf2f2)", border: "1px solid rgba(180,69,61,0.2)",
+    borderRadius: "8px", fontSize: "13px", color: "var(--apl-danger, #ef4444)",
   }}>
     {msg}
   </div>
@@ -51,23 +82,33 @@ const Field = ({ label, htmlFor, children }) => (
 );
 
 export default function Companies() {
-  const [companies,  setCompanies]  = useState([]);
-  const [loading,    setLoading]    = useState(true);
-  const [error,      setError]      = useState(null);
+  const [companies, setCompanies] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  // Status Filter Tab ("all" | "pending" | "verified" | "rejected")
+  const [statusFilter, setStatusFilter] = useState("all");
 
   // Add state
-  const [showAdd,    setShowAdd]    = useState(false);
-  const [addForm,    setAddForm]    = useState(EMPTY_FORM);
-  const [addErr,     setAddErr]     = useState(null);
-  const [addSaving,  setAddSaving]  = useState(false);
+  const [showAdd, setShowAdd] = useState(false);
+  const [addForm, setAddForm] = useState(EMPTY_FORM);
+  const [addErr, setAddErr] = useState(null);
+  const [addSaving, setAddSaving] = useState(false);
 
   // Modal edit state
   const [editingCompany, setEditingCompany] = useState(null);
-  const [editForm,       setEditForm]       = useState({});
-  const [editErr,        setEditErr]        = useState(null);
-  const [editSaving,     setEditSaving]     = useState(false);
+  const [editForm, setEditForm] = useState({});
+  const [editErr, setEditErr] = useState(null);
+  const [editSaving, setEditSaving] = useState(false);
 
-  // Delete state
+  // Rejection modal state
+  const [rejectingCompany, setRejectingCompany] = useState(null);
+  const [rejectReason, setRejectReason] = useState("");
+  const [rejectSaving, setRejectSaving] = useState(false);
+  const [rejectErr, setRejectErr] = useState(null);
+
+  // Action states
+  const [approvingId, setApprovingId] = useState(null);
   const [deletingId, setDeletingId] = useState(null);
 
   useEffect(() => { fetchCompanies(); }, []);
@@ -94,7 +135,7 @@ export default function Companies() {
     e.preventDefault(); setAddErr(null); setAddSaving(true);
     try {
       const res = await createCompany(addForm);
-      setCompanies((prev) => [...prev, res.data]);
+      setCompanies((prev) => [res.data, ...prev]);
       setAddForm(EMPTY_FORM); setShowAdd(false);
     } catch (err) {
       setAddErr(fmtErrors(err.response?.data));
@@ -107,13 +148,13 @@ export default function Companies() {
   const openEditModal = (company) => {
     setEditingCompany(company);
     setEditForm({
-      name:        company.name        ?? "",
-      email:       company.email       ?? "",
+      name: company.name ?? "",
+      email: company.email ?? "",
       description: company.description ?? "",
-      website:     company.website     ?? "",
-      industry:    company.industry    ?? "",
-      phone:       company.phone       ?? "",
-      address:     company.address     ?? "",
+      website: company.website ?? "",
+      industry: company.industry ?? "",
+      phone: company.phone ?? "",
+      address: company.address ?? "",
     });
     setEditErr(null);
   };
@@ -139,9 +180,57 @@ export default function Companies() {
     }
   };
 
+  /* ── Approve Company Verification ── */
+  const handleApprove = async (company) => {
+    if (!window.confirm(`Approve registration for "${company.name}"? An official verification email will be sent to ${company.owner_email || company.email}.`)) {
+      return;
+    }
+    setApprovingId(company.id);
+    try {
+      const res = await approveCompany(company.id);
+      const updated = res.data.company || { ...company, verification_status: "verified", rejection_reason: "" };
+      setCompanies((prev) => prev.map((c) => (c.id === company.id ? updated : c)));
+    } catch (err) {
+      alert(err.response?.data?.error || err.response?.data?.detail || "Failed to approve company.");
+    } finally {
+      setApprovingId(null);
+    }
+  };
+
+  /* ── Open Reject Modal ── */
+  const openRejectModal = (company) => {
+    setRejectingCompany(company);
+    setRejectReason("");
+    setRejectErr(null);
+  };
+
+  const closeRejectModal = () => {
+    setRejectingCompany(null);
+    setRejectReason("");
+    setRejectErr(null);
+  };
+
+  /* ── Submit Reject ── */
+  const handleRejectSubmit = async (e) => {
+    e.preventDefault();
+    if (!rejectingCompany) return;
+    setRejectSaving(true);
+    setRejectErr(null);
+    try {
+      const res = await rejectCompany(rejectingCompany.id, { reason: rejectReason });
+      const updated = res.data.company || { ...rejectingCompany, verification_status: "rejected", rejection_reason: rejectReason };
+      setCompanies((prev) => prev.map((c) => (c.id === rejectingCompany.id ? updated : c)));
+      closeRejectModal();
+    } catch (err) {
+      setRejectErr(err.response?.data?.detail || "Failed to reject company.");
+    } finally {
+      setRejectSaving(false);
+    }
+  };
+
   /* ── Delete ── */
   const handleDelete = async (id) => {
-    if (!window.confirm("Delete this company? All associated jobs will also be deleted.")) return;
+    if (!window.confirm("Delete this company? All associated jobs and team members will also be affected.")) return;
     setDeletingId(id);
     try {
       await deleteCompany(id);
@@ -153,18 +242,77 @@ export default function Companies() {
     }
   };
 
+  // Filtered list
+  const filteredCompanies = companies.filter((c) => {
+    if (statusFilter === "all") return true;
+    return (c.verification_status || "unverified") === statusFilter;
+  });
+
+  const pendingCount = companies.filter((c) => c.verification_status === "pending").length;
+
   return (
     <div className="apl-animate-fade">
       {/* Page header */}
       <div className="apl-page-header" style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", flexWrap: "wrap", gap: "12px" }}>
         <div>
-          <h1 className="apl-page-title">Companies</h1>
-          <p className="apl-page-sub">View, add, edit, and delete all registered companies.</p>
+          <h1 className="apl-page-title">Company Registration & Verification</h1>
+          <p className="apl-page-sub">Review legal SECP/NTN documents, approve registration requests, and manage companies.</p>
         </div>
         <button id="admin-add-company-btn" type="button" className="apl-btn apl-btn-primary"
           onClick={() => { setShowAdd((s) => !s); setAddErr(null); setAddForm(EMPTY_FORM); }}>
           <PlusIcon /> {showAdd ? "Cancel" : "Add Company"}
         </button>
+      </div>
+
+      {/* ─── Status Filter Tabs ─── */}
+      <div style={{ display: "flex", gap: "8px", marginBottom: "20px", borderBottom: "1px solid var(--apl-neutral-200, #eaeaea)", paddingBottom: "12px", flexWrap: "wrap" }}>
+        {[
+          { key: "all", label: "All Companies", count: companies.length },
+          { key: "pending", label: "Pending Requests", count: pendingCount, highlight: pendingCount > 0 },
+          { key: "verified", label: "Verified", count: companies.filter((c) => c.verification_status === "verified").length },
+          { key: "rejected", label: "Rejected", count: companies.filter((c) => c.verification_status === "rejected").length },
+        ].map((tab) => {
+          const isActive = statusFilter === tab.key;
+          return (
+            <button
+              key={tab.key}
+              type="button"
+              onClick={() => setStatusFilter(tab.key)}
+              style={{
+                display: "inline-flex",
+                alignItems: "center",
+                gap: "6px",
+                padding: "8px 14px",
+                borderRadius: "8px",
+                border: "none",
+                cursor: "pointer",
+                fontWeight: isActive ? 600 : 500,
+                fontSize: "13px",
+                background: isActive ? "var(--apl-accent, #6366f1)" : "var(--apl-neutral-100, #f3f4f6)",
+                color: isActive ? "#ffffff" : "var(--apl-neutral-700, #374151)",
+                transition: "all 0.2s ease",
+              }}
+            >
+              <span>{tab.label}</span>
+              <span
+                style={{
+                  fontSize: "11px",
+                  padding: "1px 6px",
+                  borderRadius: "10px",
+                  background: isActive
+                    ? "rgba(255,255,255,0.25)"
+                    : tab.highlight
+                    ? "var(--apl-danger, #ef4444)"
+                    : "rgba(0,0,0,0.08)",
+                  color: isActive || tab.highlight ? "#ffffff" : "inherit",
+                  fontWeight: 600,
+                }}
+              >
+                {tab.count}
+              </span>
+            </button>
+          );
+        })}
       </div>
 
       {/* ─── Add Form ─── */}
@@ -224,57 +372,269 @@ export default function Companies() {
         <div className="apl-card" style={{ padding: "48px", textAlign: "center", color: "var(--apl-neutral-500)" }}>Loading companies…</div>
       ) : error ? (
         <div className="apl-card" style={{ padding: "32px", textAlign: "center", color: "var(--apl-danger)", background: "var(--apl-danger-bg)", border: "1px solid rgba(180,69,61,0.2)" }}>{error}</div>
-      ) : companies.length === 0 ? (
+      ) : filteredCompanies.length === 0 ? (
         <div className="apl-card" style={{ padding: "48px", textAlign: "center" }}>
-          <p style={{ color: "var(--apl-neutral-500)", fontSize: "15px" }}>No companies found.</p>
+          <p style={{ color: "var(--apl-neutral-500)", fontSize: "15px" }}>
+            No companies matching &quot;{statusFilter}&quot; status.
+          </p>
         </div>
       ) : (
         <div className="apl-table-container" style={{ overflowX: "auto" }}>
           <table className="apl-table">
             <thead>
               <tr>
-                <th>ID</th>
-                <th>Name</th>
-                <th>Industry</th>
-                <th>Email</th>
-                <th>Website</th>
-                <th>Phone</th>
+                <th>Company</th>
+                <th>Owner / Contact</th>
+                <th>Legal Doc Type</th>
+                <th>Registration / NTN ID</th>
+                <th>Document File</th>
+                <th>Status</th>
                 <th style={{ textAlign: "right" }}>Actions</th>
               </tr>
             </thead>
             <tbody>
-              {companies.map((company) => (
-                <tr key={company.id}>
-                  <td style={{ color: "var(--apl-neutral-500)", fontFamily: "JetBrains Mono, monospace", fontSize: "12px" }}>
-                    #{company.id}
-                  </td>
-                  <td style={{ fontWeight: 600 }}>{company.name}</td>
-                  <td style={{ color: "var(--apl-neutral-700)", fontSize: "13px" }}>{company.industry || "—"}</td>
-                  <td style={{ color: "var(--apl-neutral-700)", fontSize: "13px" }}>{company.email || "—"}</td>
-                  <td style={{ fontSize: "13px" }}>
-                    {company.website
-                      ? <a href={company.website} target="_blank" rel="noopener noreferrer"
-                          style={{ color: "var(--apl-info)", textDecoration: "none" }}>{company.website}</a>
-                      : "—"}
-                  </td>
-                  <td style={{ color: "var(--apl-neutral-700)", fontSize: "13px" }}>{company.phone || "—"}</td>
-                  <td style={{ textAlign: "right", whiteSpace: "nowrap" }}>
-                    <button id={`edit-company-${company.id}`} type="button" className="apl-btn apl-btn-secondary"
-                      style={{ padding: "6px 12px", fontSize: "13px", marginRight: "6px" }}
-                      onClick={() => openEditModal(company)}>
-                      <EditIcon /> Edit
-                    </button>
-                    <button id={`delete-company-${company.id}`} type="button" className="apl-btn apl-btn-danger"
-                      style={{ padding: "6px 12px", fontSize: "13px" }}
-                      onClick={() => handleDelete(company.id)}
-                      disabled={deletingId === company.id}>
-                      <TrashIcon /> {deletingId === company.id ? "…" : "Delete"}
-                    </button>
-                  </td>
-                </tr>
-              ))}
+              {filteredCompanies.map((company) => {
+                const status = company.verification_status || "unverified";
+                const isPending = status === "pending";
+                const isVerified = status === "verified";
+                const isRejected = status === "rejected";
+
+                return (
+                  <tr key={company.id}>
+                    <td>
+                      <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+                        <div style={{
+                          width: "36px", height: "36px", borderRadius: "8px",
+                          background: "var(--apl-neutral-100, #f3f4f6)",
+                          display: "flex", alignItems: "center", justifyContent: "center",
+                          fontWeight: 700, fontSize: "14px", color: "var(--apl-accent, #6366f1)",
+                          flexShrink: 0
+                        }}>
+                          {company.logo ? (
+                            <img src={company.logo} alt="" style={{ width: "100%", height: "100%", borderRadius: "8px", objectFit: "cover" }} />
+                          ) : (
+                            (company.name || "C").charAt(0).toUpperCase()
+                          )}
+                        </div>
+                        <div>
+                          <div style={{ fontWeight: 600, color: "var(--apl-neutral-900)" }}>{company.name}</div>
+                          <div style={{ fontSize: "11px", color: "var(--apl-neutral-500)" }}>
+                            {company.industry || "General"} · ID #{company.id}
+                          </div>
+                        </div>
+                      </div>
+                    </td>
+
+                    <td style={{ fontSize: "13px" }}>
+                      <div>{company.owner_email || company.email || "—"}</div>
+                      {company.phone && <div style={{ fontSize: "11px", color: "var(--apl-neutral-500)" }}>{company.phone}</div>}
+                    </td>
+
+                    <td>
+                      {company.document_type === "secp" ? (
+                        <span style={{
+                          fontSize: "11px", fontWeight: 600, padding: "3px 8px", borderRadius: "6px",
+                          background: "rgba(59, 130, 246, 0.12)", color: "#2563eb", display: "inline-flex", alignItems: "center", gap: "4px"
+                        }}>
+                          <FileTextIcon /> SECP Incorporation
+                        </span>
+                      ) : company.document_type === "ntn" ? (
+                        <span style={{
+                          fontSize: "11px", fontWeight: 600, padding: "3px 8px", borderRadius: "6px",
+                          background: "rgba(16, 185, 129, 0.12)", color: "#059669", display: "inline-flex", alignItems: "center", gap: "4px"
+                        }}>
+                          <FileTextIcon /> NTN Certificate
+                        </span>
+                      ) : (
+                        <span style={{ color: "var(--apl-neutral-400)", fontSize: "12px" }}>—</span>
+                      )}
+                    </td>
+
+                    <td style={{ fontFamily: "JetBrains Mono, monospace", fontSize: "12px", fontWeight: 500 }}>
+                      {company.tax_id || "—"}
+                    </td>
+
+                    <td>
+                      {company.document_url ? (
+                        <a
+                          href={company.document_url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="apl-btn apl-btn-secondary"
+                          style={{
+                            padding: "4px 10px", fontSize: "12px", textDecoration: "none",
+                            display: "inline-flex", alignItems: "center", gap: "4px"
+                          }}
+                        >
+                          <ExternalLinkIcon /> View Document
+                        </a>
+                      ) : (
+                        <span style={{ color: "var(--apl-neutral-400)", fontSize: "12px" }}>No doc</span>
+                      )}
+                    </td>
+
+                    <td>
+                      {isPending && (
+                        <span style={{
+                          fontSize: "11px", fontWeight: 700, padding: "3px 8px", borderRadius: "6px",
+                          background: "rgba(245, 158, 11, 0.15)", color: "#d97706", display: "inline-flex", alignItems: "center", gap: "4px"
+                        }}>
+                          ● Under Review
+                        </span>
+                      )}
+                      {isVerified && (
+                        <span style={{
+                          fontSize: "11px", fontWeight: 700, padding: "3px 8px", borderRadius: "6px",
+                          background: "rgba(16, 185, 129, 0.15)", color: "#059669", display: "inline-flex", alignItems: "center", gap: "4px"
+                        }}>
+                          ✓ Verified
+                        </span>
+                      )}
+                      {isRejected && (
+                        <div title={company.rejection_reason || "Rejected by admin"}>
+                          <span style={{
+                            fontSize: "11px", fontWeight: 700, padding: "3px 8px", borderRadius: "6px",
+                            background: "rgba(239, 68, 68, 0.15)", color: "#dc2626", display: "inline-flex", alignItems: "center", gap: "4px", cursor: "help"
+                          }}>
+                            ✕ Rejected
+                          </span>
+                        </div>
+                      )}
+                      {!isPending && !isVerified && !isRejected && (
+                        <span style={{ fontSize: "12px", color: "var(--apl-neutral-500)" }}>Unverified</span>
+                      )}
+                    </td>
+
+                    <td style={{ textAlign: "right", whiteSpace: "nowrap" }}>
+                      {isPending && (
+                        <>
+                          <button
+                            type="button"
+                            className="apl-btn"
+                            style={{
+                              padding: "5px 10px", fontSize: "12px", marginRight: "6px",
+                              background: "#059669", color: "#fff", border: "none"
+                            }}
+                            onClick={() => handleApprove(company)}
+                            disabled={approvingId === company.id}
+                          >
+                            <CheckCircleIcon /> {approvingId === company.id ? "…" : "Approve"}
+                          </button>
+                          <button
+                            type="button"
+                            className="apl-btn"
+                            style={{
+                              padding: "5px 10px", fontSize: "12px", marginRight: "6px",
+                              background: "rgba(239,68,68,0.1)", color: "#dc2626", border: "1px solid rgba(239,68,68,0.3)"
+                            }}
+                            onClick={() => openRejectModal(company)}
+                          >
+                            <XCircleIcon /> Reject
+                          </button>
+                        </>
+                      )}
+                      {isRejected && (
+                        <button
+                          type="button"
+                          className="apl-btn"
+                          style={{
+                            padding: "5px 10px", fontSize: "12px", marginRight: "6px",
+                            background: "rgba(16,185,129,0.1)", color: "#059669", border: "1px solid rgba(16,185,129,0.3)"
+                          }}
+                          onClick={() => handleApprove(company)}
+                        >
+                          <CheckCircleIcon /> Re-approve
+                        </button>
+                      )}
+                      <button id={`edit-company-${company.id}`} type="button" className="apl-btn apl-btn-secondary"
+                        style={{ padding: "5px 9px", fontSize: "12px", marginRight: "4px" }}
+                        onClick={() => openEditModal(company)}>
+                        <EditIcon />
+                      </button>
+                      <button id={`delete-company-${company.id}`} type="button" className="apl-btn apl-btn-danger"
+                        style={{ padding: "5px 9px", fontSize: "12px" }}
+                        onClick={() => handleDelete(company.id)}
+                        disabled={deletingId === company.id}>
+                        <TrashIcon />
+                      </button>
+                    </td>
+                  </tr>
+                );
+              })}
             </tbody>
           </table>
+        </div>
+      )}
+
+      {/* ─── Reject Company Modal ─── */}
+      {rejectingCompany !== null && (
+        <div
+          style={{
+            position: "fixed", top: 0, left: 0, right: 0, bottom: 0,
+            zIndex: 1000, background: "rgba(0, 0, 0, 0.5)",
+            backdropFilter: "blur(4px)",
+            display: "flex", alignItems: "center", justifyContent: "center",
+            padding: "20px",
+          }}
+          onClick={closeRejectModal}
+        >
+          <div
+            className="apl-card apl-animate-scale"
+            style={{
+              width: "100%", maxWidth: "500px", padding: "0",
+              background: "var(--apl-bg-surface, #ffffff)",
+              boxShadow: "0 20px 25px -5px rgba(0, 0, 0, 0.15)",
+              borderRadius: "14px",
+            }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div style={{
+              padding: "16px 24px", borderBottom: "1px solid var(--apl-neutral-200, #eaeaea)",
+              display: "flex", justifyContent: "space-between", alignItems: "center",
+            }}>
+              <h3 style={{ fontSize: "16px", fontWeight: 700, color: "var(--apl-danger, #ef4444)", margin: 0 }}>
+                Reject Company Registration
+              </h3>
+              <button type="button" onClick={closeRejectModal} style={{ background: "none", border: "none", cursor: "pointer", color: "var(--apl-neutral-500)" }}>
+                <CloseIcon />
+              </button>
+            </div>
+
+            <form onSubmit={handleRejectSubmit}>
+              <div style={{ padding: "20px 24px" }}>
+                <ErrBanner msg={rejectErr} />
+                <p style={{ fontSize: "13px", color: "var(--apl-neutral-700)", lineHeight: 1.5, marginTop: 0, marginBottom: "14px" }}>
+                  You are rejecting the registration for <strong>{rejectingCompany.name}</strong>. An email notification will be automatically sent to <strong>{rejectingCompany.owner_email || rejectingCompany.email}</strong>.
+                </p>
+
+                <Field label="Reason for Rejection *" htmlFor="reject-reason">
+                  <textarea
+                    id="reject-reason"
+                    className="apl-input"
+                    rows={4}
+                    required
+                    placeholder="e.g. The uploaded SECP Certificate was expired / illegible, or company name does not match the legal filing."
+                    style={{ resize: "vertical", width: "100%" }}
+                    value={rejectReason}
+                    onChange={(e) => setRejectReason(e.target.value)}
+                  />
+                </Field>
+              </div>
+
+              <div style={{
+                padding: "14px 24px", borderTop: "1px solid var(--apl-neutral-200, #eaeaea)",
+                display: "flex", justifyContent: "flex-end", gap: "10px",
+                background: "var(--apl-neutral-50, #f9fafb)", borderRadius: "0 0 14px 14px",
+              }}>
+                <button type="button" className="apl-btn apl-btn-secondary" onClick={closeRejectModal}>
+                  Cancel
+                </button>
+                <button type="submit" className="apl-btn apl-btn-danger" disabled={rejectSaving || !rejectReason.trim()}>
+                  {rejectSaving ? "Rejecting…" : "Confirm Rejection"}
+                </button>
+              </div>
+            </form>
+          </div>
         </div>
       )}
 

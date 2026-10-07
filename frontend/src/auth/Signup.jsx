@@ -87,9 +87,7 @@ export default function Signup() {
   const [logoPreview, setLogoPreview] = useState(null);
   const [logoFile, setLogoFile] = useState(null);
 
-  // Security verification files
-  const [cnicFile, setCnicFile] = useState(null);
-  const [cnicPreview, setCnicPreview] = useState(null);
+  // Company legal verification document
   const [regDocFile, setRegDocFile] = useState(null);
   const [regDocFileName, setRegDocFileName] = useState("");
 
@@ -99,7 +97,6 @@ export default function Signup() {
     email: "",
     password: "",
     confirmPassword: "",
-    cnicNumber: "",
   });
 
   /* ── Company form state ──────────────────────────────────── */
@@ -110,6 +107,7 @@ export default function Signup() {
     industry: "",
     address: "",
     phone: "",
+    documentType: "secp", // "secp" | "ntn"
     taxId: "",
     ownerName: "",
     ownerEmail: "",
@@ -128,31 +126,17 @@ export default function Signup() {
     }
   };
 
-  /* ── CNIC file pick ───────────────────────────────────────── */
-  const handleCnicChange = (e) => {
-    const file = e.target.files[0];
-    if (file) {
-      if (file.size > 5 * 1024 * 1024) {
-        setError("CNIC image size must not exceed 5MB.");
-        return;
-      }
-      setCnicFile(file);
-      const reader = new FileReader();
-      reader.onload = (ev) => setCnicPreview(ev.target.result);
-      reader.readAsDataURL(file);
-    }
-  };
-
   /* ── Company Doc file pick ────────────────────────────────── */
   const handleRegDocChange = (e) => {
     const file = e.target.files[0];
     if (file) {
       if (file.size > 10 * 1024 * 1024) {
-        setError("Company document size must not exceed 10MB.");
+        setError("Company verification document size must not exceed 10MB.");
         return;
       }
       setRegDocFile(file);
       setRegDocFileName(file.name);
+      setError("");
     }
   };
 
@@ -171,13 +155,6 @@ export default function Signup() {
     formData.append("username", applicantForm.username);
     formData.append("email", applicantForm.email);
     formData.append("password", applicantForm.password);
-
-    if (applicantForm.cnicNumber?.trim()) {
-      formData.append("cnic_number", applicantForm.cnicNumber.trim());
-    }
-    if (cnicFile) {
-      formData.append("cnic_image", cnicFile);
-    }
 
     setLoading(true);
     try {
@@ -215,6 +192,21 @@ export default function Signup() {
       return;
     }
 
+    if (!companyForm.documentType) {
+      setError("Please select a Legal Verification Document type (SECP or NTN).");
+      return;
+    }
+
+    if (!companyForm.taxId?.trim()) {
+      setError("Tax / Registration ID number is required.");
+      return;
+    }
+
+    if (!regDocFile) {
+      setError("Please upload the selected legal verification document (SECP Certificate or NTN Certificate).");
+      return;
+    }
+
     const formData = new FormData();
     formData.append("role", "company_admin");
     formData.append("username", companyForm.ownerName);
@@ -227,20 +219,18 @@ export default function Signup() {
     formData.append("phone", companyForm.phone);
     formData.append("address", companyForm.address);
 
+    formData.append("document_type", companyForm.documentType);
+    formData.append("tax_id", companyForm.taxId.trim());
+    formData.append("registration_document", regDocFile);
+
     if (logoFile) {
       formData.append("logo", logoFile);
-    }
-    if (companyForm.taxId?.trim()) {
-      formData.append("tax_id", companyForm.taxId.trim());
-    }
-    if (regDocFile) {
-      formData.append("registration_document", regDocFile);
     }
 
     setLoading(true);
     try {
       await signup(formData);
-      alert("Company account registered successfully! Please login.");
+      alert("Company registration submitted! Your legal verification document is under review. An email confirmation has been sent.");
       navigate("/login");
     } catch (err) {
       console.error("API Error during signup:", err);
@@ -489,74 +479,7 @@ export default function Signup() {
                 </div>
               </div>
 
-              {/* Security & Identity Verification */}
-              <div className="auth-section-divider">Identity Verification & Security</div>
-
-              <div className="auth-info-box">
-                <Icon size={15} d={I.shield} />
-                <span>
-                  <strong>Candidate Verification:</strong> Provide your CNIC / National ID for enhanced profile security and verified candidate status.
-                </span>
-              </div>
-
-              <AuthInput
-                id="apl-cnic"
-                label="CNIC / National ID Number"
-                icon={I.idCard}
-                placeholder="e.g. 42101-1234567-1"
-                value={applicantForm.cnicNumber}
-                onChange={(e) => setApplicantForm({ ...applicantForm, cnicNumber: e.target.value })}
-              />
-
-              <div className="auth-field">
-                <label className="auth-label">CNIC / ID Card Photo</label>
-                <label className="auth-logo-upload" htmlFor="apl-cnic-file" title="Upload CNIC photo">
-                  <div className="auth-logo-upload-preview">
-                    {cnicPreview ? (
-                      <img src={cnicPreview} alt="CNIC preview" />
-                    ) : (
-                      <Icon size={20} d={I.idCard} />
-                    )}
-                  </div>
-                  <div className="auth-logo-upload-text" style={{ flex: 1 }}>
-                    <div className="auth-logo-upload-label">
-                      {cnicFile ? cnicFile.name : "Upload CNIC Photo"}
-                    </div>
-                    <div className="auth-logo-upload-hint">JPG, PNG or WEBP · Max 5MB · Encrypted storage</div>
-                  </div>
-                  {cnicFile && (
-                    <button
-                      type="button"
-                      onClick={(e) => {
-                        e.preventDefault();
-                        e.stopPropagation();
-                        setCnicFile(null);
-                        setCnicPreview(null);
-                      }}
-                      style={{
-                        background: "none",
-                        border: "none",
-                        color: "var(--danger)",
-                        cursor: "pointer",
-                        fontSize: 12,
-                        fontWeight: 600,
-                        padding: "4px 8px",
-                      }}
-                    >
-                      Remove
-                    </button>
-                  )}
-                  <input
-                    id="apl-cnic-file"
-                    type="file"
-                    accept="image/png,image/jpeg,image/webp"
-                    style={{ display: "none" }}
-                    onChange={handleCnicChange}
-                  />
-                </label>
-              </div>
-
-              <button type="submit" className="auth-submit" disabled={loading}>
+              <button type="submit" className="auth-submit" disabled={loading} style={{ marginTop: "16px" }}>
                 {loading
                   ? <><span className="auth-spinner" /><span>Creating account…</span></>
                   : "Create Applicant Account"
@@ -677,35 +600,120 @@ export default function Signup() {
               </div>
 
               {/* Company Legal & Security Verification */}
-              <div className="auth-section-divider">Company Legal & Security Verification</div>
+              <div className="auth-section-divider">Company Legal Verification & Security</div>
 
               <div className="auth-info-box">
                 <Icon size={15} d={I.shield} />
                 <span>
-                  <strong>Employer Verification:</strong> Provide your Business Tax ID / NTN and upload official registration or incorporation documents for verified status.
+                  <strong>Legal Compliance:</strong> To ensure recruitment integrity, companies must provide an official document for Admin approval before full platform activation.
                 </span>
+              </div>
+
+              {/* Document Type Selection Cards */}
+              <div className="auth-field">
+                <label className="auth-label">Select Verification Document Type *</label>
+                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "10px", marginTop: "6px" }}>
+                  <label
+                    style={{
+                      display: "flex",
+                      flexDirection: "column",
+                      gap: "5px",
+                      padding: "12px 14px",
+                      borderRadius: "10px",
+                      cursor: "pointer",
+                      border: companyForm.documentType === "secp"
+                        ? "2px solid var(--brand, #636B2F)"
+                        : "1.5px solid var(--n300, #D3D6C4)",
+                      background: companyForm.documentType === "secp"
+                        ? "var(--n100, #ECEEDF)"
+                        : "var(--white, #FFFFFF)",
+                      boxShadow: companyForm.documentType === "secp"
+                        ? "0 2px 8px rgba(99, 107, 47, 0.12)"
+                        : "none",
+                      transition: "all 0.2s ease",
+                    }}
+                  >
+                    <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                      <input
+                        type="radio"
+                        name="documentType"
+                        value="secp"
+                        checked={companyForm.documentType === "secp"}
+                        onChange={(e) => setCompanyForm({ ...companyForm, documentType: e.target.value })}
+                        style={{ accentColor: "var(--brand, #636B2F)", cursor: "pointer" }}
+                      />
+                      <span style={{ fontWeight: 700, fontSize: "13.5px", color: "var(--n900, #22241B)" }}>
+                        SECP Certificate
+                      </span>
+                    </div>
+                    <span style={{ fontSize: "11.5px", color: "var(--n700, #52564A)", marginLeft: "22px", lineHeight: 1.4 }}>
+                      Certificate of Incorporation — verifies legal existence.
+                    </span>
+                  </label>
+
+                  <label
+                    style={{
+                      display: "flex",
+                      flexDirection: "column",
+                      gap: "5px",
+                      padding: "12px 14px",
+                      borderRadius: "10px",
+                      cursor: "pointer",
+                      border: companyForm.documentType === "ntn"
+                        ? "2px solid var(--brand, #636B2F)"
+                        : "1.5px solid var(--n300, #D3D6C4)",
+                      background: companyForm.documentType === "ntn"
+                        ? "var(--n100, #ECEEDF)"
+                        : "var(--white, #FFFFFF)",
+                      boxShadow: companyForm.documentType === "ntn"
+                        ? "0 2px 8px rgba(99, 107, 47, 0.12)"
+                        : "none",
+                      transition: "all 0.2s ease",
+                    }}
+                  >
+                    <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                      <input
+                        type="radio"
+                        name="documentType"
+                        value="ntn"
+                        checked={companyForm.documentType === "ntn"}
+                        onChange={(e) => setCompanyForm({ ...companyForm, documentType: e.target.value })}
+                        style={{ accentColor: "var(--brand, #636B2F)", cursor: "pointer" }}
+                      />
+                      <span style={{ fontWeight: 700, fontSize: "13.5px", color: "var(--n900, #22241B)" }}>
+                        NTN Certificate (FBR)
+                      </span>
+                    </div>
+                    <span style={{ fontSize: "11.5px", color: "var(--n700, #52564A)", marginLeft: "22px", lineHeight: 1.4 }}>
+                      Verifies official tax registration with FBR.
+                    </span>
+                  </label>
+                </div>
               </div>
 
               <AuthInput
                 id="co-tax-id"
-                label="Tax / Business Registration ID (NTN / EIN)"
+                label={companyForm.documentType === "secp" ? "SECP CUIN / Incorporation Number *" : "National Tax Number (NTN) *"}
                 icon={I.fileText}
-                placeholder="e.g. 1234567-8 or EIN / Trade License"
+                placeholder={companyForm.documentType === "secp" ? "e.g. 0123456 or CUIN Number" : "e.g. 1234567-8"}
                 value={companyForm.taxId}
                 onChange={(e) => setCompanyForm({ ...companyForm, taxId: e.target.value })}
+                required
               />
 
               <div className="auth-field">
-                <label className="auth-label">Business Registration / Tax Certificate</label>
-                <label className="auth-logo-upload" htmlFor="co-reg-doc" title="Upload company document">
+                <label className="auth-label">
+                  Upload {companyForm.documentType === "secp" ? "SECP Certificate" : "NTN Certificate"} *
+                </label>
+                <label className="auth-logo-upload" htmlFor="co-reg-doc" title="Upload verification document">
                   <div className="auth-logo-upload-preview">
                     <Icon size={20} d={I.fileText} />
                   </div>
                   <div className="auth-logo-upload-text" style={{ flex: 1 }}>
-                    <div className="auth-logo-upload-label">
-                      {regDocFileName || "Upload Registration Document"}
+                    <div className="auth-logo-upload-label" style={{ color: "var(--n900, #22241B)", fontWeight: 600 }}>
+                      {regDocFileName || `Select ${companyForm.documentType === "secp" ? "SECP" : "NTN"} Document (PDF, Image)`}
                     </div>
-                    <div className="auth-logo-upload-hint">PDF, PNG, JPG or WEBP · Max 10MB</div>
+                    <div className="auth-logo-upload-hint">PDF, PNG, JPG or WEBP · Max 10MB · Stored on Cloudflare R2</div>
                   </div>
                   {regDocFile && (
                     <button
@@ -719,7 +727,7 @@ export default function Signup() {
                       style={{
                         background: "none",
                         border: "none",
-                        color: "var(--danger)",
+                        color: "var(--danger, #B4453D)",
                         cursor: "pointer",
                         fontSize: 12,
                         fontWeight: 600,

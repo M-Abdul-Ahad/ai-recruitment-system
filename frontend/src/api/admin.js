@@ -31,7 +31,7 @@ export const deleteRole = (id) => api.delete(`/auth/admin/roles/${id}/`);
 // ─── Admin — Company Management ───────────────────────────────────────────
 
 /** GET /api/companies/admin/ — list all companies */
-export const getCompanies = () => api.get('/companies/admin/');
+export const getCompanies = (params) => api.get('/companies/admin/', { params });
 
 /** POST /api/companies/admin/ — create a new company */
 export const createCompany = (data) => api.post('/companies/admin/', data);
@@ -41,6 +41,12 @@ export const updateCompany = (id, data) => api.patch(`/companies/admin/${id}/`, 
 
 /** DELETE /api/companies/admin/:id/ — delete a company */
 export const deleteCompany = (id) => api.delete(`/companies/admin/${id}/`);
+
+/** POST /api/companies/admin/:id/approve/ — approve company verification */
+export const approveCompany = (id) => api.post(`/companies/admin/${id}/approve/`);
+
+/** POST /api/companies/admin/:id/reject/ — reject company verification */
+export const rejectCompany = (id, data) => api.post(`/companies/admin/${id}/reject/`, data);
 
 // ─── Admin — Job Management ───────────────────────────────────────────────
 

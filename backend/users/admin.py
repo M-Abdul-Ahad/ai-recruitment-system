@@ -13,17 +13,14 @@ class UserAdmin(DjangoUserAdmin):
         "username",
         "role",
         "company",
-        "cnic_number",
-        "verification_status",
+        "is_hr",
         "is_staff",
         "is_active",
     )
-    list_filter = ("role", "verification_status", "is_staff", "is_active")
+    list_filter = ("role", "is_hr", "is_staff", "is_active")
     fieldsets = DjangoUserAdmin.fieldsets + (
-        ("RBAC & Company", {"fields": ("role", "company")}),
-        ("Identity Verification", {"fields": ("cnic_number", "cnic_image", "verification_status")}),
+        ("RBAC & Company", {"fields": ("role", "role_fk", "company", "is_hr")}),
     )
     add_fieldsets = DjangoUserAdmin.add_fieldsets + (
-        ("RBAC & Company", {"fields": ("role", "company")}),
-        ("Identity Verification", {"fields": ("cnic_number", "cnic_image", "verification_status")}),
+        ("RBAC & Company", {"fields": ("role", "role_fk", "company", "is_hr")}),
     )

@@ -49,31 +49,6 @@ class User(AbstractUser):
 
     is_hr = models.BooleanField(default=False)
 
-    class VerificationStatus(models.TextChoices):
-        UNVERIFIED = "unverified", "Unverified"
-        PENDING = "pending", "Pending Verification"
-        VERIFIED = "verified", "Verified"
-        REJECTED = "rejected", "Rejected"
-
-    cnic_number = models.CharField(
-        max_length=25,
-        blank=True,
-        default="",
-        help_text="National Identity Card (CNIC / ID) Number",
-    )
-    cnic_image = models.ImageField(
-        upload_to="verification/cnic/",
-        blank=True,
-        null=True,
-        help_text="Uploaded CNIC / Identity Document photo",
-    )
-    verification_status = models.CharField(
-        max_length=20,
-        choices=VerificationStatus.choices,
-        default=VerificationStatus.UNVERIFIED,
-        help_text="Identity document verification status",
-    )
-
     USERNAME_FIELD = "email"
     REQUIRED_FIELDS = ["username"]
 

@@ -1,24 +1,8 @@
 """
 companies/email_utils.py
 ------------------------
-Sends recruiter invitation emails via Python's built-in smtplib so we get
-exact SMTP-level error messages for debugging.
-
-Usage
------
-    from companies.email_utils import send_invitation_email
-
-    ok, err = send_invitation_email(
-        to_email="recruit@example.com",
-        setup_link="https://...",
-        company_name="Acme Corp",
-        invited_by="admin@acme.com",
-    )
-
-Returns
--------
-    (True, None)      on success
-    (False, "reason") on any failure
+Sends recruiter invitations and company registration verification emails
+via Python's built-in smtplib with comprehensive error handling and logging.
 """
 from __future__ import annotations
 
@@ -46,42 +30,64 @@ def _get_smtp_config() -> dict:
     }
 
 
+def _send_smtp_email(to_email: str, subject: str, plain_body: str, html_body: str) -> tuple[bool, str | None]:
+    """Helper to dispatch MIME emails via configured SMTP server."""
+    cfg = _get_smtp_config()
+
+    if not cfg["user"]:
+        msg = "EMAIL_HOST_USER is not set in .env. Add your Gmail address to the .env file."
+        logger.error("[SMTP] %s", msg)
+        return False, msg
+
+    if not cfg["password"]:
+        msg = "EMAIL_HOST_PASSWORD is not set in .env. Add Gmail App Password to .env."
+        logger.error("[SMTP] %s", msg)
+        return False, msg
+
+    from_email = cfg["from_email"] or cfg["user"]
+
+    mime_msg = MIMEMultipart("alternative")
+    mime_msg["Subject"] = subject
+    mime_msg["From"] = from_email
+    mime_msg["To"] = to_email
+    mime_msg.attach(MIMEText(plain_body, "plain"))
+    mime_msg.attach(MIMEText(html_body, "html"))
+
+    try:
+        if cfg["use_ssl"]:
+            context = ssl.create_default_context()
+            with smtplib.SMTP_SSL(cfg["host"], cfg["port"], context=context) as server:
+                server.login(cfg["user"], cfg["password"])
+                server.sendmail(from_email, [to_email], mime_msg.as_string())
+        else:
+            with smtplib.SMTP(cfg["host"], cfg["port"]) as server:
+                server.ehlo()
+                if cfg["use_tls"]:
+                    server.starttls(context=ssl.create_default_context())
+                    server.ehlo()
+                server.login(cfg["user"], cfg["password"])
+                server.sendmail(from_email, [to_email], mime_msg.as_string())
+
+        logger.info("[SMTP] Email successfully sent to %s (Subject: %s)", to_email, subject)
+        return True, None
+
+    except smtplib.SMTPAuthenticationError as exc:
+        error = f"SMTP authentication failed (535): {exc}"
+        logger.error("[SMTP] %s", error)
+        return False, error
+    except Exception as exc:
+        error = f"Unexpected error sending email to {to_email}: {exc}"
+        logger.exception("[SMTP] Exception")
+        return False, error
+
+
 def send_invitation_email(
     to_email: str,
     setup_link: str,
     company_name: str,
     invited_by: str,
 ) -> tuple[bool, str | None]:
-    """
-    Send recruiter invitation email using smtplib directly.
-
-    Returns (True, None) on success, (False, error_message) on failure.
-    All steps are logged at DEBUG level so you can trace the full SMTP
-    handshake in the Django dev-server console.
-    """
-    cfg = _get_smtp_config()
-
-    # -- Credential guard -------------------------------------------------------
-    if not cfg["user"]:
-        msg = (
-            "EMAIL_HOST_USER is not set in .env. "
-            "Add your Gmail address to the .env file."
-        )
-        logger.error("[SMTP] %s", msg)
-        return False, msg
-
-    if not cfg["password"]:
-        msg = (
-            "EMAIL_HOST_PASSWORD is not set in .env. "
-            "Generate a Gmail App Password at "
-            "https://myaccount.google.com/apppasswords and add it to .env."
-        )
-        logger.error("[SMTP] %s", msg)
-        return False, msg
-
-    from_email = cfg["from_email"] or cfg["user"]
-
-    # -- Build the message -------------------------------------------------------
+    """Send recruiter invitation email."""
     subject = f"You are invited to join {company_name} as a Recruiter"
     plain_body = (
         f"Hello,\n\n"
@@ -102,7 +108,7 @@ def send_invitation_email(
         "<p>Hello,</p>"
         f"<p><strong>{invited_by}</strong> has invited you to join "
         f"<strong>{company_name}</strong> as a Recruiter on the "
-        "<em>AI Recruitment System</em>.</p>"
+        "<em>Nominate AI Recruitment System</em>.</p>"
         "<p>Click the button below to set up your account and password:</p>"
         "<p style='text-align:center;margin:28px 0;'>"
         f"<a href='{setup_link}' style='background:#2563eb;color:#fff;padding:12px 28px;"
@@ -116,90 +122,145 @@ def send_invitation_email(
         "</div></body></html>"
     )
 
-    mime_msg = MIMEMultipart("alternative")
-    mime_msg["Subject"] = subject
-    mime_msg["From"] = from_email
-    mime_msg["To"] = to_email
-    mime_msg.attach(MIMEText(plain_body, "plain"))
-    mime_msg.attach(MIMEText(html_body, "html"))
+    return _send_smtp_email(to_email, subject, plain_body, html_body)
 
-    # -- SMTP connection --------------------------------------------------------
-    logger.debug(
-        "[SMTP] Connecting to %s:%s  TLS=%s  SSL=%s  user=%s  from=%s  to=%s",
-        cfg["host"], cfg["port"], cfg["use_tls"], cfg["use_ssl"],
-        cfg["user"], from_email, to_email,
+
+def send_registration_submitted_email(
+    to_email: str,
+    company_name: str,
+    owner_name: str,
+) -> tuple[bool, str | None]:
+    """Send confirmation to company that registration & documents are under review."""
+    subject = f"Registration Received — {company_name} Verification Under Process"
+    plain_body = (
+        f"Hello {owner_name},\n\n"
+        f"Thank you for registering {company_name} on Nominate AI Recruitment System.\n\n"
+        f"Your legal verification document has been securely received and uploaded for compliance review.\n"
+        f"Our administration team is currently reviewing your registration details.\n\n"
+        f"You will receive an update email once your registration has been approved.\n\n"
+        f"Best regards,\n"
+        f"Nominate AI Support & Verification Team"
     )
 
-    try:
-        if cfg["use_ssl"]:
-            logger.debug("[SMTP] Using SMTP_SSL (port 465 style)")
-            context = ssl.create_default_context()
-            with smtplib.SMTP_SSL(cfg["host"], cfg["port"], context=context) as server:
-                server.set_debuglevel(1)
-                logger.debug("[SMTP] Logging in as %s", cfg["user"])
-                server.login(cfg["user"], cfg["password"])
-                logger.debug("[SMTP] Sending message to %s", to_email)
-                server.sendmail(from_email, [to_email], mime_msg.as_string())
-        else:
-            logger.debug("[SMTP] Using SMTP + STARTTLS (port 587 style)")
-            with smtplib.SMTP(cfg["host"], cfg["port"]) as server:
-                server.set_debuglevel(1)
-                server.ehlo()
-                if cfg["use_tls"]:
-                    logger.debug("[SMTP] Starting TLS")
-                    server.starttls(context=ssl.create_default_context())
-                    server.ehlo()
-                logger.debug("[SMTP] Logging in as %s", cfg["user"])
-                server.login(cfg["user"], cfg["password"])
-                logger.debug("[SMTP] Sending message to %s", to_email)
-                server.sendmail(from_email, [to_email], mime_msg.as_string())
+    html_body = (
+        "<html><body style='font-family:Arial,sans-serif;background:#0d1117;padding:30px;color:#c9d1d9;'>"
+        "<div style='max-width:540px;margin:auto;background:#161b22;border:1px solid #30363d;border-radius:12px;"
+        "padding:36px;box-shadow:0 8px 24px rgba(0,0,0,.4);'>"
+        "<div style='margin-bottom:20px;display:flex;align-items:center;'>"
+        "<h2 style='color:#58a6ff;margin:0;font-size:22px;'>Nominate AI</h2>"
+        "</div>"
+        f"<h3 style='color:#f0f6fc;margin-top:0;'>Registration Under Review</h3>"
+        f"<p>Hello <strong>{owner_name}</strong>,</p>"
+        f"<p>Thank you for submitting registration details for <strong>{company_name}</strong>.</p>"
+        "<div style='background:#1f242c;border-left:4px solid #f59e0b;padding:14px 16px;border-radius:6px;margin:20px 0;'>"
+        "<p style='margin:0;color:#fcd34d;font-size:14px;line-height:1.5;'>"
+        "<strong>Status: Under Review</strong><br>"
+        "Your legal verification document (SECP / NTN Certificate) has been uploaded to our secure storage. "
+        "Our compliance administrators are reviewing your submission."
+        "</p>"
+        "</div>"
+        "<p style='font-size:14px;line-height:1.6;'>Once reviewed, you will receive an email confirmation with your verification outcome.</p>"
+        "<hr style='border:none;border-top:1px solid #30363d;margin:24px 0;'>"
+        "<p style='font-size:12px;color:#8b949e;margin-bottom:0;'>"
+        "Need help? Contact our support team.<br>"
+        "© Nominate AI. All rights reserved."
+        "</p>"
+        "</div></body></html>"
+    )
 
-        logger.info("[SMTP] Invitation email successfully sent to %s", to_email)
-        return True, None
+    return _send_smtp_email(to_email, subject, plain_body, html_body)
 
-    except smtplib.SMTPAuthenticationError as exc:
-        error = (
-            "SMTP authentication failed (535). "
-            "For Gmail you MUST use a 16-character App Password, not your "
-            "regular login password. Generate one at "
-            "https://myaccount.google.com/apppasswords "
-            "and set EMAIL_HOST_PASSWORD in your .env file. "
-            f"Raw server error: {exc}"
-        )
-        logger.error("[SMTP] Auth error: %s", exc)
-        return False, error
 
-    except smtplib.SMTPRecipientsRefused as exc:
-        error = f"Recipient address refused by SMTP server: {exc}"
-        logger.error("[SMTP] Recipient refused: %s", exc)
-        return False, error
+def send_company_approved_email(
+    to_email: str,
+    company_name: str,
+    owner_name: str,
+) -> tuple[bool, str | None]:
+    """Send approval email when company registration is approved by admin."""
+    frontend_url = getattr(settings, "FRONTEND_URL", "http://localhost:5173")
+    login_url = f"{frontend_url}/login"
 
-    except smtplib.SMTPSenderRefused as exc:
-        error = (
-            f"Sender address {from_email!r} was refused. "
-            "Ensure EMAIL_HOST_USER in .env matches your Gmail account. "
-            f"Raw error: {exc}"
-        )
-        logger.error("[SMTP] Sender refused: %s", exc)
-        return False, error
+    subject = f"Congratulations! {company_name} Registration Approved"
+    plain_body = (
+        f"Hello {owner_name},\n\n"
+        f"Great news! Your company registration for {company_name} has been verified and APPROVED by our admin team.\n\n"
+        f"You can now sign in to your dashboard, post jobs, and invite recruiters:\n"
+        f"{login_url}\n\n"
+        f"Best regards,\n"
+        f"Nominate AI Team"
+    )
 
-    except smtplib.SMTPConnectError as exc:
-        host, port = cfg["host"], cfg["port"]
-        error = f"Could not connect to SMTP server {host}:{port}. Raw error: {exc}"
-        logger.error("[SMTP] Connect error: %s", exc)
-        return False, error
+    html_body = (
+        "<html><body style='font-family:Arial,sans-serif;background:#0d1117;padding:30px;color:#c9d1d9;'>"
+        "<div style='max-width:540px;margin:auto;background:#161b22;border:1px solid #30363d;border-radius:12px;"
+        "padding:36px;box-shadow:0 8px 24px rgba(0,0,0,.4);'>"
+        "<div style='margin-bottom:20px;'>"
+        "<h2 style='color:#58a6ff;margin:0;font-size:22px;'>Nominate AI</h2>"
+        "</div>"
+        f"<h3 style='color:#3fb950;margin-top:0;'>✓ Company Verified & Approved</h3>"
+        f"<p>Hello <strong>{owner_name}</strong>,</p>"
+        f"<p>We are pleased to inform you that <strong>{company_name}</strong> has passed document verification and is now officially verified on Nominate AI.</p>"
+        "<div style='background:#1f2923;border-left:4px solid #2ea043;padding:14px 16px;border-radius:6px;margin:20px 0;'>"
+        "<p style='margin:0;color:#7ee787;font-size:14px;line-height:1.5;'>"
+        "<strong>Your account is fully activated.</strong><br>"
+        "You have full access to AI candidate ranking, job posting, recruiter invitations, and pipeline workflows."
+        "</p>"
+        "</div>"
+        "<p style='text-align:center;margin:30px 0;'>"
+        f"<a href='{login_url}' style='background:#238636;color:#ffffff;padding:12px 30px;"
+        "border-radius:6px;text-decoration:none;font-weight:bold;display:inline-block;'>Go to Dashboard</a></p>"
+        "<hr style='border:none;border-top:1px solid #30363d;margin:24px 0;'>"
+        "<p style='font-size:12px;color:#8b949e;margin-bottom:0;'>"
+        "© Nominate AI. All rights reserved."
+        "</p>"
+        "</div></body></html>"
+    )
 
-    except smtplib.SMTPException as exc:
-        error = f"SMTP error: {exc}"
-        logger.error("[SMTP] SMTPException: %s", exc)
-        return False, error
+    return _send_smtp_email(to_email, subject, plain_body, html_body)
 
-    except OSError as exc:
-        error = f"Network/OS error while connecting to SMTP: {exc}"
-        logger.error("[SMTP] OSError: %s", exc)
-        return False, error
 
-    except Exception as exc:  # noqa: BLE001
-        error = f"Unexpected error sending email: {exc}"
-        logger.exception("[SMTP] Unexpected exception")
-        return False, error
+def send_company_rejected_email(
+    to_email: str,
+    company_name: str,
+    owner_name: str,
+    reason: str = "",
+) -> tuple[bool, str | None]:
+    """Send rejection notification email with reason."""
+    subject = f"Registration Status Update — {company_name}"
+    reason_text = reason if reason else "Document verification requirements were not fulfilled or the document was illegible."
+    
+    plain_body = (
+        f"Hello {owner_name},\n\n"
+        f"We have completed review of the registration request for {company_name}.\n\n"
+        f"Status: Rejected\n"
+        f"Reason: {reason_text}\n\n"
+        f"If you believe this is an error or would like to submit updated legal documentation, please contact our support team.\n\n"
+        f"Best regards,\n"
+        f"Nominate AI Verification Team"
+    )
+
+    html_body = (
+        "<html><body style='font-family:Arial,sans-serif;background:#0d1117;padding:30px;color:#c9d1d9;'>"
+        "<div style='max-width:540px;margin:auto;background:#161b22;border:1px solid #30363d;border-radius:12px;"
+        "padding:36px;box-shadow:0 8px 24px rgba(0,0,0,.4);'>"
+        "<div style='margin-bottom:20px;'>"
+        "<h2 style='color:#58a6ff;margin:0;font-size:22px;'>Nominate AI</h2>"
+        "</div>"
+        f"<h3 style='color:#f85149;margin-top:0;'>Registration Request Update</h3>"
+        f"<p>Hello <strong>{owner_name}</strong>,</p>"
+        f"<p>Thank you for your interest in registering <strong>{company_name}</strong> on Nominate AI.</p>"
+        "<div style='background:#2a1c1d;border-left:4px solid #da3633;padding:14px 16px;border-radius:6px;margin:20px 0;'>"
+        "<p style='margin:0;color:#ff7b72;font-size:14px;line-height:1.5;'>"
+        f"<strong>Status: Rejected</strong><br>"
+        f"<strong>Reason:</strong> {reason_text}"
+        "</p>"
+        "</div>"
+        "<p style='font-size:14px;line-height:1.6;'>If you need clarification or wish to re-submit updated documents, please contact our administration team.</p>"
+        "<hr style='border:none;border-top:1px solid #30363d;margin:24px 0;'>"
+        "<p style='font-size:12px;color:#8b949e;margin-bottom:0;'>"
+        "© Nominate AI. All rights reserved."
+        "</p>"
+        "</div></body></html>"
+    )
+
+    return _send_smtp_email(to_email, subject, plain_body, html_body)

@@ -13,6 +13,8 @@ from .views import (
     AcceptInvitationView,
     AdminCompanyListCreateView,
     AdminCompanyDetailView,
+    AdminApproveCompanyView,
+    AdminRejectCompanyView,
 )
 
 urlpatterns = [
@@ -29,8 +31,9 @@ urlpatterns = [
     path("invitations/verify/", VerifyInvitationView.as_view(), name="verify-invitation"),
     path("invitations/accept/", AcceptInvitationView.as_view(), name="accept-invitation"),
 
-    # Admin — Company Management
+    # Admin — Company Management & Document Verification
     path("admin/", AdminCompanyListCreateView.as_view(), name="admin-companies"),
     path("admin/<int:pk>/", AdminCompanyDetailView.as_view(), name="admin-company-detail"),
+    path("admin/<int:pk>/approve/", AdminApproveCompanyView.as_view(), name="admin-company-approve"),
+    path("admin/<int:pk>/reject/", AdminRejectCompanyView.as_view(), name="admin-company-reject"),
 ]
-

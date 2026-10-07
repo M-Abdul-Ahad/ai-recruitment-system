@@ -23,23 +23,39 @@ class Company(models.Model):
         VERIFIED = "verified", "Verified"
         REJECTED = "rejected", "Rejected"
 
+    class DocumentType(models.TextChoices):
+        SECP = "secp", "SECP Certificate of Incorporation"
+        NTN = "ntn", "NTN Certificate (FBR)"
+
+    document_type = models.CharField(
+        max_length=20,
+        choices=DocumentType.choices,
+        blank=True,
+        default="",
+        help_text="Type of legal registration document provided",
+    )
     tax_id = models.CharField(
         max_length=100,
         blank=True,
         default="",
-        help_text="National Tax Number (NTN), EIN, or Business Registration ID",
+        help_text="National Tax Number (NTN), SECP CUIN, or Business Registration ID",
     )
-    registration_document = models.FileField(
-        upload_to="verification/company_docs/",
+    registration_document = models.CharField(
+        max_length=500,
         blank=True,
-        null=True,
-        help_text="Uploaded official business registration / incorporation certificate",
+        default="",
+        help_text="Cloudflare R2 storage key / path for company verification document",
     )
     verification_status = models.CharField(
         max_length=20,
         choices=VerificationStatus.choices,
         default=VerificationStatus.UNVERIFIED,
         help_text="Company business verification status",
+    )
+    rejection_reason = models.TextField(
+        blank=True,
+        default="",
+        help_text="Reason provided by admin if registration was rejected",
     )
 
     created_at = models.DateTimeField(auto_now_add=True)

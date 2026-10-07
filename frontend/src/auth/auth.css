@@ -136,9 +136,11 @@
   display: flex;
   flex-direction: column;
   justify-content: space-between;
-  padding: 48px 56px;
-  position: relative;
-  overflow: hidden;
+  padding: 40px 48px;
+  position: sticky;
+  top: 0;
+  height: 100vh;
+  overflow-y: auto;
   color: #FFFFFF;
 }
 
@@ -196,8 +198,8 @@
 .auth-brand-content {
   position: relative;
   z-index: 2;
-  margin: auto 0;
-  padding: 24px 0;
+  margin: 0;
+  padding: 20px 0;
 }
 
 .auth-brand-badge {
@@ -413,11 +415,11 @@
   width: 50%;
   flex: 0 0 50%;
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   justify-content: center;
   background: var(--bg);
   padding: 48px 40px;
-  overflow-y: auto;
+  min-height: 100vh;
 }
 
 @media (max-width: 960px) {
