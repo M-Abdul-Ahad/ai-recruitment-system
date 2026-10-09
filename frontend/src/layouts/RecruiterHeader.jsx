@@ -51,6 +51,7 @@ const PAGE_TITLES = {
   "/recruiter":             "Dashboard",
   "/recruiter/jobs":        "Manage Jobs",
   "/recruiter/jobs/create": "Create Job",
+  "/recruiter/shortlist":   "AI Resume Shortlisting",
   "/recruiter/candidates":  "Candidate Management",
   "/recruiter/company":     "Company",
 };
@@ -59,7 +60,7 @@ function getPageTitle(pathname) {
   // Exact match first
   if (PAGE_TITLES[pathname]) return PAGE_TITLES[pathname];
   // Pattern matches for dynamic segments
-  if (pathname.startsWith("/recruiter/shortlist/")) return "Candidate Shortlisting";
+  if (pathname.startsWith("/recruiter/shortlist/")) return "AI Resume Shortlisting";
   if (pathname.startsWith("/recruiter/candidate/")) return "Candidate Detail";
   return "Recruiter Portal";
 }

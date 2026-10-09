@@ -35,13 +35,18 @@ const Icon = {
       <path d="M12 6v6l4 2"/>
     </svg>
   ),
+  Sparkles: () => (
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M12 2l2.4 7.2L22 12l-7.6 2.8L12 22l-2.4-7.2L2 12l7.6-2.8z"/>
+    </svg>
+  ),
 };
 
-const NAV_ITEMS = [
+const BASE_RECRUITER_NAV = [
   { to: "/recruiter",            label: "Dashboard",           Icon: Icon.Grid,      exact: true  },
   { to: "/recruiter/jobs",       label: "Jobs",                Icon: Icon.Briefcase, exact: false },
+  { to: "/recruiter/shortlist",  label: "AI Shortlisting",     Icon: Icon.Sparkles,  exact: false },
   { to: "/recruiter/candidates", label: "Candidates",          Icon: Icon.Users,     exact: false },
-  { to: "/recruiter/company",    label: "Company",             Icon: Icon.Building,  exact: false },
 ];
 
 export default function RecruiterSidebar({ collapsed, mobileOpen }) {
@@ -72,9 +77,9 @@ export default function RecruiterSidebar({ collapsed, mobileOpen }) {
 
       {/* Navigation */}
       <nav className="apl-sb-nav" aria-label="Recruiter navigation">
-        <span className="apl-sb-section-label">Menu</span>
+        <span className="apl-sb-section-label">Recruiter Menu</span>
 
-        {NAV_ITEMS.map(({ to, label, Icon: NavIcon, exact }) => (
+        {BASE_RECRUITER_NAV.map(({ to, label, Icon: NavIcon, exact }) => (
           <NavLink
             key={to}
             to={to}
@@ -92,23 +97,64 @@ export default function RecruiterSidebar({ collapsed, mobileOpen }) {
           </NavLink>
         ))}
 
-        {user?.role === "company_admin" && (
+        {user?.role === "company_admin" ? (
           <>
             <span className="apl-sb-section-label" style={{ marginTop: "16px" }}>Company Admin</span>
             <NavLink
               to="/company"
-              data-tooltip="Company Portal"
+              end={true}
+              data-tooltip="Company Dashboard"
               className={({ isActive }) =>
                 ["apl-sb-link", isActive ? "active" : ""].filter(Boolean).join(" ")
               }
-              aria-label="Company Management Portal"
+              aria-label="Company Dashboard"
             >
               <span className="apl-sb-link-icon" aria-hidden="true">
                 <Icon.Building />
               </span>
-              <span className="apl-sb-link-label">Company Portal</span>
+              <span className="apl-sb-link-label">Company Dashboard</span>
+            </NavLink>
+            <NavLink
+              to="/company/recruiters"
+              data-tooltip="Recruiter Management"
+              className={({ isActive }) =>
+                ["apl-sb-link", isActive ? "active" : ""].filter(Boolean).join(" ")
+              }
+              aria-label="Recruiter Management"
+            >
+              <span className="apl-sb-link-icon" aria-hidden="true">
+                <Icon.Users />
+              </span>
+              <span className="apl-sb-link-label">Recruiter Management</span>
+            </NavLink>
+            <NavLink
+              to="/company/settings"
+              data-tooltip="Company Settings"
+              className={({ isActive }) =>
+                ["apl-sb-link", isActive ? "active" : ""].filter(Boolean).join(" ")
+              }
+              aria-label="Company Settings"
+            >
+              <span className="apl-sb-link-icon" aria-hidden="true">
+                <Icon.Grid />
+              </span>
+              <span className="apl-sb-link-label">Company Settings</span>
             </NavLink>
           </>
+        ) : (
+          <NavLink
+            to="/recruiter/company"
+            data-tooltip="Company"
+            className={({ isActive }) =>
+              ["apl-sb-link", isActive ? "active" : ""].filter(Boolean).join(" ")
+            }
+            aria-label="Company"
+          >
+            <span className="apl-sb-link-icon" aria-hidden="true">
+              <Icon.Building />
+            </span>
+            <span className="apl-sb-link-label">Company</span>
+          </NavLink>
         )}
       </nav>
 

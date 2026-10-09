@@ -1,4 +1,5 @@
 import React from 'react';
+import { Link } from 'react-router-dom';
 
 const JobCard = ({ job, onPublish, onClose, onViewApplicants, onEdit, onDelete, onBulkUpload }) => {
   const isDraft = job.status === "DRAFT";
@@ -117,6 +118,19 @@ const JobCard = ({ job, onPublish, onClose, onViewApplicants, onEdit, onDelete, 
             View Applicants
           </button>
         </div>
+
+        {/* AI Shortlist Candidates Button — only visible on non-draft jobs */}
+        {!isDraft && (
+          <Link
+            to={`/recruiter/shortlist/${job.id}`}
+            className="w-full flex items-center justify-center gap-2 py-2 px-4 rounded-xl text-xs font-bold text-[#3D4127] dark:text-[#D4DE95] bg-[#D4DE95]/20 dark:bg-[#D4DE95]/15 hover:bg-[#D4DE95] hover:text-[#3D4127] border border-[#D4DE95]/40 transition-all duration-200 shadow-sm"
+          >
+            <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M13 10V3L4 14h7v7l9-11h-7z" />
+            </svg>
+            AI Shortlist Candidates
+          </Link>
+        )}
 
         {/* Bulk Import Resumes — only visible on non-draft jobs */}
         {!isDraft && onBulkUpload && (

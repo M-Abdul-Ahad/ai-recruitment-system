@@ -41,6 +41,11 @@ const Icon = {
       <path d="M12 6v6l4 2"/>
     </svg>
   ),
+  Sparkles: () => (
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M12 2l2.4 7.2L22 12l-7.6 2.8L12 22l-2.4-7.2L2 12l7.6-2.8z"/>
+    </svg>
+  ),
 };
 
 const COMPANY_NAV_ITEMS = [
@@ -77,7 +82,7 @@ export default function CompanySidebar({ collapsed, mobileOpen }) {
 
       {/* Navigation */}
       <nav className="apl-sb-nav" aria-label="Company navigation">
-        <span className="apl-sb-section-label">Management</span>
+        <span className="apl-sb-section-label">Company Admin</span>
 
         {COMPANY_NAV_ITEMS.map(({ to, label, Icon: NavIcon, exact }) => (
           <NavLink
@@ -97,19 +102,45 @@ export default function CompanySidebar({ collapsed, mobileOpen }) {
           </NavLink>
         ))}
 
-        <span className="apl-sb-section-label" style={{ marginTop: "16px" }}>Portals</span>
+        <span className="apl-sb-section-label" style={{ marginTop: "16px" }}>Hiring Operations</span>
         <NavLink
-          to="/recruiter"
-          data-tooltip="Recruiter Portal"
+          to="/recruiter/jobs"
+          data-tooltip="Jobs"
           className={({ isActive }) =>
             ["apl-sb-link", isActive ? "active" : ""].filter(Boolean).join(" ")
           }
-          aria-label="Recruiter Portal"
+          aria-label="Jobs"
         >
           <span className="apl-sb-link-icon" aria-hidden="true">
             <Icon.Briefcase />
           </span>
-          <span className="apl-sb-link-label">Recruiter Portal</span>
+          <span className="apl-sb-link-label">Jobs</span>
+        </NavLink>
+        <NavLink
+          to="/recruiter/shortlist"
+          data-tooltip="AI Shortlisting"
+          className={({ isActive }) =>
+            ["apl-sb-link", isActive ? "active" : ""].filter(Boolean).join(" ")
+          }
+          aria-label="AI Shortlisting"
+        >
+          <span className="apl-sb-link-icon" aria-hidden="true">
+            <Icon.Sparkles />
+          </span>
+          <span className="apl-sb-link-label">AI Shortlisting</span>
+        </NavLink>
+        <NavLink
+          to="/recruiter/candidates"
+          data-tooltip="Candidates"
+          className={({ isActive }) =>
+            ["apl-sb-link", isActive ? "active" : ""].filter(Boolean).join(" ")
+          }
+          aria-label="Candidates"
+        >
+          <span className="apl-sb-link-icon" aria-hidden="true">
+            <Icon.Users />
+          </span>
+          <span className="apl-sb-link-label">Candidates</span>
         </NavLink>
       </nav>
 

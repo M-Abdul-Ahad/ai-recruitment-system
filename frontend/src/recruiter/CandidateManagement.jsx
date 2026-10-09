@@ -135,7 +135,7 @@ const CandidateManagement = () => {
   }), [applicants]);
 
   return (
-    <div className="apl-animate-fade space-y-6">
+    <div className="apl-animate-fade w-full min-w-0 space-y-6">
       {/* Header */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
         <div>
@@ -143,15 +143,26 @@ const CandidateManagement = () => {
           <p className="text-xs sm:text-sm text-[#8A8F76] dark:text-[#9CA485] mt-1">Review applicants, manage statuses, and preview candidate resumes</p>
         </div>
         {selectedJobId && (
-          <button
-            onClick={() => setBulkUploadOpen(true)}
-            className="flex items-center gap-2 apl-btn py-2 px-4 text-xs font-bold text-[#3D4127] dark:text-[#D4DE95] bg-[#D4DE95]/15 dark:bg-[#D4DE95]/10 hover:bg-[#D4DE95]/30 border border-[#D4DE95]/40 rounded-xl transition-all whitespace-nowrap"
-          >
-            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
-            </svg>
-            Bulk Import Resumes
-          </button>
+          <div className="flex items-center gap-2 flex-wrap">
+            <Link
+              to={`/recruiter/shortlist/${selectedJobId}`}
+              className="flex items-center gap-2 apl-btn apl-btn-primary py-2 px-4 text-xs font-bold shadow-sm whitespace-nowrap"
+            >
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M13 10V3L4 14h7v7l9-11h-7z" />
+              </svg>
+              AI Shortlisting Engine
+            </Link>
+            <button
+              onClick={() => setBulkUploadOpen(true)}
+              className="flex items-center gap-2 apl-btn py-2 px-4 text-xs font-bold text-[#3D4127] dark:text-[#D4DE95] bg-[#D4DE95]/15 dark:bg-[#D4DE95]/10 hover:bg-[#D4DE95]/30 border border-[#D4DE95]/40 rounded-xl transition-all whitespace-nowrap"
+            >
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
+              </svg>
+              Bulk Import Resumes
+            </button>
+          </div>
         )}
       </div>
 
@@ -187,17 +198,17 @@ const CandidateManagement = () => {
       {selectedJobId && (
         <>
           {/* Filters bar */}
-          <div className="flex flex-col lg:flex-row gap-4">
+          <div className="flex flex-col lg:flex-row gap-4 min-w-0">
             {/* Status filter pills */}
-            <div className="flex items-center gap-2 overflow-x-auto pb-1 flex-1">
+            <div className="flex items-center gap-2 overflow-x-auto pb-1 flex-1 min-w-0 scrollbar-thin">
               {["ALL", "APPLIED", "SHORTLISTED", "INTERVIEW", "REJECTED"].map(s => (
                 <button
                   key={s}
                   onClick={() => setStatusFilter(s)}
-                  className={`px-3.5 py-2 text-xs font-bold rounded-full whitespace-nowrap transition-all border ${
+                  className={`px-3.5 py-2 text-xs font-bold rounded-full whitespace-nowrap transition-all border flex-shrink-0 ${
                     statusFilter === s
-                      ? "bg-[#3D4127] text-[#D4DE95] border-[#3D4127] shadow-xs"
-                      : "bg-white dark:bg-[#222518] text-[#52564A] dark:text-[#9CA485] border-[#D3D6C4] dark:border-[#383D28] hover:bg-[#ECEEDF]"
+                      ? "bg-[#3D4127] dark:bg-[#D4DE95] text-[#D4DE95] dark:text-[#3D4127] border-[#3D4127] dark:border-[#D4DE95] shadow-xs"
+                      : "bg-white dark:bg-[#222518] text-[#52564A] dark:text-[#9CA485] border-[#D3D6C4] dark:border-[#383D28] hover:bg-[#ECEEDF] dark:hover:bg-[#2A2E1E] hover:text-[#22241B] dark:hover:text-[#EBF0DA]"
                   }`}
                 >
                   {s === "ALL" ? "All" : s.charAt(0) + s.slice(1).toLowerCase()} ({statusCounts[s]})
@@ -214,10 +225,10 @@ const CandidateManagement = () => {
                 <button
                   key={key}
                   onClick={() => setSourceFilter(key)}
-                  className={`px-3.5 py-2 text-xs font-bold rounded-full whitespace-nowrap transition-all border ${
+                  className={`px-3.5 py-2 text-xs font-bold rounded-full whitespace-nowrap transition-all border flex-shrink-0 ${
                     sourceFilter === key
                       ? "bg-[#3E7285] text-white border-[#3E7285] shadow-xs"
-                      : "bg-white dark:bg-[#222518] text-[#52564A] dark:text-[#9CA485] border-[#D3D6C4] dark:border-[#383D28] hover:bg-[#ECEEDF]"
+                      : "bg-white dark:bg-[#222518] text-[#52564A] dark:text-[#9CA485] border-[#D3D6C4] dark:border-[#383D28] hover:bg-[#ECEEDF] dark:hover:bg-[#2A2E1E] hover:text-[#22241B] dark:hover:text-[#EBF0DA]"
                   }`}
                 >
                   {label}
@@ -226,7 +237,7 @@ const CandidateManagement = () => {
             </div>
 
             {/* Search */}
-            <div className="relative w-full lg:w-72">
+            <div className="relative w-full lg:w-72 flex-shrink-0">
               <svg className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-[#8A8F76]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
               </svg>

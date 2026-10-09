@@ -19,6 +19,7 @@ export default function CompanyLayout() {
       "data-apl-theme",
       isDark ? "dark" : "light"
     );
+    document.documentElement.classList.toggle("dark", isDark);
     localStorage.setItem(THEME_KEY, isDark ? "dark" : "light");
   }, [isDark]);
 

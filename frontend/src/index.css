@@ -1,1 +1,14 @@
 @import "tailwindcss";
+
+@custom-variant dark (&:where([data-apl-theme="dark"], [data-apl-theme="dark"] *, .dark, .dark *));
+
+html, body, #root {
+  min-height: 100%;
+  max-width: 100%;
+  overflow-x: hidden;
+  background-color: var(--apl-neutral-bg, #F8F9F1);
+}
+
+html.dark, html[data-apl-theme="dark"], body.dark, [data-apl-theme="dark"] body {
+  background-color: #171911 !important;
+}

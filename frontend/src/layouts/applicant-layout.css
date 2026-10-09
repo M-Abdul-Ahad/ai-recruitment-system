@@ -92,6 +92,9 @@
   font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   display: flex;
   min-height: 100vh;
+  width: 100%;
+  max-width: 100vw;
+  overflow-x: hidden;
   background: var(--apl-neutral-bg);
   color: var(--apl-neutral-900);
   line-height: 1.5;
@@ -607,20 +610,30 @@
   margin-left: var(--apl-sidebar-w);
   padding-top: var(--apl-header-h);
   min-height: 100vh;
+  min-width: 0;
+  width: calc(100% - var(--apl-sidebar-w));
+  max-width: 100%;
   flex: 1;
-  transition: margin-left var(--apl-transition);
-  will-change: margin-left;
+  overflow-x: hidden;
+  transition: margin-left var(--apl-transition), width var(--apl-transition);
+  will-change: margin-left, width;
 }
 .apl-shell.apl-sb-collapsed-shell .apl-main {
   margin-left: var(--apl-sidebar-w-col);
+  width: calc(100% - var(--apl-sidebar-w-col));
 }
 @media (max-width: 768px) {
-  .apl-main { margin-left: 0 !important; }
+  .apl-main {
+    margin-left: 0 !important;
+    width: 100% !important;
+  }
 }
 
 .apl-content {
   padding: 32px 32px 48px;
   max-width: 1280px;
+  width: 100%;
+  box-sizing: border-box;
   margin: 0 auto;
 }
 @media (max-width: 640px) {
