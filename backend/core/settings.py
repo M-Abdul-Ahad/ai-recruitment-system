@@ -141,6 +141,12 @@ MEDIA_ROOT =os.path.join(BASE_DIR, 'media')
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
 GEMINI_EMBEDDING_API_KEY = os.getenv("GEMINI_EMBEDDING_API_KEY", "")
 
+# Cloudflare R2 Storage Configuration
+R2_ACCESS_KEY_ID = os.getenv("ACCESS_KEY_ID", "")
+R2_SECRET_ACCESS_KEY = os.getenv("SECRET_ACCESS_KEY", "")
+R2_ENDPOINT_URL = os.getenv("DEFAULT_URL", "")
+R2_BUCKET_NAME = os.getenv("BUCKET_NAME", "resumes-storage")
+
 REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': (
         'rest_framework_simplejwt.authentication.JWTAuthentication',

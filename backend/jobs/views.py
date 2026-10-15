@@ -1,23 +1,29 @@
+import os
+import io
+import uuid
+import zipfile
+import hashlib
+import logging
+
+from django.conf import settings
+from django.contrib.auth import get_user_model
+from django.db import transaction, IntegrityError
 from rest_framework import viewsets, permissions, status
 from rest_framework.decorators import action
 from rest_framework.response import Response
-from .models import Job, JobApplication, Skill
+
+from .models import Job, JobApplication, Skill, TemporaryResumeCandidate
 from .serializers import (
     JobSerializer, JobListSerializer, JobDetailSerializer,
     JobApplicationSerializer, RecruiterApplicationSerializer, SkillSerializer,
 )
 from .permissions import IsRecruiter, IsJobOwner, IsApplicant
-from django.contrib.auth import get_user_model
 from .services.gemini_jd_service import generate_job_description
-import hashlib
-from django.db import transaction, IntegrityError
-
-
-User = get_user_model()
-
-
-from django.db import transaction
 from resumes.models import Resume
+from resumes.utils import extract_text_from_pdf, extract_text_from_docx, clean_resume_text
+
+logger = logging.getLogger(__name__)
+User = get_user_model()
 
 
 class SkillViewSet(viewsets.ReadOnlyModelViewSet):
@@ -247,6 +253,163 @@ class JobViewSet(viewsets.ModelViewSet):
             "errors": errors if errors else None,
             "applications": serializer.data
         }, status=response_status)
+
+    @action(detail=True, methods=["post"], url_path="stage-resumes", permission_classes=[permissions.IsAuthenticated, IsRecruiter, IsJobOwner])
+    def stage_resumes(self, request, pk=None):
+        """
+        POST /api/jobs/{id}/stage-resumes/
+        Stages resumes in temporary scratch storage without saving to Cloudflare R2
+        or creating permanent Resume records.
+        Supports:
+        - Raw .pdf and .docx files
+        - Folder uploads (multiple files)
+        - .zip archives (extracted and validated in-memory)
+        Extracts and cleans text, storing temporary records in TemporaryResumeCandidate.
+        """
+        job = self.get_object()
+
+        files = request.FILES.getlist('files') or request.FILES.getlist('resumes') or request.FILES.getlist('file')
+        if not files:
+            return Response(
+                {"error": "No resume files or archives provided."},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        # Get or create a session_id
+        session_id_str = request.data.get('session_id')
+        if session_id_str:
+            try:
+                session_id = uuid.UUID(str(session_id_str))
+            except (ValueError, AttributeError):
+                session_id = uuid.uuid4()
+        else:
+            session_id = uuid.uuid4()
+
+        # Temporary folder on local scratch disk
+        temp_dir = os.path.join(settings.MEDIA_ROOT, 'temp_shortlist', str(session_id))
+        os.makedirs(temp_dir, exist_ok=True)
+
+        allowed_extensions = ('.pdf', '.docx')
+        max_file_size = 10 * 1024 * 1024  # 10 MB per file limit
+
+        staged_candidates = []
+        errors = []
+
+        def process_candidate_file(file_name, file_content_bytes):
+            clean_name = os.path.basename(file_name)
+            # Skip hidden / system files (e.g. ._filename or __MACOSX)
+            if clean_name.startswith('.') or not clean_name:
+                return
+
+            ext = os.path.splitext(clean_name)[1].lower()
+            if ext not in allowed_extensions:
+                errors.append(f"{clean_name}: Skipped, only PDF and DOCX files are supported.")
+                return
+
+            if len(file_content_bytes) > max_file_size:
+                errors.append(f"{clean_name}: File size exceeds 10MB limit.")
+                return
+
+            # Avoid file collision in the temp folder
+            unique_filename = f"{uuid.uuid4().hex[:8]}_{clean_name}"
+            temp_file_path = os.path.join(temp_dir, unique_filename)
+
+            try:
+                with open(temp_file_path, "wb") as f:
+                    f.write(file_content_bytes)
+
+                # Extract and clean text using existing resume utils
+                if ext == '.pdf':
+                    extracted_text = extract_text_from_pdf(temp_file_path)
+                else:
+                    extracted_text = extract_text_from_docx(temp_file_path)
+
+                cleaned_text = clean_resume_text(extracted_text) if extracted_text else ""
+
+                temp_candidate = TemporaryResumeCandidate.objects.create(
+                    session_id=session_id,
+                    job=job,
+                    file_name=clean_name,
+                    temp_file_path=temp_file_path,
+                    extracted_text=extracted_text or "",
+                    cleaned_text=cleaned_text or "",
+                    embedding=None,
+                )
+                staged_candidates.append(temp_candidate)
+            except Exception as e:
+                logger.error(f"Error processing temporary candidate {clean_name}: {e}")
+                errors.append(f"{clean_name}: Failed to extract text ({str(e)})")
+
+        for file_obj in files:
+            name_lower = file_obj.name.lower()
+
+            # Handle .zip archive unpacking in-memory
+            if name_lower.endswith('.zip'):
+                try:
+                    with zipfile.ZipFile(io.BytesIO(file_obj.read())) as z:
+                        for zip_info in z.infolist():
+                            if zip_info.is_dir() or '__MACOSX' in zip_info.filename:
+                                continue
+                            zip_file_bytes = z.read(zip_info.filename)
+                            process_candidate_file(zip_info.filename, zip_file_bytes)
+                except zipfile.BadZipFile:
+                    errors.append(f"{file_obj.name}: Invalid or corrupted ZIP archive.")
+                except Exception as e:
+                    errors.append(f"{file_obj.name}: Error extracting ZIP archive ({str(e)})")
+            else:
+                # Regular uploaded file (PDF / DOCX)
+                file_bytes = file_obj.read()
+                process_candidate_file(file_obj.name, file_bytes)
+
+        # Retrieve all currently staged candidates for this session
+        all_session_candidates = TemporaryResumeCandidate.objects.filter(session_id=session_id, job=job).order_by('created_at')
+
+        return Response({
+            "session_id": str(session_id),
+            "newly_staged_count": len(staged_candidates),
+            "total_staged": all_session_candidates.count(),
+            "errors": errors if errors else None,
+            "staged_candidates": [
+                {
+                    "id": c.id,
+                    "file_name": c.file_name,
+                    "has_extracted_text": bool(c.extracted_text and c.extracted_text.strip()),
+                    "text_preview": (c.extracted_text[:120] + "...") if c.extracted_text else "",
+                    "created_at": c.created_at,
+                }
+                for c in all_session_candidates
+            ]
+        }, status=status.HTTP_201_CREATED if staged_candidates else (status.HTTP_200_OK if all_session_candidates.exists() else status.HTTP_400_BAD_REQUEST))
+
+    @action(detail=True, methods=["get"], url_path="staged-resumes", permission_classes=[permissions.IsAuthenticated, IsRecruiter, IsJobOwner])
+    def get_staged_resumes(self, request, pk=None):
+        """
+        GET /api/jobs/{id}/staged-resumes/?session_id=<uuid>
+        Retrieves the list of currently staged candidates for a shortlisting session.
+        """
+        job = self.get_object()
+        session_id_str = request.query_params.get('session_id')
+        queryset = TemporaryResumeCandidate.objects.filter(job=job)
+        if session_id_str:
+            try:
+                queryset = queryset.filter(session_id=uuid.UUID(str(session_id_str)))
+            except (ValueError, AttributeError):
+                return Response({"error": "Invalid session_id format."}, status=status.HTTP_400_BAD_REQUEST)
+
+        return Response({
+            "count": queryset.count(),
+            "candidates": [
+                {
+                    "id": c.id,
+                    "file_name": c.file_name,
+                    "has_extracted_text": bool(c.extracted_text and c.extracted_text.strip()),
+                    "has_embedding": c.embedding is not None,
+                    "created_at": c.created_at,
+                }
+                for c in queryset.order_by('created_at')
+            ]
+        })
+
 
     @action(detail=False, methods=["get"], url_path="my-applications", permission_classes=[permissions.IsAuthenticated, IsApplicant])
     def my_applications(self, request):
