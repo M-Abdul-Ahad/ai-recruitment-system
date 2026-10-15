@@ -50,6 +50,37 @@ export const bulkUploadResumes = (jobId, files, onUploadProgress) => {
   });
 };
 
+/**
+ * POST /api/jobs/:jobId/stage-resumes/
+ * Stages temporary resumes (PDF, DOCX, ZIP, folders) for shortlisting session.
+ */
+export const stageResumes = (jobId, formData, onUploadProgress) =>
+  api.post(`/jobs/${jobId}/stage-resumes/`, formData, {
+    headers: { 'Content-Type': 'multipart/form-data' },
+    onUploadProgress,
+  });
+
+/**
+ * POST /api/jobs/:jobId/generate-embeddings/
+ * Generates JD embedding and candidate embeddings for a session.
+ */
+export const generateEmbeddings = (jobId, sessionId) =>
+  api.post(`/jobs/${jobId}/generate-embeddings/`, { session_id: sessionId });
+
+/**
+ * GET /api/jobs/:jobId/staged-resumes/?session_id=...
+ */
+export const getStagedResumes = (jobId, sessionId) =>
+  api.get(`/jobs/${jobId}/staged-resumes/`, { params: { session_id: sessionId } });
+
+/**
+ * POST /api/jobs/:jobId/shortlist/
+ * Ranks candidates and promotes top N candidates.
+ */
+export const shortlistCandidates = (jobId, data) =>
+  api.post(`/jobs/${jobId}/shortlist/`, data);
+
+
 // ─── Applicant APIs ───
 
 /** GET /api/jobs/:id/ → full job detail (applicant view) */
