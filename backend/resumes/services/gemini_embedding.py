@@ -1,3 +1,4 @@
+import math
 import logging
 from django.conf import settings
 from google import genai
@@ -66,7 +67,7 @@ def build_resume_embedding_text(resume) -> str:
             for edu in resume.education.all()[:3]:
                 educations.append(f"{edu.degree} from {edu.institution}")
 
-    body_text = (resume.cleaned_text or resume.extracted_text or "")[:4000]
+    body_text = (resume.cleaned_text or resume.extracted_text or "")[:12000]
 
     parts = []
     if skills:
@@ -84,9 +85,42 @@ def build_resume_embedding_text(resume) -> str:
 def build_temporary_candidate_embedding_text(candidate) -> str:
     """
     Constructs representation for a temporary bulk-imported resume candidate.
+    Extracts explicit skills and preserves full document text up to 12,000 characters
+    so that zero critical candidate experience is missed.
     """
-    text = (candidate.cleaned_text or candidate.extracted_text or "")[:5000]
-    return f"Candidate Resume ({candidate.file_name}):\n{text}"
+    from resumes.utils import extract_skills
+    cleaned = candidate.cleaned_text or candidate.extracted_text or ""
+    detected_skills = extract_skills(cleaned) if cleaned else []
+
+    parts = []
+    if detected_skills:
+        parts.append(f"Candidate Skills: {', '.join(detected_skills)}")
+    if cleaned:
+        parts.append(f"Resume Document ({candidate.file_name}):\n{cleaned[:12000]}")
+
+    return "\n\n".join(parts) if parts else candidate.file_name
+
+
+def calculate_cosine_similarity(vec_a: list[float], vec_b: list[float]) -> float:
+    """
+    Computes cosine similarity between two float vectors.
+    Returns float in range [0.0, 1.0].
+    """
+    if not vec_a or not vec_b or len(vec_a) != len(vec_b):
+        return 0.0
+
+    dot_product = sum(a * b for a, b in zip(vec_a, vec_b))
+    norm_a = math.sqrt(sum(a * a for a in vec_a))
+    norm_b = math.sqrt(sum(b * b for b in vec_b))
+
+    if norm_a == 0.0 or norm_b == 0.0:
+        return 0.0
+
+    cos_sim = dot_product / (norm_a * norm_b)
+    cos_sim = max(-1.0, min(1.0, cos_sim))
+    # Normalize [-1, 1] to [0, 1]
+    return (cos_sim + 1.0) / 2.0
+
 
 
 def generate_embedding(text: str) -> list[float]:

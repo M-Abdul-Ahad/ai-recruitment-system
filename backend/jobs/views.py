@@ -3,6 +3,7 @@ import io
 import uuid
 import zipfile
 import hashlib
+import shutil
 import logging
 
 from django.conf import settings
@@ -21,6 +22,15 @@ from .permissions import IsRecruiter, IsJobOwner, IsApplicant
 from .services.gemini_jd_service import generate_job_description
 from resumes.models import Resume
 from resumes.utils import extract_text_from_pdf, extract_text_from_docx, clean_resume_text
+from resumes.services.gemini_embedding import (
+    build_job_embedding_text,
+    build_resume_embedding_text,
+    build_temporary_candidate_embedding_text,
+    generate_embedding,
+    generate_embeddings_batch,
+    calculate_cosine_similarity,
+)
+from core.r2_storage import upload_file_to_r2, generate_r2_presigned_url
 
 logger = logging.getLogger(__name__)
 User = get_user_model()
@@ -409,6 +419,281 @@ class JobViewSet(viewsets.ModelViewSet):
                 for c in queryset.order_by('created_at')
             ]
         })
+
+    @action(detail=True, methods=["post"], url_path="generate-embeddings", permission_classes=[permissions.IsAuthenticated, IsRecruiter, IsJobOwner])
+    def generate_embeddings_view(self, request, pk=None):
+        """
+        POST /api/jobs/{id}/generate-embeddings/
+        Generates JD embedding for the job and batch-generates embeddings for all
+        staged temporary candidates and any existing applicant resumes attached to this job.
+        """
+        job = self.get_object()
+        session_id_str = request.data.get('session_id')
+        if not session_id_str:
+            return Response({"error": "session_id is required."}, status=status.HTTP_400_BAD_REQUEST)
+
+        try:
+            session_id = uuid.UUID(str(session_id_str))
+        except (ValueError, AttributeError):
+            return Response({"error": "Invalid session_id format."}, status=status.HTTP_400_BAD_REQUEST)
+
+        # 1. Ensure Job JD embedding is generated
+        if not job.jd_embedding:
+            jd_text = build_job_embedding_text(job)
+            jd_vec = generate_embedding(jd_text)
+            if jd_vec:
+                job.jd_embedding = jd_vec
+                job.save(update_fields=['jd_embedding'])
+
+        # 2. Batch-generate embeddings for un-embedded temporary candidates in this session
+        staged_candidates = list(TemporaryResumeCandidate.objects.filter(
+            job=job,
+            session_id=session_id,
+            embedding__isnull=True
+        ))
+
+        if staged_candidates:
+            texts_to_embed = [build_temporary_candidate_embedding_text(c) for c in staged_candidates]
+            embeddings = generate_embeddings_batch(texts_to_embed, batch_size=15)
+
+            for candidate, emb in zip(staged_candidates, embeddings):
+                if emb:
+                    candidate.embedding = emb
+                    candidate.save(update_fields=['embedding'])
+
+        # 3. Also check and embed any existing job applicants lacking an embedding
+        existing_apps = job.applications.select_related('resume').filter(
+            resume__isnull=False,
+            resume__embedding__isnull=True
+        )
+        for app in existing_apps:
+            try:
+                emb_text = build_resume_embedding_text(app.resume)
+                emb = generate_embedding(emb_text)
+                if emb:
+                    app.resume.embedding = emb
+                    app.resume.save(update_fields=['embedding'])
+            except Exception as e:
+                logger.error(f"Error embedding existing applicant resume #{app.resume_id}: {e}")
+
+        # Total ready counts
+        total_staged_ready = TemporaryResumeCandidate.objects.filter(
+            job=job,
+            session_id=session_id,
+            embedding__isnull=False
+        ).count()
+        total_applicants_ready = job.applications.filter(
+            resume__isnull=False,
+            resume__embedding__isnull=False
+        ).count()
+
+        return Response({
+            "message": "Embeddings generated successfully.",
+            "session_id": str(session_id),
+            "jd_embedding_ready": job.jd_embedding is not None,
+            "staged_candidates_ready": total_staged_ready,
+            "applicants_ready": total_applicants_ready,
+            "total_candidates_ready": total_staged_ready + total_applicants_ready
+        }, status=status.HTTP_200_OK)
+
+    @action(detail=True, methods=["post"], url_path="shortlist", permission_classes=[permissions.IsAuthenticated, IsRecruiter, IsJobOwner])
+    def shortlist_candidates(self, request, pk=None):
+        """
+        POST /api/jobs/{id}/shortlist/
+        Screens and ranks all candidates (existing applicants + staged resumes)
+        using cosine similarity against the JD and optional recruiter preferences.
+        Permanently uploads top N temporary candidates to Cloudflare R2,
+        updates application statuses to SHORTLISTED, and purges temporary data.
+        """
+        job = self.get_object()
+
+        session_id_str = request.data.get('session_id')
+        top_n = int(request.data.get('top_n', 10))
+        preferences = (request.data.get('preferences') or '').strip()
+
+        session_id = None
+        if session_id_str:
+            try:
+                session_id = uuid.UUID(str(session_id_str))
+            except (ValueError, AttributeError):
+                return Response({"error": "Invalid session_id format."}, status=status.HTTP_400_BAD_REQUEST)
+
+        # 1. Ensure JD embedding is ready
+        if not job.jd_embedding:
+            jd_text = build_job_embedding_text(job)
+            job.jd_embedding = generate_embedding(jd_text)
+            if job.jd_embedding:
+                job.save(update_fields=['jd_embedding'])
+
+        if not job.jd_embedding:
+            return Response(
+                {"error": "Failed to create JD embedding. Please ensure your Gemini Embedding key is configured."},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
+
+        # 2. Preference embedding if preferences provided
+        pref_vector = None
+        if preferences:
+            pref_text = f"Recruiter Preferences and Hiring Criteria:\n{preferences}"
+            pref_vector = generate_embedding(pref_text)
+
+        # 3. Gather all candidates to evaluate
+        candidates_to_score = []
+
+        # A. Existing job applicants
+        existing_apps = job.applications.select_related('applicant', 'resume').filter(
+            resume__isnull=False,
+            resume__embedding__isnull=False
+        )
+        for app in existing_apps:
+            vec = app.resume.embedding
+            jd_sim = calculate_cosine_similarity(vec, job.jd_embedding)
+            if pref_vector:
+                pref_sim = calculate_cosine_similarity(vec, pref_vector)
+                score = (0.7 * jd_sim + 0.3 * pref_sim) * 100.0
+            else:
+                score = jd_sim * 100.0
+
+            name = app.applicant.email if app.applicant else f"Candidate #{app.id}"
+            file_url = app.resume.file.url if app.resume and app.resume.file else ""
+
+            candidates_to_score.append({
+                "kind": "applicant",
+                "app": app,
+                "score": score,
+                "name": name,
+                "file_url": file_url,
+                "source_type": app.source_type,
+            })
+
+        # B. Temporary staged candidates (if session_id provided)
+        staged_candidates = []
+        if session_id:
+            staged_candidates = list(TemporaryResumeCandidate.objects.filter(
+                job=job,
+                session_id=session_id,
+                embedding__isnull=False
+            ))
+
+        for tc in staged_candidates:
+            vec = tc.embedding
+            jd_sim = calculate_cosine_similarity(vec, job.jd_embedding)
+            if pref_vector:
+                pref_sim = calculate_cosine_similarity(vec, pref_vector)
+                score = (0.7 * jd_sim + 0.3 * pref_sim) * 100.0
+            else:
+                score = jd_sim * 100.0
+
+            candidates_to_score.append({
+                "kind": "temporary",
+                "temp_candidate": tc,
+                "score": score,
+                "name": tc.file_name,
+                "file_url": "",
+                "source_type": JobApplication.SourceType.RECRUITER_UPLOAD,
+            })
+
+        if not candidates_to_score:
+            return Response(
+                {"error": "No candidates found with embeddings to evaluate. Please generate embeddings first."},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        # 4. Rank candidates descending by score
+        candidates_to_score.sort(key=lambda x: x["score"], reverse=True)
+        top_candidates = candidates_to_score[:top_n]
+
+        shortlisted_results = []
+
+        # 5. Promote Top N Candidates
+        for item in top_candidates:
+            score_val = round(item["score"], 1)
+
+            if item["kind"] == "applicant":
+                app = item["app"]
+                app.status = JobApplication.ApplicationStatus.SHORTLISTED
+                app.match_score = score_val
+                app.save(update_fields=['status', 'match_score'])
+
+                shortlisted_results.append({
+                    "application_id": app.id,
+                    "name": item["name"],
+                    "match_score": score_val,
+                    "status": JobApplication.ApplicationStatus.SHORTLISTED,
+                    "source_type": app.source_type,
+                    "file_url": item["file_url"],
+                    "is_promoted_import": False,
+                })
+
+            elif item["kind"] == "temporary":
+                tc = item["temp_candidate"]
+
+                # Upload to Cloudflare R2
+                r2_key = f"resumes/job_{job.id}/{uuid.uuid4().hex[:10]}_{tc.file_name}"
+                try:
+                    upload_file_to_r2(tc.temp_file_path, r2_key)
+                except Exception as e:
+                    logger.error(f"Error uploading shortlisted candidate {tc.file_name} to R2: {e}")
+
+                # Compute SHA-256 file hash
+                file_hash = ""
+                try:
+                    hasher = hashlib.sha256()
+                    with open(tc.temp_file_path, "rb") as f:
+                        for chunk in iter(lambda: f.read(65536), b""):
+                            hasher.update(chunk)
+                    file_hash = hasher.hexdigest()
+                except Exception as e:
+                    logger.error(f"Error computing hash for {tc.file_name}: {e}")
+
+                # Create permanent Resume record
+                permanent_resume = Resume.objects.create(
+                    user=None,
+                    file=r2_key,
+                    file_hash=file_hash or None,
+                    extracted_text=tc.extracted_text,
+                    cleaned_text=tc.cleaned_text,
+                    embedding=tc.embedding
+                )
+
+                # Create permanent JobApplication record attached to this job
+                new_app = JobApplication.objects.create(
+                    job=job,
+                    applicant=None,
+                    resume=permanent_resume,
+                    source_type=JobApplication.SourceType.RECRUITER_UPLOAD,
+                    status=JobApplication.ApplicationStatus.SHORTLISTED,
+                    match_score=score_val
+                )
+
+                # Generate secure presigned URL for preview
+                presigned_url = generate_r2_presigned_url(r2_key)
+
+                shortlisted_results.append({
+                    "application_id": new_app.id,
+                    "name": tc.file_name,
+                    "match_score": score_val,
+                    "status": JobApplication.ApplicationStatus.SHORTLISTED,
+                    "source_type": JobApplication.SourceType.RECRUITER_UPLOAD,
+                    "file_url": presigned_url or permanent_resume.file.url,
+                    "is_promoted_import": True,
+                })
+
+        # 6. Safe Cleanup: Purge temporary records and local scratch files
+        if session_id:
+            TemporaryResumeCandidate.objects.filter(job=job, session_id=session_id).delete()
+            temp_dir = os.path.join(settings.MEDIA_ROOT, 'temp_shortlist', str(session_id))
+            shutil.rmtree(temp_dir, ignore_errors=True)
+
+        return Response({
+            "message": f"Successfully shortlisted top {len(shortlisted_results)} candidate(s).",
+            "job_id": job.id,
+            "shortlisted_count": len(shortlisted_results),
+            "total_screened": len(candidates_to_score),
+            "preferences_applied": bool(preferences),
+            "candidates": shortlisted_results
+        }, status=status.HTTP_200_OK)
+
 
 
     @action(detail=False, methods=["get"], url_path="my-applications", permission_classes=[permissions.IsAuthenticated, IsApplicant])
