@@ -35,6 +35,11 @@ const Icon = {
       <rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2"/>
     </svg>
   ),
+  Sparkles: () => (
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M12 3l1.912 5.813a2 2 0 001.275 1.275L21 12l-5.813 1.912a2 2 0 00-1.275 1.275L12 21l-1.912-5.813a2 2 0 00-1.275-1.275L3 12l5.813-1.912a2 2 0 001.275-1.275L12 3z"/>
+    </svg>
+  ),
   Logo: () => (
     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
       <circle cx="12" cy="12" r="10"/>
@@ -110,6 +115,19 @@ export default function CompanySidebar({ collapsed, mobileOpen }) {
             <Icon.Briefcase />
           </span>
           <span className="apl-sb-link-label">Recruiter Portal</span>
+        </NavLink>
+        <NavLink
+          to="/recruiter/shortlist"
+          data-tooltip="AI Shortlisting"
+          className={({ isActive }) =>
+            ["apl-sb-link", isActive ? "active" : ""].filter(Boolean).join(" ")
+          }
+          aria-label="AI Shortlisting"
+        >
+          <span className="apl-sb-link-icon" aria-hidden="true">
+            <Icon.Sparkles />
+          </span>
+          <span className="apl-sb-link-label">AI Shortlisting</span>
         </NavLink>
       </nav>
 
