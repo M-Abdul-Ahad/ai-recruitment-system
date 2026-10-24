@@ -1,5 +1,6 @@
 from django.db import models
 from django.contrib.auth import get_user_model
+from pgvector.django import VectorField
 
 
 User = get_user_model()
@@ -50,7 +51,13 @@ class Job(models.Model):
     
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
-    
+    jd_embedding = VectorField(
+        dimensions=768,
+        null=True,
+        blank=True,
+        help_text="Gemini text-embedding-004 vector representation of JD (768 dimensions)"
+    )
+
     def __str__(self):
         return f"{self.title} at {self.company.name}"
 
@@ -109,4 +116,66 @@ class JobApplication(models.Model):
     def __str__(self):
         applicant_identifier = self.applicant.email if self.applicant else f"Recruiter Candidate (Resume #{self.resume_id})"
         return f"{applicant_identifier} for {self.job.title}"
+
+
+class TemporaryResumeCandidate(models.Model):
+    """
+    Temporary storage for bulk-imported resumes before shortlisting.
+    Holds extracted text and embeddings temporarily during a shortlisting session
+    and is purged once the session is completed or expired.
+    Non-shortlisted candidate files are never written to Cloudflare R2.
+    """
+    session_id = models.UUIDField(db_index=True, help_text="Unique session identifier for the bulk import batch")
+    job = models.ForeignKey(
+        Job,
+        on_delete=models.CASCADE,
+        related_name="temp_candidates"
+    )
+    file_name = models.CharField(max_length=255)
+    temp_file_path = models.CharField(max_length=500, help_text="Path to temporary file in local scratch storage")
+    extracted_text = models.TextField(blank=True, default="")
+    cleaned_text = models.TextField(blank=True, default="")
+    embedding = VectorField(
+        dimensions=768,
+        null=True,
+        blank=True,
+        help_text="Gemini text-embedding-004 vector representation (768 dimensions)"
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        indexes = [
+            models.Index(fields=["session_id", "job"]),
+        ]
+
+    def __str__(self):
+        return f"Temp Candidate ({self.file_name}) - Job #{self.job_id}"
+
+
+class CandidateInterviewKit(models.Model):
+    """
+    Stores LLM-generated personalized interview questions, expected answers,
+    and evaluation criteria for a shortlisted candidate application.
+    """
+    application = models.OneToOneField(
+        JobApplication,
+        on_delete=models.CASCADE,
+        related_name="interview_kit",
+        help_text="The shortlisted job application this question set belongs to"
+    )
+    difficulty = models.CharField(
+        max_length=50,
+        default="Mid-Level",
+        help_text="Target difficulty level (e.g. Junior, Mid-Level, Senior, Lead)"
+    )
+    questions = models.JSONField(
+        default=list,
+        help_text="List of personalized Q&A objects tailored to the candidate's resume and JD"
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return f"Interview Kit ({self.difficulty}) for Application #{self.application_id}"
+
 

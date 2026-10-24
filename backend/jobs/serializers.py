@@ -90,7 +90,19 @@ class JobApplicationSerializer(serializers.ModelSerializer):
         return resume
 
 
+from .services.candidate_extractor import extract_candidate_email, extract_candidate_name
+
+
 # --- Recruiter-facing serializers ---
+
+class CandidateInterviewKitSerializer(serializers.ModelSerializer):
+    """Serializer for AI-generated candidate interview kit."""
+    class Meta:
+        from .models import CandidateInterviewKit
+        model = CandidateInterviewKit
+        fields = ['id', 'application', 'difficulty', 'questions', 'created_at', 'updated_at']
+        read_only_fields = ['id', 'application', 'created_at', 'updated_at']
+
 
 class RecruiterApplicationSerializer(serializers.ModelSerializer):
     """Serializer for recruiter viewing applications on their jobs."""
@@ -98,19 +110,29 @@ class RecruiterApplicationSerializer(serializers.ModelSerializer):
     applicant_name = serializers.SerializerMethodField()
     resume_file = serializers.FileField(source='resume.file', read_only=True)
     resume_text = serializers.CharField(source='resume.extracted_text', read_only=True, default="")
+    has_interview_kit = serializers.SerializerMethodField()
+    interview_kit_id = serializers.SerializerMethodField()
 
     class Meta:
         model = JobApplication
         fields = [
             'id', 'job', 'applicant', 'applicant_email', 'applicant_name',
             'resume', 'resume_file', 'resume_text', 'source_type', 'status', 'tags',
-            'recruiter_notes', 'match_score', 'applied_at',
+            'recruiter_notes', 'match_score', 'has_interview_kit', 'interview_kit_id', 'applied_at',
         ]
         read_only_fields = ['id', 'job', 'applicant', 'applied_at']
 
     def get_applicant_email(self, obj):
-        return obj.applicant.email if obj.applicant else None
+        return extract_candidate_email(obj)
 
     def get_applicant_name(self, obj):
-        return obj.applicant.username if obj.applicant else "Recruiter Candidate"
+        return extract_candidate_name(obj)
+
+    def get_has_interview_kit(self, obj):
+        return hasattr(obj, 'interview_kit') and obj.interview_kit is not None
+
+    def get_interview_kit_id(self, obj):
+        if hasattr(obj, 'interview_kit') and obj.interview_kit is not None:
+            return obj.interview_kit.id
+        return None
 

@@ -64,6 +64,19 @@ class ResumeUploadView(APIView):
         # 🔥 7️⃣ Parse & store structured data (WEEK 3 CORE)
         parse_and_store_resume_data(resume)
 
+        # 🧠 7.5️⃣ Auto-generate vector embedding (if GEMINI_EMBEDDING_API_KEY configured)
+        try:
+            from resumes.services.gemini_embedding import build_resume_embedding_text, generate_embedding
+            resume.refresh_from_db()
+            emb_text = build_resume_embedding_text(resume)
+            embedding_vector = generate_embedding(emb_text)
+            if embedding_vector:
+                resume.embedding = embedding_vector
+                resume.save(update_fields=['embedding'])
+        except Exception:
+            # Non-blocking fallback: normal upload succeeds even if embedding API key is not configured yet
+            pass
+
         # 8️⃣ Return structured response
         serializer = ResumeDetailSerializer(resume)
 

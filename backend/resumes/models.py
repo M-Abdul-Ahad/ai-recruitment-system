@@ -1,5 +1,6 @@
 from django.db import models
 from django.conf import settings
+from pgvector.django import VectorField
 
 
 class Resume(models.Model):
@@ -29,6 +30,12 @@ class Resume(models.Model):
     ai_suggestions = models.JSONField(null=True, blank=True)
     ai_category_scores = models.JSONField(null=True, blank=True)
     ai_recommended_certifications = models.JSONField(null=True, blank=True)
+    embedding = VectorField(
+        dimensions=768,
+        null=True,
+        blank=True,
+        help_text="Gemini text-embedding-004 vector representation (768 dimensions)"
+    )
 
     def __str__(self):
         return f"{self.user.username if self.user else 'Anonymous'} - Resume"

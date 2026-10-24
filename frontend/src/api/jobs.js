@@ -50,6 +50,62 @@ export const bulkUploadResumes = (jobId, files, onUploadProgress) => {
   });
 };
 
+/**
+ * POST /api/jobs/:jobId/stage-resumes/
+ * Stages temporary resumes (PDF, DOCX, ZIP, folders) for shortlisting session.
+ */
+export const stageResumes = (jobId, formData, onUploadProgress) =>
+  api.post(`/jobs/${jobId}/stage-resumes/`, formData, {
+    headers: { 'Content-Type': 'multipart/form-data' },
+    onUploadProgress,
+  });
+
+/**
+ * POST /api/jobs/:jobId/generate-embeddings/
+ * Generates JD embedding and candidate embeddings for a session.
+ */
+export const generateEmbeddings = (jobId, sessionId) =>
+  api.post(`/jobs/${jobId}/generate-embeddings/`, { session_id: sessionId });
+
+/**
+ * GET /api/jobs/:jobId/staged-resumes/?session_id=...
+ */
+export const getStagedResumes = (jobId, sessionId) =>
+  api.get(`/jobs/${jobId}/staged-resumes/`, { params: { session_id: sessionId } });
+
+/**
+ * POST /api/jobs/:jobId/shortlist/
+ * Ranks candidates and promotes top N candidates.
+ */
+export const shortlistCandidates = (jobId, data) =>
+  api.post(`/jobs/${jobId}/shortlist/`, data);
+
+/**
+ * POST /api/jobs/:jobId/send-shortlist-emails/
+ * Sends shortlist notification emails to selected candidates.
+ */
+export const sendShortlistEmails = (jobId, applicationIds, customMessage = '') =>
+  api.post(`/jobs/${jobId}/send-shortlist-emails/`, {
+    application_ids: applicationIds,
+    custom_message: customMessage,
+  });
+
+/**
+ * POST /api/jobs/:jobId/applications/:appId/generate-interview-kit/
+ * Generates 10 personalized interview questions & model answers using Gemini.
+ */
+export const generateInterviewKit = (jobId, appId, difficulty = 'Mid-Level') =>
+  api.post(`/jobs/${jobId}/applications/${appId}/generate-interview-kit/`, { difficulty });
+
+/**
+ * GET /api/jobs/:jobId/applications/:appId/interview-kit/
+ * Retrieves existing interview kit for a candidate application.
+ */
+export const getInterviewKit = (jobId, appId) =>
+  api.get(`/jobs/${jobId}/applications/${appId}/interview-kit/`);
+
+
+
 // ─── Applicant APIs ───
 
 /** GET /api/jobs/:id/ → full job detail (applicant view) */
