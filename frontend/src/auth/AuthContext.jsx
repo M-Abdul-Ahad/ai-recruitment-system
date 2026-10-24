@@ -64,6 +64,7 @@ export const AuthProvider = ({ children }) => {
     localStorage.removeItem("access");
     localStorage.removeItem("refresh");
     localStorage.removeItem("user");
+    sessionStorage.clear();
     setUser(null);
     console.log("USER CLEARED FROM CONTEXT");
   };
