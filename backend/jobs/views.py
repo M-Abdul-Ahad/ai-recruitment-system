@@ -13,13 +13,17 @@ from rest_framework import viewsets, permissions, status
 from rest_framework.decorators import action
 from rest_framework.response import Response
 
-from .models import Job, JobApplication, Skill, TemporaryResumeCandidate
+from .models import Job, JobApplication, Skill, TemporaryResumeCandidate, CandidateInterviewKit
 from .serializers import (
     JobSerializer, JobListSerializer, JobDetailSerializer,
     JobApplicationSerializer, RecruiterApplicationSerializer, SkillSerializer,
+    CandidateInterviewKitSerializer,
 )
 from .permissions import IsRecruiter, IsJobOwner, IsApplicant
 from .services.gemini_jd_service import generate_job_description
+from .services.candidate_extractor import extract_candidate_email, extract_candidate_name
+from .services.interview_email_service import send_candidate_shortlist_email
+from .services.interview_kit_service import generate_candidate_interview_kit
 from resumes.models import Resume
 from resumes.utils import extract_text_from_pdf, extract_text_from_docx, clean_resume_text
 from resumes.services.gemini_embedding import (
@@ -617,7 +621,8 @@ class JobViewSet(viewsets.ModelViewSet):
 
                 shortlisted_results.append({
                     "application_id": app.id,
-                    "name": item["name"],
+                    "name": extract_candidate_name(app),
+                    "email": extract_candidate_email(app),
                     "match_score": score_val,
                     "status": JobApplication.ApplicationStatus.SHORTLISTED,
                     "source_type": app.source_type,
@@ -671,7 +676,8 @@ class JobViewSet(viewsets.ModelViewSet):
 
                 shortlisted_results.append({
                     "application_id": new_app.id,
-                    "name": tc.file_name,
+                    "name": extract_candidate_name(new_app),
+                    "email": extract_candidate_email(new_app),
                     "match_score": score_val,
                     "status": JobApplication.ApplicationStatus.SHORTLISTED,
                     "source_type": JobApplication.SourceType.RECRUITER_UPLOAD,
@@ -779,6 +785,126 @@ class JobViewSet(viewsets.ModelViewSet):
             {"message": "Candidate removed successfully."},
             status=status.HTTP_200_OK,
         )
+
+    @action(
+        detail=True,
+        methods=["post"],
+        url_path="send-shortlist-emails",
+        permission_classes=[permissions.IsAuthenticated, IsRecruiter, IsJobOwner],
+    )
+    def send_shortlist_emails(self, request, pk=None):
+        """
+        POST /api/jobs/{job_id}/send-shortlist-emails/
+        Sends personalized shortlist notification emails to selected candidates.
+        Payload:
+        {
+            "application_ids": [12, 15, 18],
+            "custom_message": "Optional note from hiring team"
+        }
+        """
+        job = self.get_object()
+        application_ids = request.data.get("application_ids", [])
+        custom_message = request.data.get("custom_message", "")
+
+        if not application_ids or not isinstance(application_ids, list):
+            return Response(
+                {"error": "Please provide a non-empty list of application_ids to email."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        # Retrieve matching applications for this job
+        applications = job.applications.select_related('applicant', 'resume').filter(id__in=application_ids)
+        if not applications.exists():
+            return Response(
+                {"error": "No matching job applications found for the provided IDs."},
+                status=status.HTTP_404_NOT_FOUND,
+            )
+
+        results = []
+        sent_count = 0
+        failed_count = 0
+
+        for app in applications:
+            c_name = extract_candidate_name(app)
+            success, err, email = send_candidate_shortlist_email(app, job, custom_message)
+            if success:
+                sent_count += 1
+                results.append({
+                    "application_id": app.id,
+                    "candidate_name": c_name,
+                    "email": email,
+                    "status": "SENT",
+                })
+            else:
+                failed_count += 1
+                results.append({
+                    "application_id": app.id,
+                    "candidate_name": c_name,
+                    "email": email,
+                    "status": "FAILED",
+                    "error": err,
+                })
+
+        return Response({
+            "message": f"Shortlist emails processed: {sent_count} sent successfully, {failed_count} failed.",
+            "total_requested": len(application_ids),
+            "sent_count": sent_count,
+            "failed_count": failed_count,
+            "results": results,
+        }, status=status.HTTP_200_OK)
+
+    @action(
+        detail=True,
+        methods=["post"],
+        url_path=r'applications/(?P<app_id>[^/.]+)/generate-interview-kit',
+        permission_classes=[permissions.IsAuthenticated, IsRecruiter, IsJobOwner],
+    )
+    def generate_interview_kit(self, request, pk=None, app_id=None):
+        """
+        POST /api/jobs/{job_id}/applications/{app_id}/generate-interview-kit/
+        Generates 10 personalized interview questions & model answers tailored
+        to candidate resume and job requirements using Gemini LLM.
+        """
+        job = self.get_object()
+        try:
+            application = job.applications.select_related('resume', 'applicant').get(id=app_id)
+        except JobApplication.DoesNotExist:
+            return Response({"error": "Job application not found."}, status=status.HTTP_404_NOT_FOUND)
+
+        difficulty = request.data.get("difficulty", "Mid-Level")
+        valid_difficulties = ["Junior", "Mid-Level", "Senior", "Lead / Expert"]
+        if difficulty not in valid_difficulties:
+            difficulty = "Mid-Level"
+
+        kit, err = generate_candidate_interview_kit(application, difficulty=difficulty)
+        if err or not kit:
+            return Response({"error": err or "Failed to generate interview kit."}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+        return Response(CandidateInterviewKitSerializer(kit).data, status=status.HTTP_200_OK)
+
+    @action(
+        detail=True,
+        methods=["get"],
+        url_path=r'applications/(?P<app_id>[^/.]+)/interview-kit',
+        permission_classes=[permissions.IsAuthenticated, IsRecruiter, IsJobOwner],
+    )
+    def get_interview_kit(self, request, pk=None, app_id=None):
+        """
+        GET /api/jobs/{job_id}/applications/{app_id}/interview-kit/
+        Retrieves the saved interview kit for the candidate application.
+        """
+        job = self.get_object()
+        try:
+            application = job.applications.get(id=app_id)
+        except JobApplication.DoesNotExist:
+            return Response({"error": "Job application not found."}, status=status.HTTP_404_NOT_FOUND)
+
+        try:
+            kit = application.interview_kit
+        except CandidateInterviewKit.DoesNotExist:
+            return Response({"error": "No interview kit found for this candidate. Please generate one."}, status=status.HTTP_404_NOT_FOUND)
+
+        return Response(CandidateInterviewKitSerializer(kit).data, status=status.HTTP_200_OK)
 
 
 

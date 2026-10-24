@@ -7,6 +7,9 @@ import {
   generateEmbeddings,
   getStagedResumes,
   shortlistCandidates,
+  sendShortlistEmails,
+  generateInterviewKit,
+  getInterviewKit,
 } from "../api/jobs";
 import ResumePreviewModal from "./components/ResumePreviewModal";
 
@@ -54,8 +57,21 @@ const CandidateShortlisting = () => {
   const [shortlistSummary, setShortlistSummary] = useState(null);
   const [shortlistError, setShortlistError] = useState(null);
 
-  // Interview Questions State (Tab 3)
+  // Email Selection & Sending State (Step 2)
+  const [selectedCandidateIdsForEmail, setSelectedCandidateIdsForEmail] = useState([]);
+  const [isEmailModalOpen, setIsEmailModalOpen] = useState(false);
+  const [customEmailMessage, setCustomEmailMessage] = useState("");
+  const [isSendingEmails, setIsSendingEmails] = useState(false);
+  const [emailNotification, setEmailNotification] = useState(null);
+
+  // AI Interview Questions Kit State (Step 3)
   const [selectedInterviewCandidate, setSelectedInterviewCandidate] = useState(null);
+  const [interviewDifficulty, setInterviewDifficulty] = useState("Mid-Level");
+  const [interviewKits, setInterviewKits] = useState({}); // { [applicationId]: kitData }
+  const [isGeneratingKit, setIsGeneratingKit] = useState(false);
+  const [generatingKitAppId, setGeneratingKitAppId] = useState(null);
+  const [kitError, setKitError] = useState(null);
+  const [expandedAnswers, setExpandedAnswers] = useState({});
   const [copiedQuestionIndex, setCopiedQuestionIndex] = useState(null);
 
   // Preview modal state
@@ -209,16 +225,20 @@ const CandidateShortlisting = () => {
         .map((app) => ({
           application_id: app.id,
           name:
+            app.applicant_name ||
             app.applicant?.email ||
             (app.resume?.file
               ? app.resume.file.split("/").pop().replace(/^[a-f0-9]{10}_/, "")
-              : `Applicant #${app.id}`),
+              : `Candidate #${app.id}`),
+          email: app.applicant_email || app.email || null,
           match_score: app.match_score || 0,
           source_type: app.source_type,
           is_promoted_import: app.source_type === "RECRUITER_UPLOAD",
           resume: app.resume,
           file_url: app.resume?.file || "",
           extracted_text: app.resume?.extracted_text || "",
+          has_interview_kit: Boolean(app.has_interview_kit),
+          interview_kit_id: app.interview_kit_id || null,
           status: app.status,
         }))
         .sort((a, b) => (b.match_score || 0) - (a.match_score || 0));
@@ -248,10 +268,54 @@ const CandidateShortlisting = () => {
     }
   };
 
-  // 3. File Staging Handlers
-  const handleFileDrop = (e) => {
+  // 3. File & Folder Staging Handlers
+  const handleFileDrop = async (e) => {
     e.preventDefault();
     setIsDragging(false);
+
+    // Support dropping an entire directory / folder
+    const items = e.dataTransfer.items;
+    if (items && items.length > 0) {
+      const fileList = [];
+      const traverseEntry = async (entry) => {
+        if (entry.isFile) {
+          return new Promise((resolve) => {
+            entry.file((file) => {
+              fileList.push(file);
+              resolve();
+            });
+          });
+        } else if (entry.isDirectory) {
+          const dirReader = entry.createReader();
+          const entries = await new Promise((resolve) => {
+            dirReader.readEntries(resolve);
+          });
+          for (const child of entries) {
+            await traverseEntry(child);
+          }
+        }
+      };
+
+      const promises = [];
+      for (let i = 0; i < items.length; i++) {
+        const item = items[i];
+        if (item.webkitGetAsEntry) {
+          const entry = item.webkitGetAsEntry();
+          if (entry) {
+            promises.push(traverseEntry(entry));
+          }
+        }
+      }
+
+      if (promises.length > 0) {
+        await Promise.all(promises);
+        if (fileList.length > 0) {
+          addFiles(fileList);
+          return;
+        }
+      }
+    }
+
     if (e.dataTransfer.files?.length) {
       addFiles(Array.from(e.dataTransfer.files));
     }
@@ -261,6 +325,39 @@ const CandidateShortlisting = () => {
     if (e.target.files?.length) {
       addFiles(Array.from(e.target.files));
       e.target.value = "";
+    }
+  };
+
+  // Dedicated Folder Picker: Uses native showDirectoryPicker if available, with robust fallback
+  const handleFolderSelect = async () => {
+    if (window.showDirectoryPicker) {
+      try {
+        const dirHandle = await window.showDirectoryPicker();
+        const files = [];
+        for await (const entry of dirHandle.values()) {
+          if (entry.kind === "file") {
+            const file = await entry.getFile();
+            files.push(file);
+          }
+        }
+        if (files.length > 0) {
+          addFiles(files);
+        }
+        return;
+      } catch (err) {
+        if (err.name === "AbortError") {
+          return; // User canceled the picker dialog
+        }
+        console.warn("showDirectoryPicker error, falling back to input:", err);
+      }
+    }
+
+    // Fallback: input with explicit webkitdirectory property
+    if (folderInputRef.current) {
+      folderInputRef.current.setAttribute("webkitdirectory", "");
+      folderInputRef.current.setAttribute("directory", "");
+      folderInputRef.current.webkitdirectory = true;
+      folderInputRef.current.click();
     }
   };
 
@@ -465,36 +562,114 @@ const CandidateShortlisting = () => {
   const totalCandidateCount = combinedCandidates.length;
   const readyCandidateCount = combinedCandidates.filter((c) => c.hasEmbedding).length;
 
-  // Mock Question Generator for Tab 3 (based on candidate profile and JD)
-  const getCandidateQuestions = (candidate) => {
-    const candidateName = candidate?.name || candidate?.file_name || "Candidate";
-    const jobTitle = selectedJob?.title || "Target Role";
-    return [
-      {
-        category: "Technical Architecture & Core Stack",
-        difficulty: "Advanced",
-        question: `How would you architect a scalable solution for ${jobTitle} addressing latency and concurrent data updates, given your previous experience in your submitted projects?`,
-        whatToLookFor: "Evaluates architectural patterns, caching, concurrency control, and modular code structuring."
-      },
-      {
-        category: "Hands-on Problem Solving",
-        difficulty: "Intermediate",
-        question: `In your resume, you highlighted performance improvements and key deliverables. Can you walk through a production bug or unexpected bottleneck you encountered and how you diagnosed it?`,
-        whatToLookFor: "Assesses root cause analysis, logging/monitoring familiarity, and systematic debugging methodology."
-      },
-      {
-        category: "System Design & Optimization",
-        difficulty: "Advanced",
-        question: `If our backend receives a 5x surge in request traffic during peak hours, what specific database or caching optimization strategies would you implement first?`,
-        whatToLookFor: "Validates indexing strategy, connection pooling, Redis caching layers, and asynchronous task execution."
-      },
-      {
-        category: "Role Alignment & Communication",
-        difficulty: "General",
-        question: `What motivated you to apply for this ${jobTitle} position at our company, and how does your technical roadmap align with our team's tech stack?`,
-        whatToLookFor: "Checks genuine motivation, culture fit, continuous learning mindset, and collaborative approach."
+  // 8. Email Shortlisted Candidates Handlers
+  const toggleSelectCandidateForEmail = (appId) => {
+    setSelectedCandidateIdsForEmail((prev) =>
+      prev.includes(appId) ? prev.filter((id) => id !== appId) : [...prev, appId]
+    );
+  };
+
+  const toggleSelectAllCandidatesForEmail = () => {
+    if (selectedCandidateIdsForEmail.length === shortlistedResults.length) {
+      setSelectedCandidateIdsForEmail([]);
+    } else {
+      setSelectedCandidateIdsForEmail(
+        shortlistedResults.map((c) => c.application_id).filter(Boolean)
+      );
+    }
+  };
+
+  const handleSendShortlistEmails = async () => {
+    if (!selectedJob?.id || selectedCandidateIdsForEmail.length === 0) return;
+    setIsSendingEmails(true);
+    setEmailNotification(null);
+    try {
+      const res = await sendShortlistEmails(
+        selectedJob.id,
+        selectedCandidateIdsForEmail,
+        customEmailMessage
+      );
+      setEmailNotification({
+        type: res.data.sent_count > 0 ? "success" : "warning",
+        message: res.data.message || `Processed ${res.data.sent_count} emails successfully.`,
+        sentCount: res.data.sent_count,
+        failedCount: res.data.failed_count,
+        results: res.data.results,
+      });
+      setIsEmailModalOpen(false);
+      setCustomEmailMessage("");
+      setSelectedCandidateIdsForEmail([]);
+    } catch (err) {
+      console.error("Failed to send shortlist emails:", err);
+      setEmailNotification({
+        type: "error",
+        message:
+          err.response?.data?.error ||
+          "Failed to send shortlist emails. Please verify SMTP credentials in backend/.env.",
+      });
+    } finally {
+      setIsSendingEmails(false);
+    }
+  };
+
+  // 9. AI Interview Questions Kit Handlers (Tab 3)
+  // Auto-fetch interview kit from DB when candidate changes
+  useEffect(() => {
+    if (selectedJob?.id && selectedInterviewCandidate?.application_id) {
+      const appId = selectedInterviewCandidate.application_id;
+      if (!interviewKits[appId]) {
+        getInterviewKit(selectedJob.id, appId)
+          .then((res) => {
+            if (res.data) {
+              setInterviewKits((prev) => ({ ...prev, [appId]: res.data }));
+              if (res.data.difficulty) {
+                setInterviewDifficulty(res.data.difficulty);
+              }
+            }
+          })
+          .catch(() => {
+            // Kit not yet generated for this candidate
+          });
       }
-    ];
+    }
+  }, [selectedJob?.id, selectedInterviewCandidate?.application_id]);
+
+  const handleGenerateInterviewKit = async (targetDifficulty) => {
+    if (!selectedJob?.id || !selectedInterviewCandidate?.application_id) return;
+    const appId = selectedInterviewCandidate.application_id;
+    const diff = targetDifficulty || interviewDifficulty;
+    setIsGeneratingKit(true);
+    setGeneratingKitAppId(appId);
+    setKitError(null);
+    try {
+      const res = await generateInterviewKit(selectedJob.id, appId, diff);
+      if (res.data) {
+        setInterviewKits((prev) => ({ ...prev, [appId]: res.data }));
+        setInterviewDifficulty(res.data.difficulty || diff);
+        // Mark candidate as having an interview kit
+        setShortlistedResults((prev) =>
+          prev.map((c) =>
+            c.application_id === appId ? { ...c, has_interview_kit: true } : c
+          )
+        );
+      }
+    } catch (err) {
+      console.error("Failed to generate interview kit:", err);
+      setKitError(
+        err.response?.data?.error ||
+          "Failed to generate interview questions with AI. Please check GEMINI_INTERVIEW_API_KEY in .env."
+      );
+    } finally {
+      setIsGeneratingKit(false);
+      setGeneratingKitAppId(null);
+    }
+  };
+
+  const toggleAnswerAccordion = (qId) => {
+    setExpandedAnswers((prev) => ({
+      ...prev,
+      [qId]: !prev[qId],
+    }));
   };
 
   const handleCopyQuestion = (text, index) => {
@@ -505,69 +680,38 @@ const CandidateShortlisting = () => {
 
   return (
     <div className="apl-animate-fade max-w-7xl mx-auto space-y-6 pb-16">
-      {/* ── Top Header & Job Selector ─────────────────────────────────── */}
-      <div className="apl-card p-6 bg-gradient-to-r from-[#FFFFFF] via-[#F8F9F1] to-[#FFFFFF] dark:from-[#1F2316] dark:via-[#171911] dark:to-[#1F2316] border border-[#D3D6C4] dark:border-[#2A2E1E] shadow-sm">
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-          <div>
-            <Link
-              to="/recruiter/jobs"
-              className="text-xs font-bold text-[#636B2F] dark:text-[#BAC095] hover:underline inline-flex items-center gap-1.5 mb-1.5 transition-colors"
-            >
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
-              </svg>
-              Back to Job Requisitions
-            </Link>
-            <h1 className="text-2xl sm:text-3xl font-extrabold text-[#22241B] dark:text-[#EBF0DA] tracking-tight">
-              AI Candidate Shortlisting Hub
-            </h1>
-            <p className="text-xs sm:text-sm text-[#8A8F76] dark:text-[#9CA485] mt-0.5">
-              AI-powered candidate screening, automated shortlisting, and interview kit preparation
-            </p>
-          </div>
-
-          {/* Job Dropdown Selector */}
-          <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3">
-            <div className="w-full sm:w-72">
-              <label className="block text-[11px] font-bold uppercase tracking-wider text-[#52564A] dark:text-[#BAC095] mb-1">
-                Select Job Requisition
-              </label>
-              {loadingJobs ? (
-                <div className="h-10 bg-[#ECEEDF] dark:bg-[#2A2E1E] animate-pulse rounded-lg" />
-              ) : (
-                <select
-                  value={selectedJob?.id || ""}
-                  onChange={(e) => handleJobSwitch(e.target.value)}
-                  className="w-full text-xs font-bold bg-[#FFFFFF] dark:bg-[#1E2015] border-2 border-[#D3D6C4] dark:border-[#383D28] rounded-lg px-3 py-2 text-[#22241B] dark:text-[#EBF0DA] focus:border-[#636B2F] focus:outline-none transition-colors"
-                >
-                  {jobs.map((j) => (
-                    <option key={j.id} value={j.id}>
-                      {j.title} ({j.status})
-                    </option>
-                  ))}
-                </select>
-              )}
-            </div>
-
-            {selectedJob && (
-              <div className="pt-5 hidden sm:block">
-                <span
-                  className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-extrabold uppercase tracking-wider ${
-                    selectedJob.status === "ACTIVE"
-                      ? "bg-[#4E7A33]/15 text-[#4E7A33] border border-[#4E7A33]/30"
-                      : "bg-[#BAC095]/20 text-[#52564A] border border-[#BAC095]/40"
-                  }`}
-                >
-                  <span className="w-2 h-2 rounded-full bg-current animate-pulse" />
-                  {selectedJob.status}
-                </span>
-              </div>
-            )}
-          </div>
+      {/* ── Top Header Title ────────────────────────────────────────── */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+        <div>
+          <Link
+            to="/recruiter/jobs"
+            className="text-xs font-bold text-[#636B2F] dark:text-[#BAC095] hover:underline inline-flex items-center gap-1.5 mb-1.5 transition-colors"
+          >
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+            </svg>
+            Back to Job Requisitions
+          </Link>
+          <h1 className="text-2xl sm:text-3xl font-extrabold text-[#22241B] dark:text-[#EBF0DA] tracking-tight">
+            AI Candidate Shortlisting Hub
+          </h1>
+          <p className="text-xs sm:text-sm text-[#8A8F76] dark:text-[#9CA485] mt-0.5">
+            AI-powered candidate screening, automated shortlisting, and interview kit preparation
+          </p>
         </div>
+
+        {selectedJob && (
+          <div className="flex items-center gap-2 self-start sm:self-auto">
+            <div className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-[#FFFFFF] dark:bg-[#1E2015] border border-[#D3D6C4] dark:border-[#2A2E1E] text-xs shadow-sm">
+              <span className="w-2 h-2 rounded-full bg-[#4E7A33]" />
+              <span className="text-[11px] text-[#8A8F76] font-medium">Requisition:</span>
+              <span className="font-bold text-[#22241B] dark:text-[#EBF0DA]">{selectedJob.title}</span>
+            </div>
+          </div>
+        )}
       </div>
 
-      {/* ── Workflow Stepper Navigation Tabs ─────────────────────────── */}
+      {/* ── Workflow Stepper Navigation Tabs (ABOVE the Job Selection Div) ── */}
       <div className="bg-[#FFFFFF] dark:bg-[#1E2015] border border-[#D3D6C4] dark:border-[#2A2E1E] rounded-2xl p-2 shadow-sm">
         <div className="flex flex-col md:flex-row items-stretch md:items-center justify-between gap-1.5" role="tablist">
           {/* Step 1 Tab */}
@@ -774,6 +918,64 @@ const CandidateShortlisting = () => {
           })()}
         </div>
       </div>
+
+      {/* ── Job Selection Div (SHOWN ONLY ON FIRST TAB: upload) ────────── */}
+      {currentWorkflowTab === "upload" && (
+        <div className="apl-card p-5 bg-gradient-to-r from-[#FFFFFF] via-[#F8F9F1] to-[#FFFFFF] dark:from-[#1F2316] dark:via-[#171911] dark:to-[#1F2316] border border-[#D3D6C4] dark:border-[#2A2E1E] shadow-sm">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div>
+              <span className="text-[10px] font-black uppercase tracking-wider px-2 py-0.5 rounded-full bg-[#3D4127] text-[#D4DE95] apl-font-mono">
+                Active Requisition
+              </span>
+              <h2 className="text-base font-extrabold text-[#22241B] dark:text-[#EBF0DA] mt-1">
+                {selectedJob?.title || "Choose a Job Requisition"}
+              </h2>
+              <p className="text-xs text-[#8A8F76] mt-0.5">
+                Switch or choose the target job requisition to load its candidate pool and specifications
+              </p>
+            </div>
+
+            {/* Job Dropdown Selector */}
+            <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3">
+              <div className="w-full sm:w-80">
+                <label className="block text-[11px] font-bold uppercase tracking-wider text-[#52564A] dark:text-[#BAC095] mb-1">
+                  Select Job Requisition
+                </label>
+                {loadingJobs ? (
+                  <div className="h-10 bg-[#ECEEDF] dark:bg-[#2A2E1E] animate-pulse rounded-lg" />
+                ) : (
+                  <select
+                    value={selectedJob?.id || ""}
+                    onChange={(e) => handleJobSwitch(e.target.value)}
+                    className="w-full text-xs font-bold bg-[#FFFFFF] dark:bg-[#1E2015] border-2 border-[#D3D6C4] dark:border-[#383D28] rounded-lg px-3 py-2 text-[#22241B] dark:text-[#EBF0DA] focus:border-[#636B2F] focus:outline-none transition-colors"
+                  >
+                    {jobs.map((j) => (
+                      <option key={j.id} value={j.id}>
+                        {j.title} ({j.status})
+                      </option>
+                    ))}
+                  </select>
+                )}
+              </div>
+
+              {selectedJob && (
+                <div className="pt-5 hidden sm:block">
+                  <span
+                    className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-extrabold uppercase tracking-wider ${
+                      selectedJob.status === "ACTIVE"
+                        ? "bg-[#4E7A33]/15 text-[#4E7A33] border border-[#4E7A33]/30"
+                        : "bg-[#BAC095]/20 text-[#52564A] border border-[#BAC095]/40"
+                    }`}
+                  >
+                    <span className="w-2 h-2 rounded-full bg-current animate-pulse" />
+                    {selectedJob.status}
+                  </span>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* ================================================================ */}
       {/* TAB 1 CONTENT: RESUME UPLOAD & PROCESSING WORKSPACE             */}
@@ -1086,10 +1288,15 @@ const CandidateShortlisting = () => {
                       />
                       <input
                         type="file"
-                        ref={folderInputRef}
+                        ref={(node) => {
+                          folderInputRef.current = node;
+                          if (node) {
+                            node.setAttribute("webkitdirectory", "");
+                            node.setAttribute("directory", "");
+                            node.webkitdirectory = true;
+                          }
+                        }}
                         onChange={handleFileInputChange}
-                        webkitdirectory=""
-                        directory=""
                         multiple
                         className="hidden"
                       />
@@ -1116,7 +1323,7 @@ const CandidateShortlisting = () => {
                         </button>
                         <button
                           type="button"
-                          onClick={() => folderInputRef.current?.click()}
+                          onClick={handleFolderSelect}
                           className="apl-btn apl-btn-secondary text-[11px] py-1 px-3"
                         >
                           Select Folder
@@ -1423,6 +1630,45 @@ const CandidateShortlisting = () => {
           </div>
 
           {/* RESULTS SECTION: Ranked Shortlisted Candidates (Appears on same tab!) */}
+          {/* Email Processing Feedback Banner */}
+          {emailNotification && (
+            <div
+              className={`p-4 rounded-xl border flex items-start justify-between gap-3 text-xs ${
+                emailNotification.type === "success"
+                  ? "bg-[#4E7A33]/15 border-[#4E7A33]/30 text-[#4E7A33]"
+                  : emailNotification.type === "warning"
+                  ? "bg-[#C99A3E]/15 border-[#C99A3E]/30 text-[#C99A3E]"
+                  : "bg-[#B4453D]/15 border-[#B4453D]/30 text-[#B4453D]"
+              }`}
+            >
+              <div className="flex items-start gap-2.5">
+                <span className="text-base">
+                  {emailNotification.type === "success" ? "✓" : emailNotification.type === "warning" ? "⚠" : "✕"}
+                </span>
+                <div>
+                  <h4 className="font-bold">{emailNotification.message}</h4>
+                  {emailNotification.results && (
+                    <div className="mt-1 space-y-0.5 text-[11px] opacity-90">
+                      {emailNotification.results.map((r, i) => (
+                        <div key={i}>
+                          &bull; {r.candidate_name} ({r.email || "No email"}): <strong>{r.status}</strong>
+                          {r.error && <span className="text-red-500"> — {r.error}</span>}
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setEmailNotification(null)}
+                className="opacity-70 hover:opacity-100 font-black text-sm"
+              >
+                ✕
+              </button>
+            </div>
+          )}
+
           {shortlistedResults.length > 0 ? (
             <div ref={resultsRef} className="apl-card p-6 border-2 border-[#4E7A33]/40 space-y-5 shadow-lg bg-white dark:bg-[#1A1D13]">
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-[#ECEEDF] dark:border-[#2A2E1E] pb-4">
@@ -1434,11 +1680,55 @@ const CandidateShortlisting = () => {
                     </h3>
                   </div>
                   <p className="text-xs text-[#8A8F76] dark:text-[#9CA485] mt-0.5">
-                    Top {shortlistSummary?.shortlisted_count} ranked candidates out of {shortlistSummary?.total_screened} evaluated resumes
+                    Top {shortlistSummary?.shortlisted_count || shortlistedResults.length} ranked candidates evaluated by semantic match & recruiter preferences
                   </p>
                 </div>
 
-                <div className="flex items-center gap-2">
+                <div className="flex flex-wrap items-center gap-2">
+                  {/* Select All Checkbox */}
+                  <button
+                    type="button"
+                    onClick={toggleSelectAllCandidatesForEmail}
+                    className="apl-btn apl-btn-secondary text-xs py-1.5 px-3 font-bold inline-flex items-center gap-1.5"
+                  >
+                    <input
+                      type="checkbox"
+                      checked={
+                        shortlistedResults.length > 0 &&
+                        selectedCandidateIdsForEmail.length === shortlistedResults.length
+                      }
+                      onChange={() => {}}
+                      className="cursor-pointer rounded border-[#636B2F] text-[#636B2F] focus:ring-0"
+                    />
+                    <span>
+                      {selectedCandidateIdsForEmail.length === shortlistedResults.length
+                        ? "Deselect All"
+                        : "Select All"}
+                    </span>
+                  </button>
+
+                  {/* Send Shortlist Email Button */}
+                  <button
+                    type="button"
+                    onClick={() => setIsEmailModalOpen(true)}
+                    disabled={selectedCandidateIdsForEmail.length === 0}
+                    className={`apl-btn text-xs py-1.5 px-3.5 font-bold inline-flex items-center gap-1.5 shadow-sm transition-all ${
+                      selectedCandidateIdsForEmail.length > 0
+                        ? "apl-btn-primary"
+                        : "opacity-40 cursor-not-allowed bg-[#ECEEDF] dark:bg-[#2A2E1E] text-[#8A8F76]"
+                    }`}
+                    title="Send official shortlist interview notification email"
+                  >
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                    </svg>
+                    <span>
+                      Email Candidates{" "}
+                      {selectedCandidateIdsForEmail.length > 0 && `(${selectedCandidateIdsForEmail.length})`}
+                    </span>
+                  </button>
+
+                  {/* Move to Step 3 Shortcut */}
                   <button
                     onClick={() => setCurrentWorkflowTab("interview")}
                     className="apl-btn apl-btn-primary text-xs py-1.5 px-3.5 font-bold inline-flex items-center gap-1.5 shadow-sm"
@@ -1448,13 +1738,6 @@ const CandidateShortlisting = () => {
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M14 5l7 7m0 0l-7 7m7-7H3" />
                     </svg>
                   </button>
-
-                  <Link
-                    to="/recruiter/candidates"
-                    className="apl-btn apl-btn-secondary text-xs py-1.5 px-3 font-bold inline-flex items-center gap-1.5"
-                  >
-                    <span>Candidate Management</span>
-                  </Link>
                 </div>
               </div>
 
@@ -1463,6 +1746,7 @@ const CandidateShortlisting = () => {
                 {shortlistedResults.map((candidate, idx) => {
                   const rank = idx + 1;
                   const badge = getScoreBadge(candidate.match_score);
+                  const isSelectedForEmail = selectedCandidateIdsForEmail.includes(candidate.application_id);
 
                   let rankBadgeStyle = "bg-[#ECEEDF] text-[#52564A] dark:bg-[#2A2E1E] dark:text-[#BAC095]";
                   if (rank === 1) rankBadgeStyle = "bg-[#D4DE95] text-[#3D4127] font-black";
@@ -1472,9 +1756,22 @@ const CandidateShortlisting = () => {
                   return (
                     <div
                       key={candidate.application_id || idx}
-                      className="p-4 rounded-xl border border-[#D3D6C4] dark:border-[#2A2E1E] bg-[#F8F9F1]/40 dark:bg-[#151710]/40 flex flex-col sm:flex-row sm:items-center justify-between gap-4 transition-all hover:border-[#636B2F]"
+                      className={`p-4 rounded-xl border transition-all flex flex-col sm:flex-row sm:items-center justify-between gap-4 ${
+                        isSelectedForEmail
+                          ? "border-[#636B2F] bg-[#636B2F]/5 ring-1 ring-[#636B2F]/30"
+                          : "border-[#D3D6C4] dark:border-[#2A2E1E] bg-[#F8F9F1]/40 dark:bg-[#151710]/40 hover:border-[#636B2F]"
+                      }`}
                     >
                       <div className="flex items-center gap-3.5 truncate">
+                        {/* Checkbox for email selection */}
+                        <input
+                          type="checkbox"
+                          checked={isSelectedForEmail}
+                          onChange={() => toggleSelectCandidateForEmail(candidate.application_id)}
+                          className="w-4 h-4 cursor-pointer rounded border-[#636B2F] text-[#636B2F] focus:ring-0 flex-shrink-0"
+                          title="Select candidate to send shortlist email"
+                        />
+
                         {/* Rank Badge */}
                         <div
                           className={`w-9 h-9 rounded-xl flex items-center justify-center text-sm shadow-sm flex-shrink-0 apl-font-mono ${rankBadgeStyle}`}
@@ -1483,16 +1780,38 @@ const CandidateShortlisting = () => {
                         </div>
 
                         <div className="truncate">
-                          <div className="flex items-center gap-2">
+                          <div className="flex flex-wrap items-center gap-2">
                             <h4 className="text-sm font-extrabold text-[#22241B] dark:text-[#EBF0DA] truncate">
                               {candidate.name}
                             </h4>
+
+                            {/* Candidate Email extracted from resume */}
+                            {candidate.email ? (
+                              <span className="px-2 py-0.5 rounded text-[11px] font-semibold bg-[#2563eb]/10 text-[#2563eb] dark:text-[#93c5fd] border border-[#2563eb]/20 inline-flex items-center gap-1">
+                                <svg className="w-3 h-3 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                                </svg>
+                                <span>{candidate.email}</span>
+                              </span>
+                            ) : (
+                              <span className="text-[10px] text-[#8A8F76] italic">
+                                No email in resume
+                              </span>
+                            )}
+
+                            {candidate.has_interview_kit && (
+                              <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-[#4E7A33]/15 text-[#4E7A33] border border-[#4E7A33]/30 flex items-center gap-1">
+                                <span>✓ Kit Ready</span>
+                              </span>
+                            )}
+
                             {candidate.is_promoted_import && (
                               <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-[#D4DE95]/30 text-[#3D4127] dark:text-[#D4DE95] border border-[#D4DE95]/60 flex items-center gap-1">
                                 <span>☁ Saved to Storage</span>
                               </span>
                             )}
                           </div>
+
                           <div className="text-[11px] text-[#8A8F76] mt-0.5">
                             Status: <span className="font-bold text-[#4E7A33]">SHORTLISTED</span> • Source:{" "}
                             <span className="capitalize">{candidate.source_type}</span>
@@ -1501,7 +1820,7 @@ const CandidateShortlisting = () => {
                       </div>
 
                       {/* Score & Actions */}
-                      <div className="flex items-center gap-4 flex-shrink-0 self-end sm:self-auto">
+                      <div className="flex items-center gap-3.5 flex-shrink-0 self-end sm:self-auto">
                         {/* Score pill & visual bar */}
                         <div className="text-right">
                           <div className="flex items-center gap-2 justify-end mb-1">
@@ -1520,19 +1839,19 @@ const CandidateShortlisting = () => {
                           </div>
                         </div>
 
-                        {/* Generate Questions shortcut */}
+                        {/* Interview Questions Shortcut Button */}
                         <button
                           onClick={() => {
                             setSelectedInterviewCandidate(candidate);
                             setCurrentWorkflowTab("interview");
                           }}
                           className="apl-btn apl-btn-secondary text-xs py-1.5 px-3 font-bold flex items-center gap-1.5 shadow-sm text-[#3D4127] dark:text-[#D4DE95]"
-                          title="Generate Interview Questions"
+                          title="Generate or view personalized interview questions"
                         >
                           <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z" />
                           </svg>
-                          Questions
+                          <span>{candidate.has_interview_kit ? "View Kit" : "Interview Kit"}</span>
                         </button>
 
                         {/* View Original Resume Button */}
@@ -1544,7 +1863,7 @@ const CandidateShortlisting = () => {
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
                           </svg>
-                          View Resume
+                          <span>View Resume</span>
                         </button>
                       </div>
                     </div>
@@ -1571,94 +1890,112 @@ const CandidateShortlisting = () => {
       )}
 
       {/* ================================================================ */}
-      {/* TAB 3 CONTENT: INTERVIEW QUESTION KIT WORKSPACE                 */}
+      {/* TAB 3 CONTENT: COHESIVE INTERVIEW QUESTION KIT WORKSPACE        */}
       {/* ================================================================ */}
       {currentWorkflowTab === "interview" && (
         <div className="space-y-6 apl-animate-fade">
-          <div className="apl-card p-6 border border-[#D3D6C4] dark:border-[#2A2E1E] bg-[#FFFFFF] dark:bg-[#1E2015] shadow-sm">
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-[#ECEEDF] dark:border-[#2A2E1E] pb-4">
+          {shortlistedResults.length === 0 ? (
+            <div className="apl-card p-12 text-center border border-dashed border-[#D3D6C4] dark:border-[#383D28] space-y-4">
+              <div className="w-14 h-14 mx-auto rounded-full bg-[#D4DE95]/20 text-[#636B2F] dark:text-[#BAC095] flex items-center justify-center">
+                <svg className="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+                </svg>
+              </div>
               <div>
-                <div className="flex items-center gap-2">
-                  <span className="w-2.5 h-2.5 rounded-full bg-[#636B2F]" />
-                  <h2 className="text-xl font-extrabold text-[#22241B] dark:text-[#EBF0DA] tracking-tight">
-                    AI Interview Question Generator
-                  </h2>
-                </div>
-                <p className="text-xs text-[#8A8F76] dark:text-[#9CA485] mt-0.5">
-                  Generate tailored interview questions and technical assessment criteria based on candidate resumes
+                <h3 className="text-base font-extrabold text-[#22241B] dark:text-[#EBF0DA]">
+                  No Shortlisted Candidates Available
+                </h3>
+                <p className="text-xs text-[#8A8F76] max-w-md mx-auto mt-1">
+                  Complete <strong>Step 02: AI Shortlisting & Ranking</strong> first to shortlist top candidate profiles for personalized interview kits.
                 </p>
               </div>
-
-              <span className="text-[11px] font-bold px-3 py-1 rounded-full bg-[#D4DE95]/25 text-[#3D4127] dark:text-[#D4DE95] border border-[#D4DE95]/40 apl-font-mono">
-                {shortlistedResults.length} Candidate(s) Available
-              </span>
+              <button
+                type="button"
+                onClick={() => setCurrentWorkflowTab("shortlist")}
+                className="apl-btn apl-btn-primary text-xs py-2 px-5 font-bold shadow-md inline-flex items-center gap-2"
+              >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+                </svg>
+                <span>Go to Step 02: Shortlisting & Ranking</span>
+              </button>
             </div>
-
-            {shortlistedResults.length === 0 ? (
-              <div className="py-16 text-center space-y-4">
-                <div className="w-14 h-14 mx-auto rounded-full bg-[#D4DE95]/20 text-[#636B2F] dark:text-[#BAC095] flex items-center justify-center">
-                  <svg className="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
-                  </svg>
-                </div>
-                <div>
-                  <h3 className="text-base font-extrabold text-[#22241B] dark:text-[#EBF0DA]">
-                    No Candidates Shortlisted Yet
-                  </h3>
-                  <p className="text-xs text-[#8A8F76] max-w-md mx-auto mt-1">
-                    Complete <strong>Step 02: AI Shortlisting & Ranking</strong> first to select top candidate resumes for automated interview question preparation.
+          ) : (
+            /* Main 2-Container Layout: Clean, grouped, no scattered divs */
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+              
+              {/* ── MAIN CONTAINER 1: CANDIDATE SELECTOR & AI SETTINGS (Col 4) ── */}
+              <div className="lg:col-span-4 apl-card p-5 border-2 border-[#D3D6C4] dark:border-[#2A2E1E] bg-[#FFFFFF] dark:bg-[#1E2015] shadow-sm space-y-5">
+                <div className="border-b border-[#ECEEDF] dark:border-[#2A2E1E] pb-3">
+                  <div className="flex items-center justify-between">
+                    <h3 className="text-sm font-extrabold uppercase tracking-wider text-[#3D4127] dark:text-[#D4DE95]">
+                      Candidate & Settings
+                    </h3>
+                    <span className="text-[11px] font-bold px-2 py-0.5 rounded-full bg-[#D4DE95]/30 text-[#3D4127] dark:text-[#D4DE95] apl-font-mono">
+                      {shortlistedResults.length} Shortlisted
+                    </span>
+                  </div>
+                  <p className="text-[11px] text-[#8A8F76] mt-0.5">
+                    Select a candidate and target seniority to generate personalized questions
                   </p>
                 </div>
-                <button
-                  type="button"
-                  onClick={() => setCurrentWorkflowTab("shortlist")}
-                  className="apl-btn apl-btn-primary text-xs py-2 px-5 font-bold shadow-md inline-flex items-center gap-2"
-                >
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
-                  </svg>
-                  <span>Go to Step 02: Shortlisting & Ranking</span>
-                </button>
-              </div>
-            ) : (
-              <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 mt-6 items-start">
-                {/* Left: Candidate Selector Column (Col 4) */}
-                <div className="lg:col-span-4 space-y-3">
-                  <label className="block text-xs font-bold uppercase tracking-wider text-[#3D4127] dark:text-[#EBF0DA]">
-                    Select Shortlisted Candidate
+
+                {/* Sub-div: Candidate Selection List */}
+                <div className="space-y-2">
+                  <label className="block text-[11px] font-bold uppercase tracking-wider text-[#8A8F76]">
+                    Select Candidate
                   </label>
-                  <div className="space-y-2 max-h-[600px] overflow-y-auto pr-1">
+                  <div className="space-y-2 max-h-[300px] overflow-y-auto pr-1">
                     {shortlistedResults.map((candidate, idx) => {
-                      const isSelected = selectedInterviewCandidate?.application_id === candidate.application_id ||
+                      const isSelected =
+                        selectedInterviewCandidate?.application_id === candidate.application_id ||
                         (!selectedInterviewCandidate && idx === 0);
                       const rank = idx + 1;
                       const badge = getScoreBadge(candidate.match_score);
+                      const hasKit =
+                        interviewKits[candidate.application_id]?.questions?.length > 0 ||
+                        candidate.has_interview_kit;
 
                       return (
                         <div
                           key={candidate.application_id || idx}
                           onClick={() => setSelectedInterviewCandidate(candidate)}
-                          className={`p-3.5 rounded-xl border text-left cursor-pointer transition-all ${
+                          className={`p-3 rounded-xl border text-left cursor-pointer transition-all ${
                             isSelected
-                              ? "bg-white dark:bg-[#151710] border-[#636B2F] ring-2 ring-[#636B2F]/20 shadow-sm"
-                              : "bg-[#F8F9F1]/60 dark:bg-[#171911]/60 border-[#ECEEDF] dark:border-[#2A2E1E] hover:border-[#BAC095]"
+                              ? "bg-gradient-to-r from-[#F8F9F1] to-white dark:from-[#171911] dark:to-[#151710] border-[#636B2F] ring-2 ring-[#636B2F]/20 shadow-sm"
+                              : "bg-[#F8F9F1]/50 dark:bg-[#171911]/50 border-[#ECEEDF] dark:border-[#2A2E1E] hover:border-[#BAC095]"
                           }`}
                         >
-                          <div className="flex items-center justify-between gap-2 mb-1">
-                            <span className="text-xs font-black px-1.5 py-0.5 rounded bg-[#D4DE95]/40 text-[#3D4127] dark:text-[#D4DE95] apl-font-mono">
-                              #{rank}
-                            </span>
-                            <span className={`px-2 py-0.5 rounded-full text-[10px] font-extrabold border apl-font-mono ${badge.colorClass}`}>
+                          <div className="flex items-center justify-between gap-1 mb-1">
+                            <div className="flex items-center gap-1.5 truncate">
+                              <span className="text-[11px] font-black px-1.5 py-0.5 rounded bg-[#D4DE95]/40 text-[#3D4127] dark:text-[#D4DE95] apl-font-mono">
+                                #{rank}
+                              </span>
+                              <h4 className="text-xs font-extrabold text-[#22241B] dark:text-[#EBF0DA] truncate">
+                                {candidate.name}
+                              </h4>
+                            </div>
+                            <span className={`px-2 py-0.2 rounded-full text-[10px] font-extrabold border apl-font-mono ${badge.colorClass}`}>
                               {candidate.match_score}%
                             </span>
                           </div>
-                          <h4 className="text-xs font-extrabold text-[#22241B] dark:text-[#EBF0DA] truncate">
-                            {candidate.name}
-                          </h4>
-                          <div className="flex items-center justify-between mt-2 pt-2 border-t border-[#ECEEDF] dark:border-[#2A2E1E] text-[10px] text-[#8A8F76]">
-                            <span className="capitalize">{candidate.source_type}</span>
+
+                          {/* Candidate Email extracted from resume */}
+                          <div className="text-[11px] text-[#2563eb] dark:text-[#93c5fd] font-medium truncate flex items-center gap-1 mt-1">
+                            <span className="opacity-70">✉</span>
+                            <span className="truncate">{candidate.email || "No email in resume"}</span>
+                          </div>
+
+                          <div className="flex items-center justify-between mt-2 pt-2 border-t border-[#ECEEDF] dark:border-[#2A2E1E] text-[10px]">
+                            <span
+                              className={`font-bold ${
+                                hasKit ? "text-[#4E7A33]" : "text-[#8A8F76]"
+                              }`}
+                            >
+                              {hasKit ? "✓ 10 Questions Ready" : "Pending AI Generation"}
+                            </span>
                             <span className="text-[#636B2F] dark:text-[#BAC095] font-bold">
-                              {isSelected ? "Active View" : "Select →"}
+                              {isSelected ? "Active" : "Select →"}
                             </span>
                           </div>
                         </div>
@@ -1667,100 +2004,401 @@ const CandidateShortlisting = () => {
                   </div>
                 </div>
 
-                {/* Right: Generated Questions & Evaluation Panel (Col 8) */}
-                <div className="lg:col-span-8 space-y-5">
-                  {selectedInterviewCandidate ? (
-                    <div className="space-y-5">
-                      {/* Candidate Card Summary */}
-                      <div className="p-4 rounded-xl border border-[#D4DE95] dark:border-[#383D28] bg-gradient-to-r from-[#F8F9F1] to-[#FFFFFF] dark:from-[#171911] dark:to-[#1A1D13] flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                        <div>
-                          <div className="flex items-center gap-2">
-                            <h3 className="text-base font-extrabold text-[#22241B] dark:text-[#EBF0DA]">
-                              {selectedInterviewCandidate.name}
-                            </h3>
-                            <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-[#4E7A33]/15 text-[#4E7A33] border border-[#4E7A33]/30">
-                              Match: {selectedInterviewCandidate.match_score}%
-                            </span>
-                          </div>
-                          <p className="text-xs text-[#8A8F76] mt-0.5">
-                            Tailored interview kit for <strong>{selectedJob?.title}</strong>
-                          </p>
-                        </div>
+                {/* Sub-div: Seniority / Difficulty Level Selector */}
+                <div className="space-y-2 pt-3 border-t border-[#ECEEDF] dark:border-[#2A2E1E]">
+                  <div className="flex items-center justify-between">
+                    <label className="block text-[11px] font-bold uppercase tracking-wider text-[#3D4127] dark:text-[#D4DE95]">
+                      Interview Difficulty Level
+                    </label>
+                    <span className="text-[10px] font-bold text-[#636B2F] dark:text-[#BAC095] apl-font-mono">
+                      {interviewDifficulty}
+                    </span>
+                  </div>
 
-                        <div className="flex items-center gap-2">
-                          <button
-                            onClick={() => handleOpenPreview(selectedInterviewCandidate)}
-                            className="apl-btn apl-btn-secondary text-xs py-1.5 px-3 font-bold inline-flex items-center gap-1.5 shadow-sm"
-                          >
-                            <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-                            </svg>
-                            <span>View Resume</span>
-                          </button>
+                  <div className="grid grid-cols-2 gap-2">
+                    {[
+                      { level: "Junior", desc: "Basics & syntax" },
+                      { level: "Mid-Level", desc: "Tradeoffs & bugs" },
+                      { level: "Senior", desc: "Architecture & scale" },
+                      { level: "Lead / Expert", desc: "Strategy & resilience" },
+                    ].map((item) => (
+                      <button
+                        key={item.level}
+                        type="button"
+                        onClick={() => setInterviewDifficulty(item.level)}
+                        className={`p-2.5 rounded-xl border text-left transition-all ${
+                          interviewDifficulty === item.level
+                            ? "bg-[#3D4127] text-[#D4DE95] border-[#3D4127] shadow-sm"
+                            : "bg-[#F8F9F1] dark:bg-[#171911] text-[#52564A] dark:text-[#BAC095] border-[#ECEEDF] dark:border-[#2A2E1E] hover:border-[#BAC095]"
+                        }`}
+                      >
+                        <div className="text-xs font-bold">{item.level}</div>
+                        <div
+                          className={`text-[10px] ${
+                            interviewDifficulty === item.level
+                              ? "text-[#D4DE95]/80"
+                              : "text-[#8A8F76]"
+                          }`}
+                        >
+                          {item.desc}
                         </div>
-                      </div>
+                      </button>
+                    ))}
+                  </div>
+                </div>
 
-                      {/* AI Question Generation Engine Status Banner */}
-                      <div className="p-3 bg-[#D4DE95]/20 border border-[#D4DE95]/60 rounded-xl flex items-center justify-between gap-3 text-xs">
-                        <div className="flex items-center gap-2 text-[#3D4127] dark:text-[#D4DE95] font-bold">
-                          <span className="text-sm">✨</span>
-                          <span>AI Question Generator Ready — Candidate resume parsed and contextualized with Job Description.</span>
-                        </div>
-                        <span className="text-[10px] uppercase tracking-wider font-extrabold px-2 py-0.5 rounded bg-[#3D4127] text-[#D4DE95] apl-font-mono flex-shrink-0">
-                          Ready
+                {/* Sub-div: AI Question Generation Action Button */}
+                <div className="pt-2">
+                  <button
+                    type="button"
+                    onClick={() => handleGenerateInterviewKit(interviewDifficulty)}
+                    disabled={isGeneratingKit || !selectedInterviewCandidate}
+                    className="w-full apl-btn apl-btn-primary py-3 text-xs font-extrabold shadow-md hover:shadow-lg disabled:opacity-50 flex items-center justify-center gap-2"
+                  >
+                    {isGeneratingKit ? (
+                      <>
+                        <svg className="animate-spin h-4 w-4 text-[#3D4127]" fill="none" viewBox="0 0 24 24">
+                          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                        </svg>
+                        <span>Analyzing Resume & Generating Questions...</span>
+                      </>
+                    ) : (
+                      <>
+                        <span>✨</span>
+                        <span>
+                          {interviewKits[selectedInterviewCandidate?.application_id]?.questions?.length > 0
+                            ? `Regenerate 10 Questions (${interviewDifficulty})`
+                            : `Generate 10 Questions with AI`}
+                        </span>
+                      </>
+                    )}
+                  </button>
+                  <p className="text-[10px] text-[#8A8F76] text-center mt-1.5">
+                    Probes candidate resume claims, tools, and projects against target JD
+                  </p>
+                </div>
+
+                {/* Sub-div: Error feedback if generation fails */}
+                {kitError && (
+                  <div className="p-3 bg-[#B4453D]/10 border border-[#B4453D]/30 text-[#B4453D] rounded-xl text-xs font-semibold">
+                    {kitError}
+                  </div>
+                )}
+              </div>
+
+              {/* ── MAIN CONTAINER 2: STRUCTURED QUESTIONNAIRE WORKSPACE (Col 8) ── */}
+              <div className="lg:col-span-8 apl-card p-6 border-2 border-[#D3D6C4] dark:border-[#2A2E1E] bg-[#FFFFFF] dark:bg-[#1E2015] shadow-sm space-y-6">
+                
+                {/* Active Candidate Header Bar */}
+                {selectedInterviewCandidate && (
+                  <div className="p-4 rounded-xl border border-[#D4DE95] dark:border-[#383D28] bg-gradient-to-r from-[#F8F9F1] via-[#FFFFFF] to-[#F8F9F1] dark:from-[#171911] dark:to-[#1A1D13] flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                    <div>
+                      <div className="flex flex-wrap items-center gap-2">
+                        <h3 className="text-base font-extrabold text-[#22241B] dark:text-[#EBF0DA]">
+                          {selectedInterviewCandidate.name}
+                        </h3>
+                        {selectedInterviewCandidate.email && (
+                          <span className="px-2 py-0.5 rounded text-[11px] font-semibold bg-[#2563eb]/10 text-[#2563eb] dark:text-[#93c5fd] border border-[#2563eb]/20 inline-flex items-center gap-1">
+                            <span>✉</span>
+                            <span>{selectedInterviewCandidate.email}</span>
+                          </span>
+                        )}
+                        <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-[#4E7A33]/15 text-[#4E7A33] border border-[#4E7A33]/30">
+                          Match: {selectedInterviewCandidate.match_score}%
                         </span>
                       </div>
+                      <p className="text-xs text-[#8A8F76] mt-0.5">
+                        Target Role: <strong>{selectedJob?.title}</strong> &bull; Level:{" "}
+                        <span className="font-bold text-[#636B2F] dark:text-[#BAC095]">
+                          {interviewKits[selectedInterviewCandidate.application_id]?.difficulty || interviewDifficulty}
+                        </span>
+                      </p>
+                    </div>
 
-                      {/* Question Cards List */}
-                      <div className="space-y-4">
-                        {getCandidateQuestions(selectedInterviewCandidate).map((item, qIdx) => (
+                    <div className="flex items-center gap-2">
+                      <button
+                        onClick={() => handleOpenPreview(selectedInterviewCandidate)}
+                        className="apl-btn apl-btn-secondary text-xs py-1.5 px-3 font-bold inline-flex items-center gap-1.5 shadow-sm"
+                      >
+                        <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                        </svg>
+                        <span>View Resume</span>
+                      </button>
+
+                      {interviewKits[selectedInterviewCandidate.application_id]?.questions?.length > 0 && (
+                        <button
+                          onClick={() => {
+                            const qs = interviewKits[selectedInterviewCandidate.application_id].questions;
+                            const fullText = qs
+                              .map(
+                                (q, i) =>
+                                  `Q${i + 1} (${q.category} - ${q.topic}):\n${q.question}\n\nExpected Answer:\n${q.expected_answer}\n\nEvaluation Criteria:\n${q.evaluation_criteria}\n`
+                              )
+                              .join("\n---\n\n");
+                            navigator.clipboard.writeText(fullText);
+                            alert("Copied full interview kit (10 questions & expected answers) to clipboard!");
+                          }}
+                          className="apl-btn apl-btn-secondary text-xs py-1.5 px-3 font-bold inline-flex items-center gap-1.5 shadow-sm"
+                          title="Copy all questions and model answers to clipboard"
+                        >
+                          <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m0 0h2a2 2 0 012 2v3m2 4H10m0 0l3-3m-3 3l3 3" />
+                          </svg>
+                          <span>Copy All</span>
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                )}
+
+                {/* Sub-div: Display Questions or Welcome State */}
+                {selectedInterviewCandidate &&
+                interviewKits[selectedInterviewCandidate.application_id]?.questions?.length > 0 ? (
+                  <div className="space-y-4">
+                    {/* Kit Header Summary */}
+                    <div className="p-3 bg-[#4E7A33]/10 border border-[#4E7A33]/30 rounded-xl flex items-center justify-between text-xs font-bold text-[#4E7A33]">
+                      <div className="flex items-center gap-2">
+                        <span>✓</span>
+                        <span>
+                          10 Personalized Questions & Model Answers Generated for {selectedInterviewCandidate.name}
+                        </span>
+                      </div>
+                      <span className="text-[10px] apl-font-mono uppercase px-2 py-0.5 rounded bg-[#4E7A33] text-white">
+                        {interviewKits[selectedInterviewCandidate.application_id]?.difficulty || interviewDifficulty} Level
+                      </span>
+                    </div>
+
+                    {/* 10 Question Cards */}
+                    <div className="space-y-3.5">
+                      {interviewKits[selectedInterviewCandidate.application_id].questions.map((item, qIdx) => {
+                        const isExpanded = Boolean(expandedAnswers[item.id || qIdx]);
+
+                        return (
                           <div
-                            key={qIdx}
-                            className="p-4 rounded-xl border border-[#D3D6C4] dark:border-[#2A2E1E] bg-[#FFFFFF] dark:bg-[#171911] space-y-2.5 shadow-sm hover:border-[#636B2F] transition-colors"
+                            key={item.id || qIdx}
+                            className="p-4 rounded-xl border border-[#D3D6C4] dark:border-[#2A2E1E] bg-[#FFFFFF] dark:bg-[#171911] space-y-3 shadow-sm hover:border-[#636B2F] transition-all"
                           >
-                            <div className="flex items-center justify-between gap-2">
-                              <div className="flex items-center gap-2">
-                                <span className="w-5 h-5 rounded-full bg-[#3D4127] text-[#D4DE95] text-[10px] font-black flex items-center justify-center">
+                            {/* Card Top: Number, Category, Topic, and Copy Button */}
+                            <div className="flex flex-wrap items-center justify-between gap-2 border-b border-[#ECEEDF] dark:border-[#2A2E1E] pb-2.5">
+                              <div className="flex flex-wrap items-center gap-2">
+                                <span className="w-6 h-6 rounded-lg bg-[#3D4127] text-[#D4DE95] text-xs font-black flex items-center justify-center apl-font-mono">
                                   {qIdx + 1}
                                 </span>
                                 <span className="text-xs font-bold text-[#636B2F] dark:text-[#BAC095]">
                                   {item.category}
                                 </span>
+                                {item.topic && (
+                                  <span className="text-[10px] font-semibold px-2 py-0.5 rounded bg-[#ECEEDF] dark:bg-[#2A2E1E] text-[#52564A] dark:text-[#BAC095]">
+                                    {item.topic}
+                                  </span>
+                                )}
                               </div>
-                              <span className="text-[10px] font-extrabold px-2 py-0.5 rounded bg-[#ECEEDF] dark:bg-[#2A2E1E] text-[#52564A] dark:text-[#BAC095] uppercase">
-                                {item.difficulty}
-                              </span>
-                            </div>
 
-                            <p className="text-xs font-bold text-[#22241B] dark:text-[#EBF0DA] leading-relaxed">
-                              "{item.question}"
-                            </p>
-
-                            <div className="pt-2 border-t border-[#ECEEDF] dark:border-[#2A2E1E] flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-[11px] text-[#8A8F76]">
-                              <div className="flex items-start gap-1">
-                                <span className="font-bold text-[#3D4127] dark:text-[#D4DE95]">Evaluation Objective:</span>
-                                <span>{item.whatToLookFor}</span>
-                              </div>
                               <button
                                 onClick={() => handleCopyQuestion(item.question, qIdx)}
-                                className="text-[10px] font-bold text-[#636B2F] dark:text-[#BAC095] hover:underline flex-shrink-0"
+                                className="text-[11px] font-bold text-[#636B2F] dark:text-[#BAC095] hover:underline flex items-center gap-1"
                               >
                                 {copiedQuestionIndex === qIdx ? "✓ Copied!" : "Copy Question"}
                               </button>
                             </div>
+
+                            {/* Question text probing resume claims */}
+                            <p className="text-xs font-bold text-[#22241B] dark:text-[#EBF0DA] leading-relaxed">
+                              "{item.question}"
+                            </p>
+
+                            {/* Expandable Model Answer & Rubric Toggle */}
+                            <div className="pt-1">
+                              <button
+                                type="button"
+                                onClick={() => toggleAnswerAccordion(item.id || qIdx)}
+                                className="text-[11px] font-bold text-[#3D4127] dark:text-[#D4DE95] hover:underline inline-flex items-center gap-1.5"
+                              >
+                                <span>{isExpanded ? "▾ Hide Expected Answer & Rubric" : "▸ View Expected Answer & Evaluation Rubric"}</span>
+                              </button>
+
+                              {isExpanded && (
+                                <div className="mt-2.5 space-y-2.5 p-3.5 rounded-xl bg-[#F8F9F1] dark:bg-[#151710] border border-[#ECEEDF] dark:border-[#2A2E1E] text-xs apl-animate-fade">
+                                  {/* Section A: Ideal Candidate Answer */}
+                                  <div className="space-y-1">
+                                    <div className="font-extrabold text-[#166534] dark:text-[#4ade80] flex items-center gap-1">
+                                      <span>✓ Expected Model Answer:</span>
+                                    </div>
+                                    <p className="text-[#334155] dark:text-[#cbd5e1] leading-relaxed whitespace-pre-line pl-2 border-l-2 border-[#16a34a]">
+                                      {item.expected_answer}
+                                    </p>
+                                  </div>
+
+                                  {/* Section B: Evaluation Criteria & Signals */}
+                                  {item.evaluation_criteria && (
+                                    <div className="space-y-1 pt-2 border-t border-[#ECEEDF] dark:border-[#2A2E1E]">
+                                      <div className="font-extrabold text-[#b45309] dark:text-[#fbbf24] flex items-center gap-1">
+                                        <span>🔍 Interviewer Evaluation Rubric:</span>
+                                      </div>
+                                      <p className="text-[#334155] dark:text-[#cbd5e1] leading-relaxed whitespace-pre-line pl-2 border-l-2 border-[#f59e0b]">
+                                        {item.evaluation_criteria}
+                                      </p>
+                                    </div>
+                                  )}
+                                </div>
+                              )}
+                            </div>
                           </div>
-                        ))}
-                      </div>
+                        );
+                      })}
                     </div>
-                  ) : (
-                    <div className="p-8 text-center text-xs text-[#8A8F76]">
-                      Select a candidate from the left panel to preview interview questions.
+                  </div>
+                ) : (
+                  /* Welcome empty state inside right container */
+                  <div className="py-14 text-center space-y-4">
+                    <div className="w-14 h-14 mx-auto rounded-full bg-[#D4DE95]/20 text-[#636B2F] dark:text-[#BAC095] flex items-center justify-center">
+                      <svg className="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 10V3L4 14h7v7l9-11h-7z" />
+                      </svg>
                     </div>
-                  )}
-                </div>
+                    <div>
+                      <h4 className="text-base font-extrabold text-[#22241B] dark:text-[#EBF0DA]">
+                        Generate 10 Tailored Questions for {selectedInterviewCandidate?.name || "Candidate"}
+                      </h4>
+                      <p className="text-xs text-[#8A8F76] max-w-md mx-auto mt-1">
+                        Our LLM analyzes the specific projects, tools, and technical claims in the candidate's resume against the Job Description to create 10 personalized questions with expected model answers.
+                      </p>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => handleGenerateInterviewKit(interviewDifficulty)}
+                      disabled={isGeneratingKit}
+                      className="apl-btn apl-btn-primary text-xs py-2 px-6 font-extrabold shadow-md inline-flex items-center gap-2"
+                    >
+                      {isGeneratingKit ? (
+                        <>
+                          <svg className="animate-spin h-4 w-4 text-[#3D4127]" fill="none" viewBox="0 0 24 24">
+                            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                          </svg>
+                          <span>Generating Questions...</span>
+                        </>
+                      ) : (
+                        <>
+                          <span>✨</span>
+                          <span>Generate 10 Questions Now ({interviewDifficulty})</span>
+                        </>
+                      )}
+                    </button>
+                  </div>
+                )}
               </div>
-            )}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* ── Shortlist Email Sending Modal ────────────────────────────── */}
+      {isEmailModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm apl-animate-fade">
+          <div className="w-full max-w-xl bg-white dark:bg-[#1E2015] rounded-2xl border-2 border-[#D4DE95] dark:border-[#383D28] shadow-2xl p-6 space-y-5">
+            <div className="flex items-center justify-between border-b border-[#ECEEDF] dark:border-[#2A2E1E] pb-3">
+              <div className="flex items-center gap-2">
+                <span className="text-lg">✉️</span>
+                <h3 className="text-base font-extrabold text-[#22241B] dark:text-[#EBF0DA]">
+                  Send Shortlist Interview Notification
+                </h3>
+              </div>
+              <button
+                type="button"
+                onClick={() => setIsEmailModalOpen(false)}
+                className="text-[#8A8F76] hover:text-[#22241B] dark:hover:text-white font-bold text-sm"
+              >
+                ✕
+              </button>
+            </div>
+
+            {/* Recipient Summary */}
+            <div className="space-y-2">
+              <label className="block text-xs font-bold uppercase tracking-wider text-[#3D4127] dark:text-[#D4DE95]">
+                Recipients ({selectedCandidateIdsForEmail.length} Selected Candidates)
+              </label>
+              <div className="max-h-36 overflow-y-auto space-y-1.5 p-2.5 rounded-xl bg-[#F8F9F1] dark:bg-[#171911] border border-[#ECEEDF] dark:border-[#2A2E1E]">
+                {shortlistedResults
+                  .filter((c) => selectedCandidateIdsForEmail.includes(c.application_id))
+                  .map((c) => (
+                    <div
+                      key={c.application_id}
+                      className="flex items-center justify-between text-xs px-2 py-1 rounded bg-white dark:bg-[#1A1C12]"
+                    >
+                      <span className="font-bold text-[#22241B] dark:text-[#EBF0DA] truncate">
+                        {c.name}
+                      </span>
+                      <span className="text-[11px] text-[#2563eb] dark:text-[#93c5fd] font-semibold truncate ml-2">
+                        {c.email || "⚠ No email detected"}
+                      </span>
+                    </div>
+                  ))}
+              </div>
+              <p className="text-[11px] text-[#8A8F76]">
+                Emails are sent from <strong>{selectedJob?.company?.name || "Company"} Hiring Team</strong> using your configured SMTP credentials in .env.
+              </p>
+            </div>
+
+            {/* Email Subject Preview */}
+            <div className="space-y-1">
+              <label className="block text-[11px] font-bold uppercase tracking-wider text-[#8A8F76]">
+                Subject
+              </label>
+              <div className="p-2.5 rounded-lg bg-[#F8F9F1] dark:bg-[#171911] border border-[#ECEEDF] dark:border-[#2A2E1E] text-xs font-semibold text-[#22241B] dark:text-[#EBF0DA]">
+                Congratulations [Candidate Name]! You've been shortlisted for {selectedJob?.title} at {selectedJob?.company?.name || "Our Company"}
+              </div>
+            </div>
+
+            {/* Custom Note input */}
+            <div className="space-y-1.5">
+              <label className="block text-xs font-bold uppercase tracking-wider text-[#3D4127] dark:text-[#D4DE95]">
+                Custom Note from Hiring Team (Optional)
+              </label>
+              <textarea
+                rows={3}
+                value={customEmailMessage}
+                onChange={(e) => setCustomEmailMessage(e.target.value)}
+                placeholder="e.g. Please be ready with your portfolio or Github repo link. Our recruiter will reach out with the Google Meet link shortly..."
+                className="w-full text-xs p-3 rounded-xl border border-[#D3D6C4] dark:border-[#383D28] bg-white dark:bg-[#151710] text-[#22241B] dark:text-[#EBF0DA] focus:border-[#636B2F] focus:outline-none"
+              />
+            </div>
+
+            {/* Modal Actions */}
+            <div className="flex items-center justify-end gap-3 pt-3 border-t border-[#ECEEDF] dark:border-[#2A2E1E]">
+              <button
+                type="button"
+                onClick={() => setIsEmailModalOpen(false)}
+                disabled={isSendingEmails}
+                className="apl-btn apl-btn-secondary text-xs py-2 px-4 font-bold"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={handleSendShortlistEmails}
+                disabled={isSendingEmails || selectedCandidateIdsForEmail.length === 0}
+                className="apl-btn apl-btn-primary text-xs py-2 px-5 font-extrabold shadow-md flex items-center gap-2"
+              >
+                {isSendingEmails ? (
+                  <>
+                    <svg className="animate-spin h-4 w-4 text-[#3D4127]" fill="none" viewBox="0 0 24 24">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                    </svg>
+                    <span>Sending Emails...</span>
+                  </>
+                ) : (
+                  <>
+                    <span>✉️</span>
+                    <span>Send {selectedCandidateIdsForEmail.length} Shortlist Emails</span>
+                  </>
+                )}
+              </button>
+            </div>
           </div>
         </div>
       )}

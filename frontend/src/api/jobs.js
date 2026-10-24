@@ -80,6 +80,31 @@ export const getStagedResumes = (jobId, sessionId) =>
 export const shortlistCandidates = (jobId, data) =>
   api.post(`/jobs/${jobId}/shortlist/`, data);
 
+/**
+ * POST /api/jobs/:jobId/send-shortlist-emails/
+ * Sends shortlist notification emails to selected candidates.
+ */
+export const sendShortlistEmails = (jobId, applicationIds, customMessage = '') =>
+  api.post(`/jobs/${jobId}/send-shortlist-emails/`, {
+    application_ids: applicationIds,
+    custom_message: customMessage,
+  });
+
+/**
+ * POST /api/jobs/:jobId/applications/:appId/generate-interview-kit/
+ * Generates 10 personalized interview questions & model answers using Gemini.
+ */
+export const generateInterviewKit = (jobId, appId, difficulty = 'Mid-Level') =>
+  api.post(`/jobs/${jobId}/applications/${appId}/generate-interview-kit/`, { difficulty });
+
+/**
+ * GET /api/jobs/:jobId/applications/:appId/interview-kit/
+ * Retrieves existing interview kit for a candidate application.
+ */
+export const getInterviewKit = (jobId, appId) =>
+  api.get(`/jobs/${jobId}/applications/${appId}/interview-kit/`);
+
+
 
 // ─── Applicant APIs ───
 

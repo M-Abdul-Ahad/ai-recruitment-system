@@ -152,3 +152,30 @@ class TemporaryResumeCandidate(models.Model):
         return f"Temp Candidate ({self.file_name}) - Job #{self.job_id}"
 
 
+class CandidateInterviewKit(models.Model):
+    """
+    Stores LLM-generated personalized interview questions, expected answers,
+    and evaluation criteria for a shortlisted candidate application.
+    """
+    application = models.OneToOneField(
+        JobApplication,
+        on_delete=models.CASCADE,
+        related_name="interview_kit",
+        help_text="The shortlisted job application this question set belongs to"
+    )
+    difficulty = models.CharField(
+        max_length=50,
+        default="Mid-Level",
+        help_text="Target difficulty level (e.g. Junior, Mid-Level, Senior, Lead)"
+    )
+    questions = models.JSONField(
+        default=list,
+        help_text="List of personalized Q&A objects tailored to the candidate's resume and JD"
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return f"Interview Kit ({self.difficulty}) for Application #{self.application_id}"
+
+
