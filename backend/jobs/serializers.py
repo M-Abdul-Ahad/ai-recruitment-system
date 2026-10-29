@@ -12,7 +12,11 @@ class SkillSerializer(serializers.ModelSerializer):
 class JobSerializer(serializers.ModelSerializer):
     # Return nested skill data for read operations
     skills_data = SkillSerializer(source='skills', many=True, read_only=True)
-    
+    company_name = serializers.CharField(source='company.name', read_only=True)
+    created_by_email = serializers.EmailField(source='created_by.email', read_only=True)
+    created_by_name = serializers.SerializerMethodField()
+    applications_count = serializers.IntegerField(source='applications.count', read_only=True)
+
     # Accept list of skill IDs for write operations
     skills = serializers.PrimaryKeyRelatedField(
         queryset=Skill.objects.all(),
@@ -24,11 +28,18 @@ class JobSerializer(serializers.ModelSerializer):
     class Meta:
         model = Job
         fields = [
-            'id', 'title', 'description', 'company', 'created_by',
+            'id', 'title', 'description', 'company', 'company_name',
+            'created_by', 'created_by_email', 'created_by_name', 'applications_count',
             'skills', 'skills_data', 'experience_required', 'status',
             'location', 'salary_min', 'salary_max', 'created_at', 'updated_at'
         ]
         read_only_fields = ['company', 'created_by', 'created_at', 'updated_at']
+
+    def get_created_by_name(self, obj):
+        if obj.created_by:
+            name = f"{obj.created_by.first_name} {obj.created_by.last_name}".strip()
+            return name if name else obj.created_by.username
+        return ""
 
 
 # --- Applicant-facing serializers ---
@@ -135,4 +146,3 @@ class RecruiterApplicationSerializer(serializers.ModelSerializer):
         if hasattr(obj, 'interview_kit') and obj.interview_kit is not None:
             return obj.interview_kit.id
         return None
-

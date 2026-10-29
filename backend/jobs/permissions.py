@@ -20,7 +20,8 @@ class IsRecruiter(permissions.BasePermission):
 
 class IsJobOwner(permissions.BasePermission):
     """
-    Allows update/delete operations only if the requesting user is the creator of the job.
+    Allows update/delete/manage operations if the requesting user is the creator of the job,
+    or a company admin for that company, or a platform administrator.
     """
 
     def has_object_permission(self, request, view, obj):
@@ -28,8 +29,23 @@ class IsJobOwner(permissions.BasePermission):
         if request.method in permissions.SAFE_METHODS:
             return True
 
-        # Write permissions are only allowed to the owner of the job.
-        return obj.created_by == request.user
+        # Write permissions are allowed to the creator of the job
+        if obj.created_by == request.user:
+            return True
+
+        # Write permissions are also allowed to company admin of that job's company
+        if (
+            request.user.role == User.Role.COMPANY_ADMIN
+            and request.user.company is not None
+            and obj.company == request.user.company
+        ):
+            return True
+
+        # Allow platform admin or superuser
+        if request.user.role == User.Role.ADMIN or request.user.is_superuser:
+            return True
+
+        return False
 
 
 class IsApplicant(permissions.BasePermission):

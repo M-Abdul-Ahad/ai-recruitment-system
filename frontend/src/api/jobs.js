@@ -3,6 +3,8 @@ import api from './axios';
 // ─── Recruiter APIs ───
 export const getJobs = () => api.get('/jobs/');
 
+export const getDashboardStats = () => api.get('/jobs/dashboard-stats/');
+
 export const createJob = (data) => api.post('/jobs/', data);
 
 export const generateJd = (data) => api.post('/jobs/generate-jd/', data);

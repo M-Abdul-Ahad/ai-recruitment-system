@@ -7,6 +7,7 @@ export default function CompanyDashboard() {
   const { user } = useContext(AuthContext);
   const [company, setCompany] = useState(null);
   const [members, setMembers] = useState([]);
+  const [jobStats, setJobStats] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
@@ -15,9 +16,10 @@ export default function CompanyDashboard() {
       setLoading(true);
       setError("");
       try {
-        const [compRes, membRes] = await Promise.allSettled([
+        const [compRes, membRes, statsRes] = await Promise.allSettled([
           api.get("/companies/me/"),
           api.get("/companies/members/"),
+          api.get("/jobs/dashboard-stats/"),
         ]);
 
         if (compRes.status === "fulfilled") {
@@ -25,6 +27,9 @@ export default function CompanyDashboard() {
         }
         if (membRes.status === "fulfilled") {
           setMembers(membRes.value.data);
+        }
+        if (statsRes.status === "fulfilled") {
+          setJobStats(statsRes.value.data);
         }
       } catch (err) {
         console.error("Error loading company dashboard:", err);
@@ -48,7 +53,7 @@ export default function CompanyDashboard() {
             Company Management Portal
           </div>
           <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-white">
-            Welcome back, {user?.email?.split("@")[0] || "Admin"}
+            Welcome back, {user?.first_name ? `${user.first_name} ${user.last_name || ""}`.trim() : user?.email?.split("@")[0] || "Admin"}
           </h1>
           <p className="text-xs sm:text-sm text-[#9CA485] mt-1">
             Manage your company profile, recruiter permissions, and hiring organization settings.
@@ -76,7 +81,7 @@ export default function CompanyDashboard() {
         </div>
       )}
 
-      {/* Metrics Row */}
+      {/* Metrics Row: Real Dynamic Values */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <div className="apl-card space-y-2">
           <span className="text-[10px] font-extrabold uppercase tracking-wider text-[#8A8F76]">
@@ -86,7 +91,7 @@ export default function CompanyDashboard() {
             {company?.name || "Demo Company"}
           </div>
           <span className="inline-block px-2 py-0.5 rounded text-[10px] font-bold bg-[#4E7A33]/15 text-[#4E7A33]">
-            Verified Account
+            {company?.verification_status === "verified" ? "Verified Account" : company?.verification_status || "Registered"}
           </span>
         </div>
 
@@ -112,12 +117,14 @@ export default function CompanyDashboard() {
 
         <div className="apl-card space-y-2">
           <span className="text-[10px] font-extrabold uppercase tracking-wider text-[#8A8F76]">
-            Account Role
+            Company Jobs
           </span>
-          <div className="text-lg font-extrabold text-[#22241B] dark:text-[#EBF0DA] uppercase">
-            {user?.role || "company_admin"}
+          <div className="text-2xl font-extrabold text-[#22241B] dark:text-[#EBF0DA]">
+            {loading ? "..." : jobStats?.total_jobs ?? 0}
           </div>
-          <span className="text-xs text-[#8A8F76]">Full admin access</span>
+          <span className="text-xs text-[#8A8F76]">
+            {jobStats?.active_jobs ?? 0} active • {jobStats?.total_applicants ?? 0} applicants
+          </span>
         </div>
       </div>
 
@@ -166,7 +173,7 @@ export default function CompanyDashboard() {
             </div>
             <div>
               <span className="text-[#8A8F76] font-semibold uppercase tracking-wider block text-[10px]">
-                Owner Account
+                Admin Account
               </span>
               <span className="font-bold text-[#22241B] dark:text-[#EBF0DA]">
                 {user?.email}
@@ -213,7 +220,7 @@ export default function CompanyDashboard() {
                     </div>
                     <div>
                       <div className="font-bold text-[#22241B] dark:text-[#EBF0DA]">
-                        {member.username || member.email}
+                        {member.first_name ? `${member.first_name} ${member.last_name || ""}`.trim() : member.username || member.email}
                       </div>
                       <div className="text-[11px] text-[#8A8F76]">{member.email}</div>
                     </div>
@@ -221,12 +228,14 @@ export default function CompanyDashboard() {
                   <div className="flex items-center gap-2">
                     <span
                       className={`px-2.5 py-0.5 rounded-full text-[10px] font-bold ${
-                        member.is_hr
+                        member.role === "company_admin"
+                          ? "bg-[#D4DE95]/20 text-[#3D4127] dark:text-[#D4DE95]"
+                          : member.is_hr
                           ? "bg-[#4E7A33]/15 text-[#4E7A33]"
                           : "bg-gray-200 dark:bg-gray-800 text-gray-600 dark:text-gray-400"
                       }`}
                     >
-                      {member.is_hr ? "HR / Recruiter" : member.role || "Member"}
+                      {member.role === "company_admin" ? "Company Admin" : member.is_hr ? "HR / Recruiter" : member.role || "Member"}
                     </span>
                   </div>
                 </div>

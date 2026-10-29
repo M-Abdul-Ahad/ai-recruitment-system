@@ -56,14 +56,58 @@ class JobViewSet(viewsets.ModelViewSet):
 
         # If user is recruiter -> return only their jobs
         if user.role == User.Role.RECRUITER:
-            return Job.objects.filter(created_by=user)
+            return Job.objects.filter(created_by=user).select_related("company", "created_by").prefetch_related("skills", "applications")
+
+        # If user is company_admin -> return all jobs of their company
+        if user.role == User.Role.COMPANY_ADMIN:
+            if user.company:
+                return Job.objects.filter(company=user.company).select_related("company", "created_by").prefetch_related("skills", "applications")
+            return Job.objects.none()
 
         # If user is applicant -> return only ACTIVE jobs
         if user.role == User.Role.APPLICANT:
-            return Job.objects.filter(status=Job.JobStatus.ACTIVE)
+            return Job.objects.filter(status=Job.JobStatus.ACTIVE).select_related("company").prefetch_related("skills")
 
-        # For Admin or other roles, return all jobs
-        return Job.objects.all()
+        # For Admin (system admin) or superuser, return all jobs
+        if user.role == User.Role.ADMIN or user.is_superuser:
+            return Job.objects.all().select_related("company", "created_by").prefetch_related("skills", "applications")
+
+        return Job.objects.none()
+
+    @action(detail=False, methods=["get"], url_path="dashboard-stats", permission_classes=[permissions.IsAuthenticated, IsRecruiter])
+    def dashboard_stats(self, request):
+        qs = self.get_queryset()
+        total_jobs = qs.count()
+        active_jobs = qs.filter(status=Job.JobStatus.ACTIVE).count()
+        closed_jobs = qs.filter(status=Job.JobStatus.CLOSED).count()
+        draft_jobs = qs.filter(status=Job.JobStatus.DRAFT).count()
+        total_applicants = JobApplication.objects.filter(job__in=qs).count()
+
+        recent = qs.order_by("-created_at")[:5]
+        recent_list = []
+        for j in recent:
+            recent_list.append({
+                "id": j.id,
+                "title": j.title,
+                "location": j.location or "Remote",
+                "status": j.status,
+                "experience_required": j.experience_required,
+                "salary_min": j.salary_min,
+                "salary_max": j.salary_max,
+                "applicants": j.applications.count(),
+                "created_at": j.created_at.isoformat() if j.created_at else None,
+                "created_by_name": f"{j.created_by.first_name} {j.created_by.last_name}".strip() or j.created_by.username if j.created_by else "",
+                "company_name": j.company.name if j.company else "",
+            })
+
+        return Response({
+            "total_jobs": total_jobs,
+            "active_jobs": active_jobs,
+            "closed_jobs": closed_jobs,
+            "draft_jobs": draft_jobs,
+            "total_applicants": total_applicants,
+            "recent_jobs": recent_list,
+        })
 
     def get_serializer_class(self):
         """Use applicant-specific serializers for list/retrieve when user is an applicant."""
