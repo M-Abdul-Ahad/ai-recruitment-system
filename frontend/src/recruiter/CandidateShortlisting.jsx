@@ -56,6 +56,8 @@ const CandidateShortlisting = () => {
   const [shortlistedResults, setShortlistedResults] = useState([]);
   const [shortlistSummary, setShortlistSummary] = useState(null);
   const [shortlistError, setShortlistError] = useState(null);
+  // Track which candidate cards have their insights panel expanded
+  const [expandedInsights, setExpandedInsights] = useState({});
 
   // Email Selection & Sending State (Step 2)
   const [selectedCandidateIdsForEmail, setSelectedCandidateIdsForEmail] = useState([]);
@@ -237,6 +239,8 @@ const CandidateShortlisting = () => {
           resume: app.resume,
           file_url: app.resume?.file || "",
           extracted_text: app.resume?.extracted_text || "",
+          shortlist_reason: app.shortlist_reason || "",
+          match_insights: app.match_insights || null,
           has_interview_kit: Boolean(app.has_interview_kit),
           interview_kit_id: app.interview_kit_id || null,
           status: app.status,
@@ -464,6 +468,7 @@ const CandidateShortlisting = () => {
         shortlisted_count: res.data.shortlisted_count,
         total_screened: res.data.total_screened,
         preferences_applied: res.data.preferences_applied,
+        llm_insights_applied: res.data.llm_insights_applied,
       });
 
       // Clear staged candidates since they were either promoted to R2 or purged
@@ -669,6 +674,13 @@ const CandidateShortlisting = () => {
     setExpandedAnswers((prev) => ({
       ...prev,
       [qId]: !prev[qId],
+    }));
+  };
+
+  const toggleInsightAccordion = (appId) => {
+    setExpandedInsights((prev) => ({
+      ...prev,
+      [appId]: !prev[appId],
     }));
   };
 
@@ -1755,6 +1767,14 @@ const CandidateShortlisting = () => {
                   const rank = idx + 1;
                   const badge = getScoreBadge(candidate.match_score);
                   const isSelectedForEmail = selectedCandidateIdsForEmail.includes(candidate.application_id);
+                  const isInsightOpen = Boolean(expandedInsights[candidate.application_id]);
+                  const hasInsights = Boolean(
+                    candidate.shortlist_reason ||
+                    (candidate.match_insights && (
+                      candidate.match_insights.plus_points?.length > 0 ||
+                      candidate.match_insights.concerns?.length > 0
+                    ))
+                  );
 
                   let rankBadgeStyle = "bg-[#ECEEDF] text-[#52564A] dark:bg-[#2A2E1E] dark:text-[#BAC095]";
                   if (rank === 1) rankBadgeStyle = "bg-[#D4DE95] text-[#3D4127] font-black";
@@ -1764,116 +1784,236 @@ const CandidateShortlisting = () => {
                   return (
                     <div
                       key={candidate.application_id || idx}
-                      className={`p-4 rounded-xl border transition-all flex flex-col sm:flex-row sm:items-center justify-between gap-4 ${
+                      className={`p-4 rounded-xl border transition-all space-y-3 ${
                         isSelectedForEmail
                           ? "border-[#636B2F] bg-[#636B2F]/5 ring-1 ring-[#636B2F]/30"
                           : "border-[#D3D6C4] dark:border-[#2A2E1E] bg-[#F8F9F1]/40 dark:bg-[#151710]/40 hover:border-[#636B2F]"
                       }`}
                     >
-                      <div className="flex items-center gap-3.5 truncate">
-                        {/* Checkbox for email selection */}
-                        <input
-                          type="checkbox"
-                          checked={isSelectedForEmail}
-                          onChange={() => toggleSelectCandidateForEmail(candidate.application_id)}
-                          className="w-4 h-4 cursor-pointer rounded border-[#636B2F] text-[#636B2F] focus:ring-0 flex-shrink-0"
-                          title="Select candidate to send shortlist email"
-                        />
+                      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                        <div className="flex items-center gap-3.5 truncate">
+                          {/* Checkbox for email selection */}
+                          <input
+                            type="checkbox"
+                            checked={isSelectedForEmail}
+                            onChange={() => toggleSelectCandidateForEmail(candidate.application_id)}
+                            className="w-4 h-4 cursor-pointer rounded border-[#636B2F] text-[#636B2F] focus:ring-0 flex-shrink-0"
+                            title="Select candidate to send shortlist email"
+                          />
 
-                        {/* Rank Badge */}
-                        <div
-                          className={`w-9 h-9 rounded-xl flex items-center justify-center text-sm shadow-sm flex-shrink-0 apl-font-mono ${rankBadgeStyle}`}
-                        >
-                          #{rank}
+                          {/* Rank Badge */}
+                          <div
+                            className={`w-9 h-9 rounded-xl flex items-center justify-center text-sm shadow-sm flex-shrink-0 apl-font-mono ${rankBadgeStyle}`}
+                          >
+                            #{rank}
+                          </div>
+
+                          <div className="truncate">
+                            <div className="flex flex-wrap items-center gap-2">
+                              <h4 className="text-sm font-extrabold text-[#22241B] dark:text-[#EBF0DA] truncate">
+                                {candidate.name}
+                              </h4>
+
+                              {/* Candidate Email extracted from resume */}
+                              {candidate.email ? (
+                                <span className="px-2 py-0.5 rounded text-[11px] font-semibold bg-[#2563eb]/10 text-[#2563eb] dark:text-[#93c5fd] border border-[#2563eb]/20 inline-flex items-center gap-1">
+                                  <svg className="w-3 h-3 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                                  </svg>
+                                  <span>{candidate.email}</span>
+                                </span>
+                              ) : (
+                                <span className="text-[10px] text-[#8A8F76] italic">
+                                  No email in resume
+                                </span>
+                              )}
+
+                              {candidate.has_interview_kit && (
+                                <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-[#4E7A33]/15 text-[#4E7A33] border border-[#4E7A33]/30 flex items-center gap-1">
+                                  <span>✓ Kit Ready</span>
+                                </span>
+                              )}
+
+                              {candidate.is_promoted_import && (
+                                <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-[#D4DE95]/30 text-[#3D4127] dark:text-[#D4DE95] border border-[#D4DE95]/60 flex items-center gap-1">
+                                  <span>☁ Saved to Storage</span>
+                                </span>
+                              )}
+
+                              {hasInsights && (
+                                <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-[#636B2F]/15 text-[#636B2F] dark:text-[#D4DE95] border border-[#636B2F]/30 flex items-center gap-1">
+                                  <span>✨ AI Verified</span>
+                                </span>
+                              )}
+                            </div>
+
+                            <div className="text-[11px] text-[#8A8F76] mt-0.5">
+                              Status: <span className="font-bold text-[#4E7A33]">SHORTLISTED</span> • Source:{" "}
+                              <span className="capitalize">{candidate.source_type}</span>
+                            </div>
+                          </div>
                         </div>
 
-                        <div className="truncate">
-                          <div className="flex flex-wrap items-center gap-2">
-                            <h4 className="text-sm font-extrabold text-[#22241B] dark:text-[#EBF0DA] truncate">
-                              {candidate.name}
-                            </h4>
-
-                            {/* Candidate Email extracted from resume */}
-                            {candidate.email ? (
-                              <span className="px-2 py-0.5 rounded text-[11px] font-semibold bg-[#2563eb]/10 text-[#2563eb] dark:text-[#93c5fd] border border-[#2563eb]/20 inline-flex items-center gap-1">
-                                <svg className="w-3 h-3 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
-                                </svg>
-                                <span>{candidate.email}</span>
+                        {/* Score & Actions */}
+                        <div className="flex items-center gap-3.5 flex-shrink-0 self-end sm:self-auto">
+                          {/* Score pill & visual bar */}
+                          <div className="text-right">
+                            <div className="flex items-center gap-2 justify-end mb-1">
+                              <span className={`px-2.5 py-0.5 rounded-full text-xs font-extrabold border apl-font-mono ${badge.colorClass}`}>
+                                {candidate.match_score}%
                               </span>
-                            ) : (
-                              <span className="text-[10px] text-[#8A8F76] italic">
-                                No email in resume
+                              <span className="text-[11px] font-bold text-[#52564A] dark:text-[#BAC095] hidden md:inline">
+                                {badge.label}
                               </span>
-                            )}
-
-                            {candidate.has_interview_kit && (
-                              <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-[#4E7A33]/15 text-[#4E7A33] border border-[#4E7A33]/30 flex items-center gap-1">
-                                <span>✓ Kit Ready</span>
-                              </span>
-                            )}
-
-                            {candidate.is_promoted_import && (
-                              <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-[#D4DE95]/30 text-[#3D4127] dark:text-[#D4DE95] border border-[#D4DE95]/60 flex items-center gap-1">
-                                <span>☁ Saved to Storage</span>
-                              </span>
-                            )}
+                            </div>
+                            <div className="w-28 h-1.5 rounded-full bg-[#ECEEDF] dark:bg-[#2A2E1E] overflow-hidden ml-auto">
+                              <div
+                                className="h-full bg-[#D4DE95] rounded-full transition-all duration-500"
+                                style={{ width: `${Math.min(100, Math.max(0, candidate.match_score))}%` }}
+                              />
+                            </div>
                           </div>
 
-                          <div className="text-[11px] text-[#8A8F76] mt-0.5">
-                            Status: <span className="font-bold text-[#4E7A33]">SHORTLISTED</span> • Source:{" "}
-                            <span className="capitalize">{candidate.source_type}</span>
-                          </div>
+                          {/* AI Match Insights Toggle Button */}
+                          {hasInsights && (
+                            <button
+                              onClick={() => toggleInsightAccordion(candidate.application_id)}
+                              className={`apl-btn text-xs py-1.5 px-3 font-bold flex items-center gap-1.5 shadow-sm transition-colors ${
+                                isInsightOpen
+                                  ? "bg-[#3D4127] text-[#D4DE95]"
+                                  : "apl-btn-secondary text-[#3D4127] dark:text-[#D4DE95]"
+                              }`}
+                              title="Toggle AI Match Insights & Strengths"
+                            >
+                              <span>✨</span>
+                              <span>Insights</span>
+                              <svg
+                                className={`w-3.5 h-3.5 transition-transform ${isInsightOpen ? "rotate-180" : ""}`}
+                                fill="none"
+                                stroke="currentColor"
+                                viewBox="0 0 24 24"
+                              >
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" />
+                              </svg>
+                            </button>
+                          )}
+
+                          {/* Interview Questions Shortcut Button */}
+                          <button
+                            onClick={() => {
+                              setSelectedInterviewCandidate(candidate);
+                              setCurrentWorkflowTab("interview");
+                            }}
+                            className="apl-btn apl-btn-secondary text-xs py-1.5 px-3 font-bold flex items-center gap-1.5 shadow-sm text-[#3D4127] dark:text-[#D4DE95]"
+                            title="Generate or view personalized interview questions"
+                          >
+                            <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z" />
+                            </svg>
+                            <span>{candidate.has_interview_kit ? "View Kit" : "Interview Kit"}</span>
+                          </button>
+
+                          {/* View Original Resume Button */}
+                          <button
+                            onClick={() => handleOpenPreview(candidate)}
+                            className="apl-btn apl-btn-secondary text-xs py-1.5 px-3 font-bold flex items-center gap-1.5 shadow-sm"
+                          >
+                            <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                            </svg>
+                            <span>View Resume</span>
+                          </button>
                         </div>
                       </div>
 
-                      {/* Score & Actions */}
-                      <div className="flex items-center gap-3.5 flex-shrink-0 self-end sm:self-auto">
-                        {/* Score pill & visual bar */}
-                        <div className="text-right">
-                          <div className="flex items-center gap-2 justify-end mb-1">
-                            <span className={`px-2.5 py-0.5 rounded-full text-xs font-extrabold border apl-font-mono ${badge.colorClass}`}>
-                              {candidate.match_score}%
+                      {/* Shortlist Reason Highlight Banner (always visible if present) */}
+                      {candidate.shortlist_reason && (
+                        <div className="text-xs bg-[#ECEEDF]/70 dark:bg-[#1C2014] text-[#22241B] dark:text-[#EBF0DA] p-3 rounded-xl border border-[#D4DE95]/70 flex items-start gap-2.5">
+                          <span className="text-sm select-none">💡</span>
+                          <div className="flex-1">
+                            <span className="font-extrabold text-[#3D4127] dark:text-[#D4DE95] mr-1.5">
+                              Why Selected:
                             </span>
-                            <span className="text-[11px] font-bold text-[#52564A] dark:text-[#BAC095] hidden md:inline">
-                              {badge.label}
+                            <span className="leading-relaxed text-[#52564A] dark:text-[#BAC095]">
+                              {candidate.shortlist_reason}
                             </span>
                           </div>
-                          <div className="w-28 h-1.5 rounded-full bg-[#ECEEDF] dark:bg-[#2A2E1E] overflow-hidden ml-auto">
-                            <div
-                              className="h-full bg-[#D4DE95] rounded-full transition-all duration-500"
-                              style={{ width: `${Math.min(100, Math.max(0, candidate.match_score))}%` }}
-                            />
-                          </div>
+                          {!isInsightOpen && candidate.match_insights && (
+                            <button
+                              onClick={() => toggleInsightAccordion(candidate.application_id)}
+                              className="text-[11px] font-bold text-[#636B2F] dark:text-[#BAC095] hover:underline shrink-0"
+                            >
+                              View details &rarr;
+                            </button>
+                          )}
                         </div>
+                      )}
 
-                        {/* Interview Questions Shortcut Button */}
-                        <button
-                          onClick={() => {
-                            setSelectedInterviewCandidate(candidate);
-                            setCurrentWorkflowTab("interview");
-                          }}
-                          className="apl-btn apl-btn-secondary text-xs py-1.5 px-3 font-bold flex items-center gap-1.5 shadow-sm text-[#3D4127] dark:text-[#D4DE95]"
-                          title="Generate or view personalized interview questions"
-                        >
-                          <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z" />
-                          </svg>
-                          <span>{candidate.has_interview_kit ? "View Kit" : "Interview Kit"}</span>
-                        </button>
+                      {/* Expandable AI Match Insights Drawer */}
+                      {isInsightOpen && candidate.match_insights && (
+                        <div className="p-3.5 bg-[#FFFFFF] dark:bg-[#161810] rounded-xl border border-[#D3D6C4] dark:border-[#2A2E1E] space-y-3 animate-fade-in text-xs">
+                          {/* Plus Points / Strengths */}
+                          {candidate.match_insights.plus_points?.length > 0 && (
+                            <div>
+                              <span className="text-[11px] font-black uppercase tracking-wider text-[#4E7A33] block mb-1.5 flex items-center gap-1.5">
+                                <span>✓</span>
+                                <span>Key Strengths & Plus Points</span>
+                              </span>
+                              <div className="grid grid-cols-1 md:grid-cols-2 gap-1.5">
+                                {candidate.match_insights.plus_points.map((pt, pIdx) => (
+                                  <div
+                                    key={pIdx}
+                                    className="p-2 rounded-lg bg-[#4E7A33]/10 border border-[#4E7A33]/25 text-[#3D4127] dark:text-[#EBF0DA] flex items-start gap-2"
+                                  >
+                                    <span className="text-[#4E7A33] font-bold mt-0.5">•</span>
+                                    <span className="leading-tight">{pt}</span>
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
+                          )}
 
-                        {/* View Original Resume Button */}
-                        <button
-                          onClick={() => handleOpenPreview(candidate)}
-                          className="apl-btn apl-btn-secondary text-xs py-1.5 px-3 font-bold flex items-center gap-1.5 shadow-sm"
-                        >
-                          <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-                          </svg>
-                          <span>View Resume</span>
-                        </button>
-                      </div>
+                          {/* Considerations / Concerns */}
+                          {candidate.match_insights.concerns?.length > 0 && (
+                            <div>
+                              <span className="text-[11px] font-black uppercase tracking-wider text-[#C99A3E] block mb-1.5 flex items-center gap-1.5">
+                                <span>⚠️</span>
+                                <span>Considerations / Minor Gaps</span>
+                              </span>
+                              <div className="space-y-1">
+                                {candidate.match_insights.concerns.map((cn, cIdx) => (
+                                  <div
+                                    key={cIdx}
+                                    className="p-2 rounded-lg bg-[#C99A3E]/10 border border-[#C99A3E]/25 text-[#52564A] dark:text-[#BAC095] flex items-start gap-2"
+                                  >
+                                    <span className="text-[#C99A3E] font-bold mt-0.5">•</span>
+                                    <span className="leading-tight">{cn}</span>
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
+                          )}
+
+                          {/* Scoring Transparency Breakdown */}
+                          {candidate.match_insights.similarity_score !== undefined && (
+                            <div className="pt-2 border-t border-[#ECEEDF] dark:border-[#2A2E1E] flex flex-wrap items-center justify-between text-[11px] text-[#8A8F76]">
+                              <span className="font-semibold text-[#52564A] dark:text-[#9CA485]">
+                                🎯 Scoring Breakdown:
+                              </span>
+                              <div className="flex items-center gap-3">
+                                <span>
+                                  Semantic Vector Match: <strong className="text-[#22241B] dark:text-[#EBF0DA]">{candidate.match_insights.similarity_score}%</strong>
+                                </span>
+                                <span>•</span>
+                                <span>
+                                  LLM Calibrated Score: <strong className="text-[#4E7A33]">{candidate.match_score}%</strong>
+                                </span>
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      )}
                     </div>
                   );
                 })}

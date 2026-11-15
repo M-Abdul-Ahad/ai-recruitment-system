@@ -129,7 +129,8 @@ class RecruiterApplicationSerializer(serializers.ModelSerializer):
         fields = [
             'id', 'job', 'applicant', 'applicant_email', 'applicant_name',
             'resume', 'resume_file', 'resume_text', 'source_type', 'status', 'tags',
-            'recruiter_notes', 'match_score', 'has_interview_kit', 'interview_kit_id', 'applied_at',
+            'recruiter_notes', 'match_score', 'shortlist_reason', 'match_insights',
+            'has_interview_kit', 'interview_kit_id', 'applied_at',
         ]
         read_only_fields = ['id', 'job', 'applicant', 'applied_at']
 

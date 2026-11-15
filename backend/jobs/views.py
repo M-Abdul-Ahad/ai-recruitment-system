@@ -26,6 +26,12 @@ from .services.gemini_jd_service import generate_job_description
 from .services.candidate_extractor import extract_candidate_email, extract_candidate_name
 from .services.interview_email_service import send_candidate_shortlist_email
 from .services.interview_kit_service import generate_candidate_interview_kit
+from .services.shortlist_scorer import llm_rerank_and_explain
+from .services.preference_parser import (
+    parse_recruiter_preferences,
+    check_candidate_negative_violation,
+    decompose_preferences_with_llm,
+)
 from resumes.models import Resume
 from resumes.utils import extract_text_from_pdf, extract_text_from_docx, clean_resume_text
 from resumes.services.gemini_embedding import (
@@ -572,7 +578,7 @@ class JobViewSet(viewsets.ModelViewSet):
         # 1. Ensure Job JD embedding is generated
         if not job.jd_embedding:
             jd_text = build_job_embedding_text(job)
-            jd_vec = generate_embedding(jd_text)
+            jd_vec = generate_embedding(jd_text, task_type="RETRIEVAL_QUERY")
             if jd_vec:
                 job.jd_embedding = jd_vec
                 job.save(update_fields=['jd_embedding'])
@@ -586,7 +592,7 @@ class JobViewSet(viewsets.ModelViewSet):
 
         if staged_candidates:
             texts_to_embed = [build_temporary_candidate_embedding_text(c) for c in staged_candidates]
-            embeddings = generate_embeddings_batch(texts_to_embed, batch_size=15)
+            embeddings = generate_embeddings_batch(texts_to_embed, batch_size=15, task_type="RETRIEVAL_DOCUMENT")
 
             for candidate, emb in zip(staged_candidates, embeddings):
                 if emb:
@@ -601,7 +607,7 @@ class JobViewSet(viewsets.ModelViewSet):
         for app in existing_apps:
             try:
                 emb_text = build_resume_embedding_text(app.resume)
-                emb = generate_embedding(emb_text)
+                emb = generate_embedding(emb_text, task_type="RETRIEVAL_DOCUMENT")
                 if emb:
                     app.resume.embedding = emb
                     app.resume.save(update_fields=['embedding'])
@@ -653,7 +659,7 @@ class JobViewSet(viewsets.ModelViewSet):
         # 1. Ensure JD embedding is ready
         if not job.jd_embedding:
             jd_text = build_job_embedding_text(job)
-            job.jd_embedding = generate_embedding(jd_text)
+            job.jd_embedding = generate_embedding(jd_text, task_type="RETRIEVAL_QUERY")
             if job.jd_embedding:
                 job.save(update_fields=['jd_embedding'])
 
@@ -663,11 +669,18 @@ class JobViewSet(viewsets.ModelViewSet):
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR
             )
 
-        # 2. Preference embedding if preferences provided
+        # 2. Preference Decomposition & Vector Creation:
+        # LLM decomposes recruiter preferences into:
+        #   - positive_query: Dense enriched text for vector embedding (zero negative contamination)
+        #   - negative_keywords: Concrete terms to eliminate in preliminary pass (score = 0)
+        #   - conceptual_negatives: High-level qualitative criteria to penalize in LLM pass
+        decomp = decompose_preferences_with_llm(job, preferences)
         pref_vector = None
-        if preferences:
-            pref_text = f"Recruiter Preferences and Hiring Criteria:\n{preferences}"
-            pref_vector = generate_embedding(pref_text)
+        if decomp.get("positive_query"):
+            pref_text = f"Recruiter Preferences and Desired Profile:\n{decomp['positive_query']}"
+            pref_vector = generate_embedding(pref_text, task_type="SEMANTIC_SIMILARITY")
+
+        negative_keywords = decomp.get("negative_keywords", [])
 
         # 3. Gather all candidates to evaluate
         candidates_to_score = []
@@ -686,6 +699,12 @@ class JobViewSet(viewsets.ModelViewSet):
             else:
                 score = jd_sim * 100.0
 
+            # Check if candidate explicitly violates negative keyword constraints
+            resume_text = (app.resume.cleaned_text or app.resume.extracted_text or "") if app.resume else ""
+            violations = check_candidate_negative_violation(resume_text, negative_keywords)
+            if violations:
+                score = 0.0  # Penalize to zero so excluded candidates never steal top N*2 slots
+
             name = app.applicant.email if app.applicant else f"Candidate #{app.id}"
             file_url = app.resume.file.url if app.resume and app.resume.file else ""
 
@@ -696,6 +715,7 @@ class JobViewSet(viewsets.ModelViewSet):
                 "name": name,
                 "file_url": file_url,
                 "source_type": app.source_type,
+                "negative_violations": violations,
             })
 
         # B. Temporary staged candidates (if session_id provided)
@@ -716,6 +736,12 @@ class JobViewSet(viewsets.ModelViewSet):
             else:
                 score = jd_sim * 100.0
 
+            # Check if temporary candidate explicitly violates negative keyword constraints
+            tc_text = tc.cleaned_text or tc.extracted_text or ""
+            violations = check_candidate_negative_violation(tc_text, negative_keywords)
+            if violations:
+                score = 0.0  # Penalize to zero
+
             candidates_to_score.append({
                 "kind": "temporary",
                 "temp_candidate": tc,
@@ -723,6 +749,7 @@ class JobViewSet(viewsets.ModelViewSet):
                 "name": tc.file_name,
                 "file_url": "",
                 "source_type": JobApplication.SourceType.RECRUITER_UPLOAD,
+                "negative_violations": violations,
             })
 
         if not candidates_to_score:
@@ -731,21 +758,45 @@ class JobViewSet(viewsets.ModelViewSet):
                 status=status.HTTP_400_BAD_REQUEST
             )
 
-        # 4. Rank candidates descending by score
+        # 4. Rank by cosine similarity score (descending) — primary filter pass
         candidates_to_score.sort(key=lambda x: x["score"], reverse=True)
-        top_candidates = candidates_to_score[:top_n]
+
+        # 5. LLM Re-ranking: send top candidate pool through Gemini for calibrated scoring & insights
+        #    Uses a separate GEMINI_SHORTLIST_API_KEY; falls back gracefully to cosine scores on failure.
+        #    Adaptive pool size: min(total, max(top_n * 2, 20)) ensures wide semantic coverage.
+        evaluation_pool_size = min(len(candidates_to_score), max(top_n * 2, 20))
+        evaluation_pool = candidates_to_score[:evaluation_pool_size]
+        remainder_pool = candidates_to_score[evaluation_pool_size:]
+
+        logger.info(
+            "Job #%s shortlisting: %d total candidates, sending top %d to LLM re-ranker (preferences: %s)",
+            job.id, len(candidates_to_score), evaluation_pool_size, bool(preferences)
+        )
+
+        # llm_rerank_and_explain evaluates candidates against JD and recruiter preferences/negative constraints
+        reranked_pool = llm_rerank_and_explain(job, evaluation_pool, preferences=preferences, decomp=decomp)
+
+        # Recombine: LLM-ranked evaluation pool + untouched remainder (they won't be shortlisted anyway)
+        all_ranked = reranked_pool + remainder_pool
+
+        # Final top N selection after LLM re-ranking
+        top_candidates = all_ranked[:top_n]
 
         shortlisted_results = []
 
-        # 5. Promote Top N Candidates
+        # 6. Promote Top N Candidates
         for item in top_candidates:
             score_val = round(item["score"], 1)
+            shortlist_reason = item.get("shortlist_reason", "")
+            match_insights = item.get("match_insights", None)
 
             if item["kind"] == "applicant":
                 app = item["app"]
                 app.status = JobApplication.ApplicationStatus.SHORTLISTED
                 app.match_score = score_val
-                app.save(update_fields=['status', 'match_score'])
+                app.shortlist_reason = shortlist_reason
+                app.match_insights = match_insights
+                app.save(update_fields=['status', 'match_score', 'shortlist_reason', 'match_insights'])
 
                 shortlisted_results.append({
                     "application_id": app.id,
@@ -756,6 +807,8 @@ class JobViewSet(viewsets.ModelViewSet):
                     "source_type": app.source_type,
                     "file_url": item["file_url"],
                     "is_promoted_import": False,
+                    "shortlist_reason": shortlist_reason,
+                    "match_insights": match_insights,
                 })
 
             elif item["kind"] == "temporary":
@@ -789,14 +842,16 @@ class JobViewSet(viewsets.ModelViewSet):
                     embedding=tc.embedding
                 )
 
-                # Create permanent JobApplication record attached to this job
+                # Create permanent JobApplication record with LLM insights
                 new_app = JobApplication.objects.create(
                     job=job,
                     applicant=None,
                     resume=permanent_resume,
                     source_type=JobApplication.SourceType.RECRUITER_UPLOAD,
                     status=JobApplication.ApplicationStatus.SHORTLISTED,
-                    match_score=score_val
+                    match_score=score_val,
+                    shortlist_reason=shortlist_reason,
+                    match_insights=match_insights,
                 )
 
                 # Generate secure presigned URL for preview
@@ -811,9 +866,11 @@ class JobViewSet(viewsets.ModelViewSet):
                     "source_type": JobApplication.SourceType.RECRUITER_UPLOAD,
                     "file_url": presigned_url or permanent_resume.file.url,
                     "is_promoted_import": True,
+                    "shortlist_reason": shortlist_reason,
+                    "match_insights": match_insights,
                 })
 
-        # 6. Safe Cleanup: Purge temporary records and local scratch files
+        # 7. Safe Cleanup: Purge temporary records and local scratch files
         if session_id:
             TemporaryResumeCandidate.objects.filter(job=job, session_id=session_id).delete()
             temp_dir = os.path.join(settings.MEDIA_ROOT, 'temp_shortlist', str(session_id))
@@ -825,6 +882,9 @@ class JobViewSet(viewsets.ModelViewSet):
             "shortlisted_count": len(shortlisted_results),
             "total_screened": len(candidates_to_score),
             "preferences_applied": bool(preferences),
+            "llm_insights_applied": any(
+                bool(c.get("shortlist_reason")) for c in shortlisted_results
+            ),
             "candidates": shortlisted_results
         }, status=status.HTTP_200_OK)
 

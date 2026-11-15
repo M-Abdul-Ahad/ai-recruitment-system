@@ -143,6 +143,8 @@ MEDIA_ROOT =os.path.join(BASE_DIR, 'media')
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
 GEMINI_EMBEDDING_API_KEY = os.getenv("GEMINI_EMBEDDING_API_KEY", "")
 GEMINI_INTERVIEW_API_KEY = os.getenv("GEMINI_INTERVIEW_API_KEY") or GEMINI_API_KEY
+# Dedicated key for LLM shortlist re-ranking & insights. Falls back to GEMINI_API_KEY.
+GEMINI_SHORTLIST_API_KEY = os.getenv("GEMINI_SHORTLIST_API_KEY") or GEMINI_API_KEY
 
 # Cloudflare R2 Storage Configuration
 R2_ACCESS_KEY_ID = os.getenv("ACCESS_KEY_ID", "")

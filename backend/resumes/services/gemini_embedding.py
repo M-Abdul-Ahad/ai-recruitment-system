@@ -29,16 +29,36 @@ def build_job_embedding_text(job) -> str:
     """
     Constructs a rich, semantically dense representation of a Job
     for generating high-quality JD embeddings.
+    Enriched with location, salary, and job type for better retrieval context.
     """
     skills = ""
     if getattr(job, "pk", None) and hasattr(job, "skills"):
         skills = ", ".join([s.name for s in job.skills.all()])
 
+    # Company context
+    company_name = ""
+    try:
+        company_name = job.company.name if job.company else ""
+    except Exception:
+        pass
+
+    # Salary range (only if set)
+    salary_str = ""
+    sal_min = getattr(job, "salary_min", None)
+    sal_max = getattr(job, "salary_max", None)
+    if sal_min and sal_max:
+        salary_str = f"Salary Range: PKR {sal_min:,} – {sal_max:,} per month"
+    elif sal_min:
+        salary_str = f"Salary: PKR {sal_min:,}+ per month"
+
     parts = [
         f"Job Title: {job.title}",
+        f"Company: {company_name}" if company_name else "",
+        f"Location: {job.location}" if getattr(job, "location", "") else "",
         f"Required Experience: {job.experience_required} years" if getattr(job, "experience_required", None) is not None else "",
+        salary_str,
         f"Required Skills: {skills}" if skills else "",
-        f"Job Description:\n{job.description or ''}"
+        f"Job Description:\n{job.description or ''}",
     ]
     return "\n\n".join([p for p in parts if p.strip()])
 
@@ -123,9 +143,16 @@ def calculate_cosine_similarity(vec_a: list[float], vec_b: list[float]) -> float
 
 
 
-def generate_embedding(text: str) -> list[float]:
+def generate_embedding(text: str, task_type: str = "SEMANTIC_SIMILARITY") -> list[float]:
     """
     Generates a 768-dimensional embedding vector for a given text string.
+
+    Args:
+        text: The text to embed.
+        task_type: Gemini embedding task type. Use:
+            - "RETRIEVAL_QUERY"    for job descriptions (querying for matching docs)
+            - "RETRIEVAL_DOCUMENT" for resumes (documents being retrieved)
+            - "SEMANTIC_SIMILARITY" (default) for preference vectors and other uses
     Returns a list of 768 floats, or an empty list on failure.
     """
     if not text or not text.strip():
@@ -138,7 +165,10 @@ def generate_embedding(text: str) -> list[float]:
     response = client.models.embed_content(
         model=EMBEDDING_MODEL,
         contents=clamped_text,
-        config={"output_dimensionality": EMBEDDING_DIMENSIONS},
+        config={
+            "output_dimensionality": EMBEDDING_DIMENSIONS,
+            "task_type": task_type,
+        },
     )
 
     if response.embeddings and len(response.embeddings) > 0:
@@ -146,9 +176,15 @@ def generate_embedding(text: str) -> list[float]:
     return []
 
 
-def generate_embeddings_batch(texts: list[str], batch_size: int = 15) -> list[list[float]]:
+def generate_embeddings_batch(texts: list[str], batch_size: int = 15, task_type: str = "RETRIEVAL_DOCUMENT") -> list[list[float]]:
     """
     Generates embeddings for a list of texts in chunks to respect API rate limits.
+
+    Args:
+        texts: List of strings to embed.
+        batch_size: Number of texts per API call.
+        task_type: Gemini task type for all texts in this batch.
+            Use "RETRIEVAL_DOCUMENT" for resume batches (default).
     """
     if not texts:
         return []
@@ -162,7 +198,10 @@ def generate_embeddings_batch(texts: list[str], batch_size: int = 15) -> list[li
             response = client.models.embed_content(
                 model=EMBEDDING_MODEL,
                 contents=chunk,
-                config={"output_dimensionality": EMBEDDING_DIMENSIONS},
+                config={
+                    "output_dimensionality": EMBEDDING_DIMENSIONS,
+                    "task_type": task_type,
+                },
             )
             for emb in response.embeddings:
                 all_vectors.append(list(emb.values))
@@ -171,7 +210,7 @@ def generate_embeddings_batch(texts: list[str], batch_size: int = 15) -> list[li
             # Fall back to single-item processing for this batch so one failed item doesn't drop the rest
             for t in chunk:
                 try:
-                    vec = generate_embedding(t)
+                    vec = generate_embedding(t, task_type=task_type)
                     all_vectors.append(vec)
                 except Exception as inner_e:
                     logger.error(f"Error embedding single item: {inner_e}")

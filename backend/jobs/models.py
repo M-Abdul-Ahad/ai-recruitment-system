@@ -118,6 +118,17 @@ class JobApplication(models.Model):
     tags = models.JSONField(default=list, blank=True, help_text="Candidate tags for filtering")
     recruiter_notes = models.TextField(blank=True, default="")
     match_score = models.FloatField(null=True, blank=True, db_index=True, help_text="AI-generated match score")
+    # LLM shortlisting intelligence fields (populated by shortlist_scorer service)
+    shortlist_reason = models.TextField(
+        blank=True,
+        default="",
+        help_text="One-sentence LLM-generated explanation of why this candidate was shortlisted",
+    )
+    match_insights = models.JSONField(
+        null=True,
+        blank=True,
+        help_text="LLM-generated structured insights: plus_points, concerns, similarity_score, llm_score",
+    )
     applied_at = models.DateTimeField(auto_now_add=True, db_index=True)
 
     class Meta:
