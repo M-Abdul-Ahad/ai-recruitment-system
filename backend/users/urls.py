@@ -1,6 +1,7 @@
 from django.urls import path
 from .views import (
     SignupView, TestAuthView, CustomTokenObtainPairView,
+    UserProfileView, ChangePasswordView, AdminDashboardStatsView,
     AdminUserListCreateView, AdminUserDetailView,
     RoleListCreateView, RoleDetailView,
 )
@@ -11,6 +12,13 @@ urlpatterns = [
     path('login/', CustomTokenObtainPairView.as_view(), name='login'),
     path('refresh/', TokenRefreshView.as_view(), name='refresh'),
     path('test/', TestAuthView.as_view(), name='test-auth'),
+
+    # Profile & Password Settings
+    path('me/', UserProfileView.as_view(), name='user-profile'),
+    path('change-password/', ChangePasswordView.as_view(), name='change-password'),
+
+    # Admin — Dashboard Stats
+    path('admin/dashboard-stats/', AdminDashboardStatsView.as_view(), name='admin-dashboard-stats'),
 
     # Admin — User Management
     path('admin/users/', AdminUserListCreateView.as_view(), name='admin-users'),

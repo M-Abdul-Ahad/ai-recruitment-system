@@ -4,35 +4,28 @@ import api from "../api/axios";
 export const AuthContext = createContext();
 
 export const AuthProvider = ({ children }) => {
-  console.log("AUTH INIT START");
-  
   const [user, setUser] = useState(() => {
-    const savedUser = localStorage.getItem("user");
-    console.log("LOCAL STORAGE USER:", savedUser);
-    
-    if (savedUser) {
-      const parsedUser = JSON.parse(savedUser);
-      console.log("PARSED USER:", parsedUser);
-      return parsedUser;
+    try {
+      const savedUser = localStorage.getItem("user");
+      const token = localStorage.getItem("access");
+      if (savedUser && token) {
+        return JSON.parse(savedUser);
+      }
+    } catch (e) {
+      console.warn("Failed to parse saved user:", e);
     }
     return null;
   });
   
-  const [loading, setLoading] = useState(true);
-  console.log("AUTH LOADING:", loading);
+  const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    console.log("USER STATE SET:", user);
-    
-    // We already read the user from localStorage synchronously.
-    // Ensure if access token doesn't exist, we clear out bad state
+    // Validate stored session integrity
     const token = localStorage.getItem("access");
     if (!token && user) {
-        setUser(null);
-        localStorage.removeItem("user");
+      setUser(null);
+      localStorage.removeItem("user");
     }
-    
-    setLoading(false);
   }, []);
 
   const signup = async (data) => {
@@ -48,16 +41,20 @@ export const AuthProvider = ({ children }) => {
     localStorage.setItem("refresh", res.data.refresh);
 
     const newUser = {
-        id: res.data.user_id,
-        email: res.data.email,
-        role: res.data.role,
-        is_hr: res.data.is_hr
+      id: res.data.user_id,
+      email: res.data.email,
+      role: res.data.role,
+      is_hr: res.data.is_hr,
+      company_id: res.data.company_id,
+      company_name: res.data.company_name,
+      company_verification_status: res.data.company_verification_status,
     };
 
     console.log("FINAL USER:", newUser);
-    
+
     setUser(newUser);
     localStorage.setItem("user", JSON.stringify(newUser));
+    return newUser;
   };
 
   const logout = () => {

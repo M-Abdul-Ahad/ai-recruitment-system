@@ -1,64 +1,109 @@
-import { useContext } from "react";
+import { useContext, useState, useEffect } from "react";
 import { AuthContext } from "../auth/AuthContext";
 import { Link, useNavigate } from "react-router-dom";
-
-/* Inline SVG Icons for Quick Actions */
-const FileTextIcon = () => (
-  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
-    <polyline points="14 2 14 8 20 8"/>
-    <line x1="16" y1="13" x2="8" y2="13"/>
-    <line x1="16" y1="17" x2="8" y2="17"/>
-    <polyline points="10 9 9 9 8 9"/>
-  </svg>
-);
-
-const SparklesIcon = () => (
-  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-    <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
-  </svg>
-);
-
-const BriefcaseIcon = () => (
-  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-    <rect x="2" y="7" width="20" height="14" rx="2" ry="2"/>
-    <path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/>
-  </svg>
-);
-
-const CheckSquareIcon = () => (
-  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-    <polyline points="9 11 12 14 22 4"/>
-    <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/>
-  </svg>
-);
-
-const ArrowRightIcon = () => (
-  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-    <line x1="5" y1="12" x2="19" y2="12"/>
-    <polyline points="12 5 19 12 12 19"/>
-  </svg>
-);
+import { getApplicantStats } from "../api/jobs";
+import { DonutChart, HorizontalBarChart } from "../components/ui/DashboardCharts";
 
 const Dashboard = () => {
   const { user, logout } = useContext(AuthContext);
   const navigate = useNavigate();
 
-  console.log("PAGE LOADED: Applicant Dashboard");
-  console.log("CURRENT USER:", user);
+  const [stats, setStats] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
-  const handleLogout = () => {
-    console.log("LOGOUT CLICKED");
-    logout();
-    navigate("/login");
+  const displayName = user?.first_name
+    ? `${user.first_name} ${user.last_name || ""}`.trim()
+    : user?.email
+    ? user.email.split("@")[0]
+    : "Applicant";
+
+  useEffect(() => {
+    fetchStats();
+  }, []);
+
+  const fetchStats = async () => {
+    setLoading(true);
+    try {
+      const res = await getApplicantStats();
+      setStats(res.data);
+      setError(null);
+    } catch (err) {
+      console.error("Failed to load applicant dashboard stats:", err);
+      setError("Unable to load real-time candidate statistics.");
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const displayName = user?.email ? user.email.split("@")[0] : "Applicant";
+  const statCards = [
+    {
+      title: "Applications Submitted",
+      value: loading ? "—" : stats?.total_applied ?? 0,
+      sub: "Total jobs applied",
+      icon: (
+        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5.586a1 1 0 0 1 .707.293l5.414 5.414a1 1 0 0 1 .293.707V19a2 2 0 0 1-2 2z" />
+        </svg>
+      ),
+      color: "bg-[#D4DE95]/20 text-[#3D4127] dark:text-[#D4DE95]",
+    },
+    {
+      title: "Shortlisted",
+      value: loading ? "—" : stats?.status_breakdown?.shortlisted ?? 0,
+      sub: "Advanced to review",
+      icon: (
+        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" />
+        </svg>
+      ),
+      color: "bg-[#4E7A33]/15 text-[#4E7A33]",
+    },
+    {
+      title: "Interviews Scheduled",
+      value: loading ? "—" : stats?.status_breakdown?.interview ?? 0,
+      sub: "Direct interviews",
+      icon: (
+        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2z" />
+        </svg>
+      ),
+      color: "bg-[#3D4127]/20 text-[#3D4127] dark:text-[#EBF0DA]",
+    },
+    {
+      title: "Latest AI Resume Score",
+      value: loading ? "—" : stats?.resume_stats?.ai_score ? `${stats.resume_stats.ai_score}/100` : "No upload",
+      sub: stats?.resume_stats?.ai_score ? "AI quality analysis" : "Upload to calculate",
+      icon: (
+        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 10V3L4 14h7v7l9-11h-7z" />
+        </svg>
+      ),
+      color: "bg-[#C99A3E]/20 text-[#C99A3E]",
+    },
+  ];
+
+  const appStatusDonutData = [
+    { label: "Submitted", value: stats?.status_breakdown?.applied || 0, color: "#8A8F76" },
+    { label: "Shortlisted", value: stats?.status_breakdown?.shortlisted || 0, color: "#D4DE95" },
+    { label: "Interview", value: stats?.status_breakdown?.interview || 0, color: "#4E7A33" },
+    { label: "Rejected", value: stats?.status_breakdown?.rejected || 0, color: "#B4453D" },
+  ];
+
+  // Category scores from resume (Impact, Brevity, Style, Skills, etc.)
+  const categoryScores = stats?.resume_stats?.ai_category_scores || {};
+  const resumeScoreBars = Object.entries(categoryScores).map(([k, v]) => ({
+    label: k.charAt(0).toUpperCase() + k.slice(1),
+    value: typeof v === "number" ? v : parseInt(v, 10) || 0,
+    color: "#636B2F",
+  }));
+
+  const recentApplications = stats?.recent_applications || [];
 
   return (
-    <div className="apl-animate-fade space-y-8">
+    <div className="apl-animate-fade space-y-6 sm:space-y-8">
       {/* ── HERO BANNER ── */}
-      <div className="apl-card-hero flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
+      <div className="apl-card-hero flex flex-col md:flex-row items-start md:items-center justify-between gap-6 shadow-md">
         <div className="space-y-2 max-w-2xl">
           <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-bold bg-[#3D4127] text-[#D4DE95]">
             <span className="w-2 h-2 rounded-full bg-[#D4DE95] animate-pulse" />
@@ -68,167 +113,185 @@ const Dashboard = () => {
             Welcome back, <span className="capitalize">{displayName}</span> 👋
           </h1>
           <p className="text-sm md:text-base text-[#3D4127] opacity-90 leading-relaxed">
-            Your personalized recruitment dashboard is ready. Upload your resume for instant AI scoring, build tailored applications, or explore active opportunities.
+            Your real-time candidate career workspace. Track job application milestones, evaluate AI resume feedback, and apply to open requisitions.
           </p>
         </div>
 
         <div className="flex items-center gap-3 flex-shrink-0">
+          <Link
+            to="/applicant/jobs"
+            className="apl-btn apl-btn-dark shadow-md hover:shadow-lg transition-transform active:scale-95 text-xs py-2 px-4"
+          >
+            Explore Open Jobs &rarr;
+          </Link>
           <button
-            onClick={handleLogout}
-            className="apl-btn apl-btn-dark shadow-md hover:shadow-lg"
+            onClick={() => {
+              logout();
+              navigate("/login");
+            }}
+            className="apl-btn bg-[#ECEEDF] text-[#22241B] hover:bg-[#D4DE95] text-xs py-2 px-4 font-bold"
           >
             Logout
           </button>
         </div>
       </div>
 
-      {/* ── QUICK ACTIONS SECTION ── */}
-      <div>
-        <div className="flex items-center justify-between mb-4">
-          <div>
-            <h2 className="text-xl font-bold tracking-tight text-[#22241B] dark:text-[#EBF0DA]">
-              Quick Actions
-            </h2>
-            <p className="text-xs text-[#8A8F76] dark:text-[#9CA485]">
-              Accelerate your job search with AI tools and tracking
-            </p>
+      {error && (
+        <div className="p-3.5 rounded-xl bg-red-500/10 border border-red-500/30 text-red-600 dark:text-red-400 text-xs font-semibold">
+          {error}
+        </div>
+      )}
+
+      {/* ── REAL DYNAMIC METRICS ── */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-5">
+        {statCards.map((st, i) => (
+          <div key={i} className="apl-card apl-card-hover flex flex-col justify-between">
+            <div className="flex items-center justify-between mb-3">
+              <span className="text-xs font-bold uppercase tracking-wider text-[#8A8F76] dark:text-[#9CA485]">
+                {st.title}
+              </span>
+              <div className={`w-9 h-9 rounded-xl flex items-center justify-center font-bold ${st.color}`}>
+                {st.icon}
+              </div>
+            </div>
+            <div>
+              <h3 className="text-3xl font-extrabold text-[#22241B] dark:text-[#EBF0DA] tracking-tight font-mono mb-1">
+                {st.value}
+              </h3>
+              <p className="text-xs font-medium text-[#8A8F76] dark:text-[#9CA485]">
+                {st.sub}
+              </p>
+            </div>
+          </div>
+        ))}
+      </div>
+
+      {/* ── REAL VISUAL CHARTS (APPLICATION PIPELINE & AI RESUME SCORES) ── */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* Application Status Chart */}
+        <div className="apl-card space-y-4">
+          <div className="flex items-center justify-between border-b border-[#ECEEDF] dark:border-[#2A2E1E] pb-3">
+            <div>
+              <h3 className="text-base font-bold text-[#22241B] dark:text-[#EBF0DA]">
+                My Application Pipeline
+              </h3>
+              <p className="text-xs text-[#8A8F76] dark:text-[#9CA485]">
+                Status distribution of your submitted job applications
+              </p>
+            </div>
+            <Link to="/applicant/applications" className="text-xs font-bold text-[#4E7A33] hover:underline">
+              View All &rarr;
+            </Link>
+          </div>
+
+          <div className="pt-2">
+            <DonutChart
+              data={appStatusDonutData}
+              centerLabel="Applications"
+              centerValue={stats?.total_applied ?? 0}
+            />
           </div>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
-          {/* Card 1: Resume Analysis */}
-          <Link
-            to="/applicant/resume"
-            className="apl-card apl-card-hover group flex flex-col justify-between space-y-4"
-          >
-            <div className="space-y-3">
-              <div className="w-12 h-12 rounded-xl bg-[#D4DE95] text-[#3D4127] flex items-center justify-center shadow-sm group-hover:scale-105 transition-transform">
-                <FileTextIcon />
-              </div>
-              <div>
-                <h3 className="text-base font-bold text-[#22241B] dark:text-[#EBF0DA] group-hover:text-[#636B2F] dark:group-hover:text-[#D4DE95] transition-colors">
-                  Resume Analysis
-                </h3>
-                <p className="text-xs text-[#52564A] dark:text-[#9CA485] mt-1 leading-relaxed">
-                  Upload your PDF or DOCX resume to get instant AI quality score and skill gap feedback.
+        {/* AI Resume Scores Chart */}
+        <div className="apl-card space-y-4">
+          <div className="flex items-center justify-between border-b border-[#ECEEDF] dark:border-[#2A2E1E] pb-3">
+            <div>
+              <h3 className="text-base font-bold text-[#22241B] dark:text-[#EBF0DA]">
+                AI Resume Evaluation Dimensions
+              </h3>
+              <p className="text-xs text-[#8A8F76] dark:text-[#9CA485]">
+                Scores generated by Gemini for your latest uploaded resume
+              </p>
+            </div>
+            <Link to="/applicant/resume" className="text-xs font-bold text-[#4E7A33] hover:underline">
+              Analyze Resume &rarr;
+            </Link>
+          </div>
+
+          <div className="pt-2">
+            {resumeScoreBars.length === 0 ? (
+              <div className="text-center py-8 space-y-3">
+                <p className="text-xs text-[#8A8F76]">
+                  No AI scoring data available. Upload your resume to see skill & formatting dimensions.
                 </p>
+                <Link to="/applicant/resume" className="apl-btn apl-btn-primary text-xs py-1.5 px-3 inline-block">
+                  Upload Resume
+                </Link>
               </div>
-            </div>
-
-            <div className="flex items-center text-xs font-bold text-[#636B2F] dark:text-[#D4DE95] gap-1 group-hover:translate-x-1 transition-transform pt-2">
-              <span>Start Analysis</span>
-              <ArrowRightIcon />
-            </div>
-          </Link>
-
-          {/* Card 2: AI Resume Builder */}
-          <Link
-            to="/applicant/builder"
-            className="apl-card apl-card-hover group flex flex-col justify-between space-y-4"
-          >
-            <div className="space-y-3">
-              <div className="w-12 h-12 rounded-xl bg-[#D4DE95] text-[#3D4127] flex items-center justify-center shadow-sm group-hover:scale-105 transition-transform">
-                <SparklesIcon />
-              </div>
-              <div>
-                <h3 className="text-base font-bold text-[#22241B] dark:text-[#EBF0DA] group-hover:text-[#636B2F] dark:group-hover:text-[#D4DE95] transition-colors">
-                  Resume Builder
-                </h3>
-                <p className="text-xs text-[#52564A] dark:text-[#9CA485] mt-1 leading-relaxed">
-                  Generate tailored resume content targeting specific job titles and tech stacks.
-                </p>
-              </div>
-            </div>
-
-            <div className="flex items-center text-xs font-bold text-[#636B2F] dark:text-[#D4DE95] gap-1 group-hover:translate-x-1 transition-transform pt-2">
-              <span>Build Resume</span>
-              <ArrowRightIcon />
-            </div>
-          </Link>
-
-          {/* Card 3: Browse Jobs */}
-          <Link
-            to="/applicant/jobs"
-            className="apl-card apl-card-hover group flex flex-col justify-between space-y-4"
-          >
-            <div className="space-y-3">
-              <div className="w-12 h-12 rounded-xl bg-[#D4DE95] text-[#3D4127] flex items-center justify-center shadow-sm group-hover:scale-105 transition-transform">
-                <BriefcaseIcon />
-              </div>
-              <div>
-                <h3 className="text-base font-bold text-[#22241B] dark:text-[#EBF0DA] group-hover:text-[#636B2F] dark:group-hover:text-[#D4DE95] transition-colors">
-                  Browse Jobs
-                </h3>
-                <p className="text-xs text-[#52564A] dark:text-[#9CA485] mt-1 leading-relaxed">
-                  Explore open positions, check salary ranges, and submit applications directly.
-                </p>
-              </div>
-            </div>
-
-            <div className="flex items-center text-xs font-bold text-[#636B2F] dark:text-[#D4DE95] gap-1 group-hover:translate-x-1 transition-transform pt-2">
-              <span>Explore Positions</span>
-              <ArrowRightIcon />
-            </div>
-          </Link>
-
-          {/* Card 4: Applications */}
-          <Link
-            to="/applicant/applications"
-            className="apl-card apl-card-hover group flex flex-col justify-between space-y-4"
-          >
-            <div className="space-y-3">
-              <div className="w-12 h-12 rounded-xl bg-[#D4DE95] text-[#3D4127] flex items-center justify-center shadow-sm group-hover:scale-105 transition-transform">
-                <CheckSquareIcon />
-              </div>
-              <div>
-                <h3 className="text-base font-bold text-[#22241B] dark:text-[#EBF0DA] group-hover:text-[#636B2F] dark:group-hover:text-[#D4DE95] transition-colors">
-                  My Applications
-                </h3>
-                <p className="text-xs text-[#52564A] dark:text-[#9CA485] mt-1 leading-relaxed">
-                  Track live status of submitted applications, interview invites, and shortlists.
-                </p>
-              </div>
-            </div>
-
-            <div className="flex items-center text-xs font-bold text-[#636B2F] dark:text-[#D4DE95] gap-1 group-hover:translate-x-1 transition-transform pt-2">
-              <span>Track Progress</span>
-              <ArrowRightIcon />
-            </div>
-          </Link>
+            ) : (
+              <HorizontalBarChart items={resumeScoreBars} />
+            )}
+          </div>
         </div>
       </div>
 
-      {/* ── AI INSIGHTS & STATS BANNER ── */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
-        <div className="apl-card flex items-center gap-4">
-          <div className="w-10 h-10 rounded-full bg-[#ECEEDF] dark:bg-[#2A2E1E] flex items-center justify-center text-[#636B2F] dark:text-[#D4DE95] font-bold text-sm">
-            01
-          </div>
+      {/* ── LIVE RECENT APPLICATIONS TABLE ── */}
+      <div className="apl-card p-0 overflow-hidden shadow-sm">
+        <div className="p-5 sm:p-6 border-b border-[#ECEEDF] dark:border-[#2A2E1E] flex justify-between items-center bg-[#F8F9F1]/50 dark:bg-[#171911]/50">
           <div>
-            <h4 className="text-sm font-bold text-[#22241B] dark:text-[#EBF0DA]">Profile Setup</h4>
-            <p className="text-xs text-[#8A8F76] dark:text-[#9CA485]">Account: {user?.email}</p>
+            <h2 className="text-lg font-bold text-[#22241B] dark:text-[#EBF0DA]">Recent Applications</h2>
+            <p className="text-xs text-[#8A8F76] dark:text-[#9CA485]">Real-time review and feedback status from hiring teams</p>
           </div>
+          <Link
+            to="/applicant/applications"
+            className="text-xs font-bold text-[#3D4127] dark:text-[#D4DE95] hover:underline inline-flex items-center gap-1 group"
+          >
+            <span>All Applications</span>
+            <span className="group-hover:translate-x-0.5 transition-transform">&rarr;</span>
+          </Link>
         </div>
 
-        <div className="apl-card flex items-center gap-4">
-          <div className="w-10 h-10 rounded-full bg-[#ECEEDF] dark:bg-[#2A2E1E] flex items-center justify-center text-[#636B2F] dark:text-[#D4DE95] font-bold text-sm">
-            02
+        {loading ? (
+          <div className="p-8 text-center text-xs text-[#8A8F76]">Loading applications...</div>
+        ) : recentApplications.length === 0 ? (
+          <div className="p-8 text-center space-y-3">
+            <p className="text-sm text-[#8A8F76]">You haven't submitted any job applications yet.</p>
+            <Link
+              to="/applicant/jobs"
+              className="inline-block py-1.5 px-4 rounded-xl text-xs font-bold bg-[#D4DE95] text-[#3D4127] hover:bg-[#C6D17E] transition-all"
+            >
+              Browse Open Positions
+            </Link>
           </div>
-          <div>
-            <h4 className="text-sm font-bold text-[#22241B] dark:text-[#EBF0DA]">Role Type</h4>
-            <p className="text-xs text-[#8A8F76] dark:text-[#9CA485]">Applicant Account</p>
-          </div>
-        </div>
+        ) : (
+          <div className="divide-y divide-[#ECEEDF] dark:divide-[#2A2E1E]">
+            {recentApplications.map((app) => (
+              <div
+                key={app.id}
+                className="p-4 sm:p-5 hover:bg-[#D4DE95]/10 transition-colors flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 text-xs"
+              >
+                <div>
+                  <h4 className="font-bold text-[#22241B] dark:text-[#EBF0DA] text-sm mb-0.5">
+                    {app.job_title}
+                  </h4>
+                  <span className="text-[#8A8F76]">{app.company_name}</span>
+                </div>
 
-        <div className="apl-card flex items-center gap-4">
-          <div className="w-10 h-10 rounded-full bg-[#D4DE95] text-[#3D4127] flex items-center justify-center font-bold text-sm">
-            ✓
+                <div className="flex items-center gap-4">
+                  {app.match_score !== null && (
+                    <span className="font-mono font-bold text-[#4E7A33]">
+                      {Math.round(app.match_score * 100)}% Match
+                    </span>
+                  )}
+                  <span
+                    className={`px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider ${
+                      app.status === "SHORTLISTED"
+                        ? "bg-[#D4DE95] text-[#22241B]"
+                        : app.status === "INTERVIEW"
+                        ? "bg-[#4E7A33]/20 text-[#4E7A33]"
+                        : app.status === "REJECTED"
+                        ? "bg-[#B4453D]/15 text-[#B4453D]"
+                        : "bg-[#ECEEDF] text-[#52564A]"
+                    }`}
+                  >
+                    {app.status}
+                  </span>
+                </div>
+              </div>
+            ))}
           </div>
-          <div>
-            <h4 className="text-sm font-bold text-[#22241B] dark:text-[#EBF0DA]">AI Assistant Status</h4>
-            <p className="text-xs text-[#4E7A33] font-semibold">Active & Ready</p>
-          </div>
-        </div>
+        )}
       </div>
     </div>
   );

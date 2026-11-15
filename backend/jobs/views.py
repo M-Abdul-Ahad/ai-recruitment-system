@@ -81,7 +81,23 @@ class JobViewSet(viewsets.ModelViewSet):
         active_jobs = qs.filter(status=Job.JobStatus.ACTIVE).count()
         closed_jobs = qs.filter(status=Job.JobStatus.CLOSED).count()
         draft_jobs = qs.filter(status=Job.JobStatus.DRAFT).count()
-        total_applicants = JobApplication.objects.filter(job__in=qs).count()
+        
+        apps = JobApplication.objects.filter(job__in=qs)
+        total_applicants = apps.count()
+
+        status_counts = {
+            "applied": apps.filter(status=JobApplication.ApplicationStatus.APPLIED).count(),
+            "shortlisted": apps.filter(status=JobApplication.ApplicationStatus.SHORTLISTED).count(),
+            "interview": apps.filter(status=JobApplication.ApplicationStatus.INTERVIEW).count(),
+            "rejected": apps.filter(status=JobApplication.ApplicationStatus.REJECTED).count(),
+        }
+
+        # Top skills across active jobs
+        from django.db.models import Count
+        top_skills_qs = Skill.objects.filter(jobs__in=qs.filter(status=Job.JobStatus.ACTIVE)).annotate(
+            job_count=Count('jobs')
+        ).order_by('-job_count')[:6]
+        top_skills = [{"name": s.name, "count": s.job_count} for s in top_skills_qs]
 
         recent = qs.order_by("-created_at")[:5]
         recent_list = []
@@ -106,7 +122,59 @@ class JobViewSet(viewsets.ModelViewSet):
             "closed_jobs": closed_jobs,
             "draft_jobs": draft_jobs,
             "total_applicants": total_applicants,
+            "application_status_breakdown": status_counts,
+            "top_skills": top_skills,
             "recent_jobs": recent_list,
+        })
+
+    @action(detail=False, methods=["get"], url_path="applicant-stats", permission_classes=[permissions.IsAuthenticated, IsApplicant])
+    def applicant_stats(self, request):
+        user = request.user
+        apps = JobApplication.objects.filter(applicant=user).select_related("job", "job__company", "resume")
+        total_applied = apps.count()
+
+        status_counts = {
+            "applied": apps.filter(status=JobApplication.ApplicationStatus.APPLIED).count(),
+            "shortlisted": apps.filter(status=JobApplication.ApplicationStatus.SHORTLISTED).count(),
+            "interview": apps.filter(status=JobApplication.ApplicationStatus.INTERVIEW).count(),
+            "rejected": apps.filter(status=JobApplication.ApplicationStatus.REJECTED).count(),
+        }
+
+        # Latest resume metrics
+        latest_resume = Resume.objects.filter(user=user).order_by("-uploaded_at").first()
+        resume_stats = None
+        if latest_resume:
+            resume_stats = {
+                "id": latest_resume.id,
+                "ai_score": latest_resume.ai_score,
+                "ai_category_scores": latest_resume.ai_category_scores or {},
+                "uploaded_at": latest_resume.uploaded_at.isoformat() if latest_resume.uploaded_at else None,
+                "strengths_count": len(latest_resume.ai_strengths) if latest_resume.ai_strengths else 0,
+                "suggestions_count": len(latest_resume.ai_suggestions) if latest_resume.ai_suggestions else 0,
+            }
+
+        # Recent applications
+        recent_apps = []
+        for app in apps.order_by("-applied_at")[:5]:
+            recent_apps.append({
+                "id": app.id,
+                "job_id": app.job.id,
+                "job_title": app.job.title,
+                "company_name": app.job.company.name if app.job.company else "Company",
+                "status": app.status,
+                "match_score": app.match_score,
+                "applied_at": app.applied_at.isoformat() if app.applied_at else None,
+            })
+
+        # Available jobs matching candidate
+        active_jobs_count = Job.objects.filter(status=Job.JobStatus.ACTIVE).count()
+
+        return Response({
+            "total_applied": total_applied,
+            "status_breakdown": status_counts,
+            "resume_stats": resume_stats,
+            "recent_applications": recent_apps,
+            "active_jobs_count": active_jobs_count,
         })
 
     def get_serializer_class(self):

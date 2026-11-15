@@ -5,7 +5,7 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.parsers import MultiPartParser, FormParser, JSONParser
 from .serializers import (
     SignupSerializer, CustomTokenObtainPairSerializer, UserSerializer,
-    AdminUserSerializer, RoleSerializer,
+    AdminUserSerializer, RoleSerializer, ProfileUpdateSerializer, ChangePasswordSerializer,
 )
 from rest_framework_simplejwt.views import TokenObtainPairView
 from django.contrib.auth import get_user_model
@@ -36,35 +36,104 @@ class TestAuthView(APIView):
     def get(self, request):
         return Response({"message": "JWT is working!"})
 
-# ==========================================
-# EXAMPLE VIEWS FOR ROLE-BASED PERMISSIONS
-# ==========================================
-
 from .permissions import IsApplicant, IsRecruiter, IsAdmin, RolePermission
+# ==========================================
 
-class ResumeUploadView(APIView):
-    """Example: Only Applicants can upload resumes."""
-    permission_classes = [IsAuthenticated, IsApplicant]
+class UserProfileView(APIView):
+    """GET and PATCH profile details for the authenticated user."""
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        serializer = UserSerializer(request.user)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
+    def patch(self, request):
+        serializer = ProfileUpdateSerializer(
+            request.user,
+            data=request.data,
+            partial=True,
+            context={'request': request}
+        )
+        if serializer.is_valid():
+            serializer.save()
+            return Response(UserSerializer(request.user).data, status=status.HTTP_200_OK)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+class ChangePasswordView(APIView):
+    """POST /api/auth/change-password/ to update user password."""
+    permission_classes = [IsAuthenticated]
 
     def post(self, request):
-        return Response({"message": f"Resume uploaded successfully by {request.user.email}"}, status=status.HTTP_200_OK)
+        serializer = ChangePasswordSerializer(data=request.data)
+        if not serializer.is_valid():
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+        user = request.user
+        if not user.check_password(serializer.validated_data['old_password']):
+            return Response({"old_password": ["Incorrect current password."]}, status=status.HTTP_400_BAD_REQUEST)
+
+        user.set_password(serializer.validated_data['new_password'])
+        user.save()
+        return Response({"message": "Password changed successfully."}, status=status.HTTP_200_OK)
 
 
-class AdminDashboardView(APIView):
-    """Example: Only Admins can access this view."""
+class AdminDashboardStatsView(APIView):
+    """GET system-wide statistics for the Administrator portal."""
     permission_classes = [IsAuthenticated, IsAdmin]
 
     def get(self, request):
-        return Response({"message": "Welcome to the Admin Dashboard!"}, status=status.HTTP_200_OK)
+        from companies.models import Company
+        from jobs.models import Job, JobApplication
+        from resumes.models import Resume
 
+        # Total counts
+        total_users = User.objects.count()
+        users_by_role = {
+            "applicant": User.objects.filter(role=User.Role.APPLICANT).count(),
+            "recruiter": User.objects.filter(role=User.Role.RECRUITER).count(),
+            "company_admin": User.objects.filter(role=User.Role.COMPANY_ADMIN).count(),
+            "admin": User.objects.filter(role=User.Role.ADMIN).count(),
+        }
 
-class FlexibleRoleView(APIView):
-    """Example: Using the generic RolePermission for multiple roles."""
-    permission_classes = [IsAuthenticated, RolePermission]
-    allowed_roles = ['recruiter', 'admin']
+        total_companies = Company.objects.count()
+        companies_by_status = {
+            "verified": Company.objects.filter(verification_status=Company.VerificationStatus.VERIFIED).count(),
+            "pending": Company.objects.filter(verification_status=Company.VerificationStatus.PENDING).count(),
+            "rejected": Company.objects.filter(verification_status=Company.VerificationStatus.REJECTED).count(),
+            "unverified": Company.objects.filter(verification_status=Company.VerificationStatus.UNVERIFIED).count(),
+        }
 
-    def get(self, request):
-        return Response({"message": "This is accessible by Recruiters and Admins."}, status=status.HTTP_200_OK)
+        total_jobs = Job.objects.count()
+        jobs_by_status = {
+            "active": Job.objects.filter(status=Job.JobStatus.ACTIVE).count(),
+            "draft": Job.objects.filter(status=Job.JobStatus.DRAFT).count(),
+            "closed": Job.objects.filter(status=Job.JobStatus.CLOSED).count(),
+        }
+
+        total_applications = JobApplication.objects.count()
+        total_resumes = Resume.objects.count()
+
+        # Recent activities (recent users & recent companies)
+        recent_users = User.objects.order_by("-date_joined")[:5].values(
+            "id", "email", "username", "role", "date_joined"
+        )
+        recent_companies = Company.objects.order_by("-created_at")[:5].values(
+            "id", "name", "email", "verification_status", "created_at"
+        )
+
+        return Response({
+            "total_users": total_users,
+            "users_by_role": users_by_role,
+            "total_companies": total_companies,
+            "companies_by_status": companies_by_status,
+            "total_jobs": total_jobs,
+            "jobs_by_status": jobs_by_status,
+            "total_applications": total_applications,
+            "total_resumes": total_resumes,
+            "recent_users": list(recent_users),
+            "recent_companies": list(recent_companies),
+        }, status=status.HTTP_200_OK)
 
 
 # ============================================================

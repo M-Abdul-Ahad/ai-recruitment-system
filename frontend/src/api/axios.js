@@ -22,14 +22,20 @@ api.interceptors.request.use(
 api.interceptors.response.use(
   (response) => response,
   (error) => {
-    if (error.response && error.response.status === 401) {
-      console.warn("Unauthorized request - logging out");
+    // Only redirect if 401 occurs on protected endpoints, not during login or signup requests
+    const requestUrl = error.config?.url || "";
+    const isAuthEndpoint = requestUrl.includes("/auth/login/") || requestUrl.includes("/auth/signup/");
+
+    if (error.response && error.response.status === 401 && !isAuthEndpoint) {
+      console.warn("Unauthorized request on protected endpoint - logging out");
       // Clear token and user data
       localStorage.removeItem("access");
       localStorage.removeItem("refresh");
       localStorage.removeItem("user");
-      // Redirect to login page
-      window.location.href = "/login";
+      // Redirect to login page only if not already on login/signup
+      if (!window.location.pathname.startsWith("/login") && !window.location.pathname.startsWith("/signup")) {
+        window.location.href = "/login";
+      }
     }
     return Promise.reject(error);
   }

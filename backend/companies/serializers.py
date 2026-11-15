@@ -25,6 +25,24 @@ class CompanyMemberSerializer(serializers.ModelSerializer):
         fields = ["id", "username", "email", "role", "is_hr"]
 
 
+class CompanyUpdateSerializer(serializers.ModelSerializer):
+    """Allows updating company profile details."""
+    class Meta:
+        model = Company
+        fields = [
+            "name", "email", "description", "website", "industry", "phone", "address"
+        ]
+
+    def validate_name(self, value):
+        company = self.instance
+        value = value.strip()
+        if not value:
+            raise serializers.ValidationError("Company name cannot be blank.")
+        if Company.objects.exclude(pk=company.pk if company else None).filter(name__iexact=value).exists():
+            raise serializers.ValidationError("A company with this name already exists.")
+        return value
+
+
 class CompanySerializer(serializers.ModelSerializer):
     """Serializer for Company details with secure document view URL."""
     recruiters = CompanyMemberSerializer(many=True, read_only=True)

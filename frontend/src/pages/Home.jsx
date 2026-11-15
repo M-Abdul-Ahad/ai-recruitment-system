@@ -1,5 +1,6 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useContext } from "react";
 import { Link } from "react-router-dom";
+import { AuthContext } from "../auth/AuthContext";
 import "./home.css";
 
 /* ── Icon helpers (inline SVGs — no extra dependency) ─────────── */
@@ -114,6 +115,7 @@ function FaqItem({ faq, idx }) {
    HOME PAGE
    ════════════════════════════════════════════════════════════════ */
 export default function Home() {
+  const { user } = useContext(AuthContext) || {};
   const [scrolled, setScrolled] = useState(false);
   const [mobileNav, setMobileNav] = useState(false);
   const [activeFeatureTab, setActiveFeatureTab] = useState("recruiter");
@@ -216,8 +218,29 @@ export default function Home() {
           <div className="home-nav-spacer" />
 
           <div className="home-nav-cta">
-            <Link to="/login" className="btn btn-secondary btn-sm">Log In</Link>
-            <Link to="/signup" className="btn btn-primary btn-sm">Get Started</Link>
+            {user ? (
+              <Link
+                to={
+                  user.role === "applicant"
+                    ? "/applicant"
+                    : user.role === "company_admin"
+                    ? "/company"
+                    : user.role === "recruiter"
+                    ? "/recruiter"
+                    : user.role === "admin"
+                    ? "/admin"
+                    : "/login"
+                }
+                className="btn btn-primary btn-sm"
+              >
+                Go to Dashboard &rarr;
+              </Link>
+            ) : (
+              <>
+                <Link to="/login" className="btn btn-secondary btn-sm">Log In</Link>
+                <Link to="/signup" className="btn btn-primary btn-sm">Get Started</Link>
+              </>
+            )}
           </div>
 
           <button className="home-nav-menu-btn" onClick={() => setMobileNav(!mobileNav)}
@@ -232,8 +255,31 @@ export default function Home() {
               <a key={href} href={href} className="home-mobile-nav-link" onClick={() => setMobileNav(false)}>{label}</a>
             ))}
             <div className="home-mobile-nav-divider" />
-            <Link to="/login" className="home-mobile-nav-link" onClick={() => setMobileNav(false)}>Log In</Link>
-            <Link to="/signup" className="btn btn-primary" style={{ marginTop: "8px", justifyContent: "center" }} onClick={() => setMobileNav(false)}>Get Started Free</Link>
+            {user ? (
+              <Link
+                to={
+                  user.role === "applicant"
+                    ? "/applicant"
+                    : user.role === "company_admin"
+                    ? "/company"
+                    : user.role === "recruiter"
+                    ? "/recruiter"
+                    : user.role === "admin"
+                    ? "/admin"
+                    : "/login"
+                }
+                className="btn btn-primary"
+                style={{ marginTop: "8px", justifyContent: "center" }}
+                onClick={() => setMobileNav(false)}
+              >
+                Go to Dashboard &rarr;
+              </Link>
+            ) : (
+              <>
+                <Link to="/login" className="home-mobile-nav-link" onClick={() => setMobileNav(false)}>Log In</Link>
+                <Link to="/signup" className="btn btn-primary" style={{ marginTop: "8px", justifyContent: "center" }} onClick={() => setMobileNav(false)}>Get Started Free</Link>
+              </>
+            )}
           </div>
         )}
       </nav>

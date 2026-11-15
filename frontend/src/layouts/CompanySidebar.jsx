@@ -1,4 +1,4 @@
-import { NavLink } from "react-router-dom";
+import { NavLink, Link } from "react-router-dom";
 import { useContext } from "react";
 import { AuthContext } from "../auth/AuthContext";
 
@@ -70,7 +70,7 @@ export default function CompanySidebar({ collapsed, mobileOpen }) {
   return (
     <aside className={sidebarClass} aria-label="Company Management navigation">
       {/* Logo */}
-      <a href="/company" className="apl-sb-logo" tabIndex={0}>
+      <Link to="/company" className="apl-sb-logo" tabIndex={0}>
         <span className="apl-sb-logo-icon" aria-hidden="true">
           <Icon.Logo />
         </span>
@@ -78,7 +78,7 @@ export default function CompanySidebar({ collapsed, mobileOpen }) {
           <span className="apl-sb-logo-name">Nominate AI</span>
           <span className="apl-sb-logo-sub">Company Admin</span>
         </span>
-      </a>
+      </Link>
 
       {/* Navigation */}
       <nav className="apl-sb-nav" aria-label="Company navigation">
@@ -105,6 +105,7 @@ export default function CompanySidebar({ collapsed, mobileOpen }) {
         <span className="apl-sb-section-label" style={{ marginTop: "16px" }}>Portals</span>
         <NavLink
           to="/recruiter"
+          end={true}
           data-tooltip="Recruiter Portal"
           className={({ isActive }) =>
             ["apl-sb-link", isActive ? "active" : ""].filter(Boolean).join(" ")
@@ -112,9 +113,35 @@ export default function CompanySidebar({ collapsed, mobileOpen }) {
           aria-label="Recruiter Portal"
         >
           <span className="apl-sb-link-icon" aria-hidden="true">
+            <Icon.Grid />
+          </span>
+          <span className="apl-sb-link-label">Recruiter Dashboard</span>
+        </NavLink>
+        <NavLink
+          to="/recruiter/jobs"
+          data-tooltip="Jobs"
+          className={({ isActive }) =>
+            ["apl-sb-link", isActive ? "active" : ""].filter(Boolean).join(" ")
+          }
+          aria-label="Jobs"
+        >
+          <span className="apl-sb-link-icon" aria-hidden="true">
             <Icon.Briefcase />
           </span>
-          <span className="apl-sb-link-label">Recruiter Portal</span>
+          <span className="apl-sb-link-label">Manage Jobs</span>
+        </NavLink>
+        <NavLink
+          to="/recruiter/candidates"
+          data-tooltip="Candidates"
+          className={({ isActive }) =>
+            ["apl-sb-link", isActive ? "active" : ""].filter(Boolean).join(" ")
+          }
+          aria-label="Candidates"
+        >
+          <span className="apl-sb-link-icon" aria-hidden="true">
+            <Icon.Users />
+          </span>
+          <span className="apl-sb-link-label">Candidates</span>
         </NavLink>
         <NavLink
           to="/recruiter/shortlist"

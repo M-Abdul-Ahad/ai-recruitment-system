@@ -128,3 +128,25 @@ export const uploadResume = (formData) =>
     headers: { 'Content-Type': 'multipart/form-data' },
   });
 
+/** GET /api/jobs/applicant-stats/ → real metrics & latest resume stats for applicant dashboard */
+export const getApplicantStats = () => api.get('/jobs/applicant-stats/');
+
+/** GET /api/companies/dashboard-stats/ → real metrics for company admin dashboard */
+export const getCompanyDashboardStats = () => api.get('/companies/dashboard-stats/');
+
+/** GET /api/auth/admin/dashboard-stats/ → real metrics for system admin dashboard */
+export const getAdminDashboardStats = () => api.get('/auth/admin/dashboard-stats/');
+
+/** GET /api/auth/me/ → get current user profile */
+export const getUserProfile = () => api.get('/auth/me/');
+
+/** PATCH /api/auth/me/ → update user profile */
+export const updateUserProfile = (data) => api.patch('/auth/me/', data);
+
+/** POST /api/auth/change-password/ → update password */
+export const changePassword = (data) => api.post('/auth/change-password/', data);
+
+/** PATCH /api/companies/me/ → update company profile */
+export const updateCompanyProfile = (data) => api.patch('/companies/me/', data);
+
+

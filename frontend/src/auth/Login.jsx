@@ -41,9 +41,22 @@ export default function Login() {
     setError("");
     setLoading(true);
     try {
-      await login({ email, password });
+      const loggedUser = await login({ email, password });
       toast.success("Signed in successfully. Welcome back!");
-      navigate("/");
+
+      // Seamless direct role routing
+      const role = loggedUser?.role?.toLowerCase();
+      if (role === "applicant") {
+        navigate("/applicant", { replace: true });
+      } else if (role === "company_admin") {
+        navigate("/company", { replace: true });
+      } else if (role === "recruiter") {
+        navigate("/recruiter", { replace: true });
+      } else if (role === "admin") {
+        navigate("/admin", { replace: true });
+      } else {
+        navigate("/", { replace: true });
+      }
     } catch (err) {
       console.error("Login error:", err);
       const msg = err.response?.data?.detail || err.response?.data?.error || "Invalid email or password. Please try again.";

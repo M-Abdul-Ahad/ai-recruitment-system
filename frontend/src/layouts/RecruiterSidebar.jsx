@@ -1,4 +1,4 @@
-import { NavLink } from "react-router-dom";
+import { NavLink, Link } from "react-router-dom";
 import { useContext } from "react";
 import { AuthContext } from "../auth/AuthContext";
 
@@ -34,6 +34,12 @@ const Icon = {
       <path d="M12 3l1.912 5.813a2 2 0 001.275 1.275L21 12l-5.813 1.912a2 2 0 00-1.275 1.275L12 21l-1.912-5.813a2 2 0 00-1.275-1.275L3 12l5.813-1.912a2 2 0 001.275-1.275L12 3z"/>
     </svg>
   ),
+  Settings: () => (
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/>
+      <circle cx="12" cy="12" r="3"/>
+    </svg>
+  ),
   Logo: () => (
     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
       <circle cx="12" cy="12" r="10"/>
@@ -48,6 +54,7 @@ const NAV_ITEMS = [
   { to: "/recruiter/candidates", label: "Candidates",          Icon: Icon.Users,     exact: false },
   { to: "/recruiter/shortlist",  label: "AI Shortlisting",     Icon: Icon.Sparkles,  exact: false },
   { to: "/recruiter/company",    label: "Company",             Icon: Icon.Building,  exact: false },
+  { to: "/recruiter/settings",   label: "Settings",            Icon: Icon.Settings,  exact: false },
 ];
 
 export default function RecruiterSidebar({ collapsed, mobileOpen }) {
@@ -66,7 +73,7 @@ export default function RecruiterSidebar({ collapsed, mobileOpen }) {
   return (
     <aside className={sidebarClass} aria-label="Recruiter navigation">
       {/* Logo */}
-      <a href="/recruiter" className="apl-sb-logo" tabIndex={0}>
+      <Link to="/recruiter" className="apl-sb-logo" tabIndex={0}>
         <span className="apl-sb-logo-icon" aria-hidden="true">
           <Icon.Logo />
         </span>
@@ -74,7 +81,7 @@ export default function RecruiterSidebar({ collapsed, mobileOpen }) {
           <span className="apl-sb-logo-name">Nominate AI</span>
           <span className="apl-sb-logo-sub">Recruiter Portal</span>
         </span>
-      </a>
+      </Link>
 
       {/* Navigation */}
       <nav className="apl-sb-nav" aria-label="Recruiter navigation">

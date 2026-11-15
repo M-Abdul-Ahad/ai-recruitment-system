@@ -1,5 +1,5 @@
 import { useContext, useState, useEffect, useRef, useCallback } from "react";
-import { useNavigate, useLocation } from "react-router-dom";
+import { useNavigate, useLocation, Link } from "react-router-dom";
 import { AuthContext } from "../auth/AuthContext";
 
 /* ── Inline SVG icons ── */
@@ -53,6 +53,7 @@ const PAGE_TITLES = {
   "/applicant/builder":      "Resume Builder",
   "/applicant/jobs":         "Browse Jobs",
   "/applicant/applications": "My Applications",
+  "/applicant/settings":     "Settings",
 };
 
 export default function ApplicantHeader({ onToggleSidebar, isDark, onToggleTheme }) {
@@ -166,6 +167,19 @@ export default function ApplicantHeader({ onToggleSidebar, isDark, onToggleTheme
                 <div className="apl-dropdown-header-name">{displayName}</div>
                 <div className="apl-dropdown-header-role">{user?.role ?? "applicant"}</div>
               </div>
+
+              <Link
+                to="/applicant/settings"
+                className="apl-dropdown-item"
+                role="menuitem"
+                onClick={() => setProfileOpen(false)}
+              >
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/>
+                  <circle cx="12" cy="12" r="3"/>
+                </svg>
+                Account Settings
+              </Link>
 
               {/* Logout */}
               <button

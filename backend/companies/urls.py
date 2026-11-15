@@ -2,6 +2,7 @@ from django.urls import path
 from .views import (
     CompanyCreateView,
     CompanyDetailView,
+    CompanyDashboardStatsView,
     AddHRView,
     RemoveHRView,
     HRListView,
@@ -20,6 +21,7 @@ from .views import (
 urlpatterns = [
     path("register/", CompanyCreateView.as_view(), name="company-register"),
     path("me/", CompanyDetailView.as_view(), name="company-me"),
+    path("dashboard-stats/", CompanyDashboardStatsView.as_view(), name="company-dashboard-stats"),
     path("members/", CompanyMembersView.as_view(), name="company-members"),
     path("members/<int:pk>/", DeleteMemberView.as_view(), name="delete-member"),
     path("delete-hr/<int:pk>/", DeleteMemberView.as_view(), name="delete-hr"),

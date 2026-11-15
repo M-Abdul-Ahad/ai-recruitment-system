@@ -274,25 +274,38 @@ class UserSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
         fields = [
-            'id', 'username', 'email', 'role', 'is_hr', 'company', 'company_name',
-            'company_verification_status', 'cnic_number', 'cnic_image', 'cnic_image_url',
+            'id', 'username', 'email', 'first_name', 'last_name', 'role', 'is_hr', 'company', 'company_name',
+            'company_verification_status', 'cnic_number', 'cnic_image', 'cnic_image_url', 'date_joined',
         ]
-        read_only_fields = ['id', 'email', 'cnic_image_url']
+        read_only_fields = ['id', 'email', 'role', 'is_hr', 'company', 'company_name', 'company_verification_status', 'cnic_image_url', 'date_joined']
 
     def get_cnic_image_url(self, obj: User) -> str | None:
         return generate_presigned_view_url(obj.cnic_image) if obj.cnic_image else None
 
+
+class ProfileUpdateSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = User
+        fields = ['username', 'first_name', 'last_name', 'cnic_number']
+
+    def validate_username(self, value):
+        user = self.context['request'].user
+        value = value.strip().replace(' ', '_')
+        if not value:
+            raise serializers.ValidationError("Username cannot be empty.")
+        if User.objects.exclude(pk=user.pk).filter(username__iexact=value).exists():
+            raise serializers.ValidationError("This username is already taken.")
+        return value
+
+
+class ChangePasswordSerializer(serializers.Serializer):
+    old_password = serializers.CharField(required=True, write_only=True)
+    new_password = serializers.CharField(required=True, write_only=True, validators=[validate_password])
+    confirm_password = serializers.CharField(required=True, write_only=True)
+
     def validate(self, attrs):
-        is_hr = attrs.get('is_hr', getattr(self.instance, 'is_hr', False))
-        role = attrs.get('role', getattr(self.instance, 'role', User.Role.APPLICANT))
-        company = attrs.get('company', getattr(self.instance, 'company', None))
-        
-        if role == User.Role.APPLICANT and company is not None:
-            raise serializers.ValidationError({"company": "Applicants cannot belong to a company."})
-            
-        if is_hr and company is None:
-            raise serializers.ValidationError({"is_hr": "HR must belong to a company."})
-            
+        if attrs['new_password'] != attrs['confirm_password']:
+            raise serializers.ValidationError({"confirm_password": "New passwords do not match."})
         return attrs
 
 
@@ -302,15 +315,18 @@ class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
     def validate(self, attrs):
         data = super().validate(attrs)
         user: User = self.user  # type: ignore[assignment]
+        
+        # Load company only once to avoid repeated remote DB lookups
+        company = getattr(user, 'company', None)
         data.update(
             {
                 'user_id': user.id,
                 'email': user.email,
                 'role': user.role,
                 'is_hr': user.is_hr,
-                'company_id': user.company_id if user.company else None,
-                'company_name': user.company.name if user.company else None,
-                'company_verification_status': getattr(user.company, 'verification_status', None) if user.company else None,
+                'company_id': company.id if company else None,
+                'company_name': company.name if company else None,
+                'company_verification_status': getattr(company, 'verification_status', None) if company else None,
             }
         )
         return data

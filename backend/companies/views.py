@@ -13,7 +13,10 @@ logger = logging.getLogger("companies.views")
 from users.permissions import RolePermission
 from users.permissions import IsAdmin
 from .models import Company
-from .serializers import CompanySerializer, CompanyCreateSerializer, AddHRSerializer, CompanyMemberSerializer
+from .serializers import (
+    CompanySerializer, CompanyCreateSerializer, CompanyUpdateSerializer,
+    AddHRSerializer, CompanyMemberSerializer,
+)
 from django.contrib.auth import get_user_model
 
 if TYPE_CHECKING:
@@ -130,8 +133,9 @@ class HRListView(APIView):
 class CompanyDetailView(APIView):
     """
     GET /api/companies/me/
+    PATCH /api/companies/me/
 
-    Returns the logged-in user's company.
+    Returns or updates the logged-in user's company.
     """
 
     permission_classes = [IsAuthenticated]
@@ -153,6 +157,106 @@ class CompanyDetailView(APIView):
 
         serializer = CompanySerializer(user.company)
         return Response(serializer.data, status=status.HTTP_200_OK)
+
+    def patch(self, request):
+        user = cast("User", request.user)
+
+        if user.role not in ["company_admin", "admin"]:
+            return Response(
+                {"error": "Only Company Admin or System Admin can edit company profile."},
+                status=status.HTTP_403_FORBIDDEN,
+            )
+
+        if not user.company:
+            return Response(
+                {"error": "You do not belong to any company."},
+                status=status.HTTP_404_NOT_FOUND,
+            )
+
+        serializer = CompanyUpdateSerializer(user.company, data=request.data, partial=True)
+        if serializer.is_valid():
+            updated_company = serializer.save()
+            return Response(CompanySerializer(updated_company).data, status=status.HTTP_200_OK)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+class CompanyDashboardStatsView(APIView):
+    """
+    GET /api/companies/dashboard-stats/
+    Returns live metrics and breakdown for company administrators.
+    """
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        user = cast("User", request.user)
+        if user.role not in ["company_admin", "admin"]:
+            return Response(
+                {"error": "Only Company Admins or System Admins can view organization statistics."},
+                status=status.HTTP_403_FORBIDDEN
+            )
+
+        if not user.company:
+            return Response(
+                {"error": "You do not belong to any company."},
+                status=status.HTTP_404_NOT_FOUND
+            )
+
+        company = user.company
+        from jobs.models import Job, JobApplication
+        from companies.models import RecruiterInvitation
+
+        # Team metrics
+        members = _User.objects.filter(company=company)
+        total_members = members.count()
+        hr_count = members.filter(is_hr=True).count()
+        recruiters_count = members.filter(role="recruiter").count()
+        pending_invitations = RecruiterInvitation.objects.filter(company=company).count()
+
+        # Job metrics
+        company_jobs = Job.objects.filter(company=company)
+        total_jobs = company_jobs.count()
+        active_jobs = company_jobs.filter(status=Job.JobStatus.ACTIVE).count()
+        draft_jobs = company_jobs.filter(status=Job.JobStatus.DRAFT).count()
+        closed_jobs = company_jobs.filter(status=Job.JobStatus.CLOSED).count()
+
+        # Applications
+        company_applications = JobApplication.objects.filter(job__in=company_jobs)
+        total_applicants = company_applications.count()
+        status_counts = {
+            "applied": company_applications.filter(status=JobApplication.ApplicationStatus.APPLIED).count(),
+            "shortlisted": company_applications.filter(status=JobApplication.ApplicationStatus.SHORTLISTED).count(),
+            "interview": company_applications.filter(status=JobApplication.ApplicationStatus.INTERVIEW).count(),
+            "rejected": company_applications.filter(status=JobApplication.ApplicationStatus.REJECTED).count(),
+        }
+
+        # Recent activities
+        recent_jobs = []
+        for j in company_jobs.order_by("-created_at")[:5]:
+            recent_jobs.append({
+                "id": j.id,
+                "title": j.title,
+                "status": j.status,
+                "location": j.location or "Remote",
+                "applicants_count": j.applications.count(),
+                "created_by": f"{j.created_by.first_name} {j.created_by.last_name}".strip() or j.created_by.username if j.created_by else "",
+                "created_at": j.created_at.isoformat() if j.created_at else None,
+            })
+
+        return Response({
+            "company_name": company.name,
+            "verification_status": company.verification_status,
+            "total_members": total_members,
+            "hr_count": hr_count,
+            "recruiters_count": recruiters_count,
+            "pending_invitations": pending_invitations,
+            "total_jobs": total_jobs,
+            "active_jobs": active_jobs,
+            "draft_jobs": draft_jobs,
+            "closed_jobs": closed_jobs,
+            "total_applicants": total_applicants,
+            "application_status_breakdown": status_counts,
+            "recent_jobs": recent_jobs,
+        }, status=status.HTTP_200_OK)
 
 class CompanyMembersView(APIView):
     """

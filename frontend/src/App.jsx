@@ -15,6 +15,7 @@ import ResumeAnalysis from "./applicant/ResumeAnalysis";
 import ResumeBuilder from "./applicant/ResumeBuilder";
 import ApplicantJobs from "./applicant/Jobs";
 import Applications from "./applicant/Applications";
+import ApplicantSettings from "./applicant/ApplicantSettings";
 
 import RecruiterDashboard from "./recruiter/RecruiterDashboard";
 import Company from "./recruiter/Company";
@@ -23,6 +24,7 @@ import CreateJob from "./recruiter/CreateJob";
 import RecruiterJobs from "./recruiter/Jobs";
 import CandidateShortlisting from "./recruiter/CandidateShortlisting";
 import CandidateManagement from "./recruiter/CandidateManagement";
+import RecruiterSettings from "./recruiter/RecruiterSettings";
 
 import CompanyDashboard from "./company/CompanyDashboard";
 import RecruiterManagement from "./company/RecruiterManagement";
@@ -33,6 +35,7 @@ import Users from "./admin/Users";
 import Companies from "./admin/Companies";
 import Jobs from "./admin/Jobs";
 import Roles from "./admin/Roles";
+import AdminSettings from "./admin/AdminSettings";
 import AdminLayout from "./layouts/AdminLayout";
 
 import Unauthorized from "./pages/Unauthorized";
@@ -46,6 +49,11 @@ function FallbackRoute() {
   const { user } = useContext(AuthContext);
 
   if (!user) return <Navigate to="/login" replace />;
+  const role = user?.role?.toLowerCase();
+  if (role === "applicant") return <Navigate to="/applicant" replace />;
+  if (role === "company_admin") return <Navigate to="/company" replace />;
+  if (role === "recruiter") return <Navigate to="/recruiter" replace />;
+  if (role === "admin") return <Navigate to="/admin" replace />;
   return <Navigate to="/unauthorized" replace />;
 }
 
@@ -53,9 +61,8 @@ function FallbackRoute() {
 
 export default function App() {
   return (
-    <AuthProvider>
-      <ToastProvider>
-        <BrowserRouter>
+    <ToastProvider>
+      <BrowserRouter>
         <Routes>
           {/* Public */}
           <Route path="/login" element={
@@ -90,6 +97,7 @@ export default function App() {
             <Route path="builder"      element={<ResumeBuilder />} />
             <Route path="jobs"         element={<ApplicantJobs />} />
             <Route path="applications" element={<Applications />} />
+            <Route path="settings"     element={<ApplicantSettings />} />
           </Route>
 
           {/* ================= RECRUITER (HR INCLUDED) ================= */}
@@ -109,6 +117,7 @@ export default function App() {
             <Route path="shortlist"        element={<CandidateShortlisting />} />
             <Route path="shortlist/:jobId" element={<CandidateShortlisting />} />
             <Route path="candidate/:id"    element={<CandidateDetail />} />
+            <Route path="settings"         element={<RecruiterSettings />} />
           </Route>
 
           {/* ================= COMPANY MANAGEMENT ================= */}
@@ -139,12 +148,12 @@ export default function App() {
             <Route path="roles"         element={<Roles />} />
             <Route path="companies"     element={<Companies />} />
             <Route path="jobs"          element={<Jobs />} />
+            <Route path="settings"      element={<AdminSettings />} />
           </Route>
           {/* Fallback */}
           <Route path="*" element={<FallbackRoute />} />
         </Routes>
       </BrowserRouter>
-      </ToastProvider>
-    </AuthProvider>
+    </ToastProvider>
   );
 }

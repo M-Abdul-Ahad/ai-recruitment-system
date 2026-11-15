@@ -2,6 +2,7 @@ import { useContext, useState, useEffect } from "react";
 import { AuthContext } from "../auth/AuthContext";
 import { Link } from "react-router-dom";
 import { getDashboardStats } from "../api/jobs";
+import { DonutChart, HorizontalBarChart } from "../components/ui/DashboardCharts";
 
 const RecruiterDashboard = () => {
   const { user } = useContext(AuthContext);
@@ -47,7 +48,6 @@ const RecruiterDashboard = () => {
     return `${Math.floor(days / 30)}mo ago`;
   };
 
-  // Dynamic stat cards based on actual backend numbers
   const stats = [
     {
       name: 'Total Jobs',
@@ -77,6 +77,19 @@ const RecruiterDashboard = () => {
 
   const recentJobs = statsData?.recent_jobs || [];
 
+  const appStatusDonutData = [
+    { label: "Applied", value: statsData?.application_status_breakdown?.applied || 0, color: "#8A8F76" },
+    { label: "Shortlisted", value: statsData?.application_status_breakdown?.shortlisted || 0, color: "#D4DE95" },
+    { label: "Interview", value: statsData?.application_status_breakdown?.interview || 0, color: "#4E7A33" },
+    { label: "Rejected", value: statsData?.application_status_breakdown?.rejected || 0, color: "#B4453D" },
+  ];
+
+  const skillBars = (statsData?.top_skills || []).map((sk) => ({
+    label: sk.name,
+    value: sk.count,
+    color: "#636B2F",
+  }));
+
   return (
     <div className="apl-animate-fade space-y-6 sm:space-y-8">
       {/* ── HERO BANNER ── */}
@@ -105,6 +118,12 @@ const RecruiterDashboard = () => {
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M12 4v16m8-8H4" />
             </svg>
             Create New Job
+          </Link>
+          <Link
+            to="/recruiter/shortlist"
+            className="apl-btn bg-[#D4DE95] text-[#22241B] hover:bg-[#C6D17E] text-xs py-2 px-4 font-bold shadow-sm"
+          >
+            AI Shortlisting &rarr;
           </Link>
         </div>
       </div>
@@ -139,6 +158,59 @@ const RecruiterDashboard = () => {
             </div>
           </div>
         ))}
+      </div>
+
+      {/* ── REAL VISUAL CHARTS (APPLICATIONS STATUS & REQUIRED SKILLS) ── */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* Donut Chart: Application Status */}
+        <div className="apl-card space-y-4">
+          <div className="flex items-center justify-between border-b border-[#ECEEDF] dark:border-[#2A2E1E] pb-3">
+            <div>
+              <h3 className="text-base font-bold text-[#22241B] dark:text-[#EBF0DA]">
+                Pipeline Conversion Status
+              </h3>
+              <p className="text-xs text-[#8A8F76] dark:text-[#9CA485]">
+                Breakdown of candidates by review stage
+              </p>
+            </div>
+            <Link to="/recruiter/candidates" className="text-xs font-bold text-[#4E7A33] hover:underline">
+              Candidates &rarr;
+            </Link>
+          </div>
+
+          <div className="pt-2">
+            <DonutChart
+              data={appStatusDonutData}
+              centerLabel="Applicants"
+              centerValue={statsData?.total_applicants ?? 0}
+            />
+          </div>
+        </div>
+
+        {/* Bar Chart: Required Skills in active jobs */}
+        <div className="apl-card space-y-4">
+          <div className="flex items-center justify-between border-b border-[#ECEEDF] dark:border-[#2A2E1E] pb-3">
+            <div>
+              <h3 className="text-base font-bold text-[#22241B] dark:text-[#EBF0DA]">
+                Top In-Demand Skills
+              </h3>
+              <p className="text-xs text-[#8A8F76] dark:text-[#9CA485]">
+                Frequency of skills required in active postings
+              </p>
+            </div>
+            <span className="text-xs text-[#8A8F76]">Active Jobs</span>
+          </div>
+
+          <div className="pt-2">
+            {skillBars.length === 0 ? (
+              <p className="text-xs text-[#8A8F76] text-center py-8">
+                No skill requirements recorded yet. Create or edit jobs to see skill distribution.
+              </p>
+            ) : (
+              <HorizontalBarChart items={skillBars} />
+            )}
+          </div>
+        </div>
       </div>
 
       {/* ── REAL RECENT JOBS SECTION ── */}

@@ -1,4 +1,4 @@
-import { NavLink } from "react-router-dom";
+import { NavLink, Link } from "react-router-dom";
 import { useContext } from "react";
 import { AuthContext } from "../auth/AuthContext";
 
@@ -32,6 +32,12 @@ const Icon = {
       <rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2"/>
     </svg>
   ),
+  Settings: () => (
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/>
+      <circle cx="12" cy="12" r="3"/>
+    </svg>
+  ),
   Logo: () => (
     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
       <path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/>
@@ -45,6 +51,7 @@ const NAV_ITEMS = [
   { to: "/admin/roles",    label: "Roles",      Icon: Icon.Shield,    exact: false },
   { to: "/admin/companies",label: "Companies",  Icon: Icon.Building,  exact: false },
   { to: "/admin/jobs",     label: "Jobs",       Icon: Icon.Briefcase, exact: false },
+  { to: "/admin/settings", label: "Settings",   Icon: Icon.Settings,  exact: false },
 ];
 
 export default function AdminSidebar({ collapsed, mobileOpen }) {
@@ -63,7 +70,7 @@ export default function AdminSidebar({ collapsed, mobileOpen }) {
   return (
     <aside className={sidebarClass} aria-label="Admin navigation">
       {/* Logo */}
-      <a href="/admin" className="apl-sb-logo" tabIndex={0}>
+      <Link to="/admin" className="apl-sb-logo" tabIndex={0}>
         <span className="apl-sb-logo-icon" aria-hidden="true">
           <Icon.Logo />
         </span>
@@ -71,7 +78,7 @@ export default function AdminSidebar({ collapsed, mobileOpen }) {
           <span className="apl-sb-logo-name">Nominate AI</span>
           <span className="apl-sb-logo-sub">Admin Portal</span>
         </span>
-      </a>
+      </Link>
 
       {/* Navigation */}
       <nav className="apl-sb-nav" aria-label="Admin navigation">

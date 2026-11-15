@@ -1,4 +1,4 @@
-import { Link, useParams } from "react";
+import { Link, useParams } from "react-router-dom";
 
 const CandidateDetail = () => {
   const { id } = useParams();
