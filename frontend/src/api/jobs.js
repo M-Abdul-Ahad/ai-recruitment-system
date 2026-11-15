@@ -1,7 +1,7 @@
 import api from './axios';
 
 // ─── Recruiter APIs ───
-export const getJobs = () => api.get('/jobs/');
+export const getJobs = (params) => api.get('/jobs/', { params });
 
 export const getDashboardStats = () => api.get('/jobs/dashboard-stats/');
 
@@ -17,9 +17,9 @@ export const publishJob = (id) => api.post(`/jobs/${id}/publish/`);
 
 export const closeJob = (id) => api.post(`/jobs/${id}/close/`);
 
-export const getSkills = () => api.get('/jobs/skills/');
+export const getSkills = (params) => api.get('/jobs/skills/', { params });
 
-export const getApplicants = (jobId) => api.get(`/jobs/${jobId}/applications/`);
+export const getApplicants = (jobId, params) => api.get(`/jobs/${jobId}/applications/`, { params });
 
 export const updateApplicantStatus = (jobId, appId, status) => 
   api.patch(`/jobs/${jobId}/applications/${appId}/`, { status });
@@ -117,7 +117,7 @@ export const getJobDetail = (id) => api.get(`/jobs/${id}/`);
 export const applyToJob = (jobId, data = {}) => api.post(`/jobs/${jobId}/apply/`, data);
 
 /** GET /api/jobs/my-applications/ → applicant's applications list */
-export const getMyApplications = () => api.get('/jobs/my-applications/');
+export const getMyApplications = (params) => api.get('/jobs/my-applications/', { params });
 
 /** GET /api/resumes/my-resumes/ → applicant's uploaded resumes */
 export const getMyResumes = () => api.get('/resumes/my-resumes/');

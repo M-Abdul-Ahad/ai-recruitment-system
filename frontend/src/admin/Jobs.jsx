@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { getJobs, createJob, updateJob, deleteJob, getCompanies, getSkills, getUsers } from "../api/admin";
-import { useToast } from "../components/ui";
+import { useToast, Pagination } from "../components/ui";
 
 /* ── Status pill ── */
 const STATUS_PILL = {
@@ -127,23 +127,44 @@ export default function Jobs() {
   // Delete state
   const [deletingId, setDeletingId] = useState(null);
 
-  useEffect(() => { fetchAll(); }, []);
+  // Pagination state
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
+  const [totalPages, setTotalPages] = useState(1);
+  const [totalCount, setTotalCount] = useState(0);
 
-  const fetchAll = async () => {
+  useEffect(() => { fetchAll(1, pageSize); }, []);
+
+  const fetchAll = async (targetPage = currentPage, targetPageSize = pageSize) => {
     setLoading(true); setError(null);
     try {
       const [jobsRes, companiesRes, skillsRes, usersRes] = await Promise.all([
-        getJobs(), getCompanies(), getSkills(), getUsers(),
+        getJobs({ page: targetPage, page_size: targetPageSize }),
+        getCompanies({ paginate: false }),
+        getSkills(),
+        getUsers({ paginate: false }),
       ]);
       setJobs(jobsRes.data);
       setCompanies(companiesRes.data);
       setAllSkills(skillsRes.data);
       setAllUsers(usersRes.data.filter((u) => ["recruiter", "company_admin", "admin"].includes(u.role)));
+      setTotalPages(jobsRes.data.total_pages || 1);
+      setTotalCount(jobsRes.data.count ?? jobsRes.data.length ?? 0);
+      setCurrentPage(targetPage);
     } catch (err) {
       setError(err.response?.data?.detail ?? "Failed to load jobs.");
     } finally {
       setLoading(false);
     }
+  };
+
+  const handlePageChange = (newPage) => {
+    fetchAll(newPage, pageSize);
+  };
+
+  const handlePageSizeChange = (newSize) => {
+    setPageSize(newSize);
+    fetchAll(1, newSize);
   };
 
   const fmtErrors = (data) => {
@@ -170,9 +191,9 @@ export default function Jobs() {
         skills:              addForm.skills,
       };
       const res = await createJob(payload);
-      setJobs((prev) => [res.data, ...prev]);
       setAddForm(EMPTY_ADD); setShowAdd(false);
       toast.success(`Job "${res.data.title}" created successfully.`);
+      await fetchAll(1, pageSize);
     } catch (err) {
       setAddErr(fmtErrors(err.response?.data));
     } finally {
@@ -234,8 +255,8 @@ export default function Jobs() {
     setDeletingId(id);
     try {
       await deleteJob(id);
-      setJobs((prev) => prev.filter((j) => j.id !== id));
       toast.success("Job deleted successfully.");
+      await fetchAll(currentPage, pageSize);
     } catch (err) {
       toast.error(err.response?.data?.error ?? "Failed to delete job.");
     } finally {
@@ -389,6 +410,19 @@ export default function Jobs() {
             </tbody>
           </table>
         </div>
+      )}
+
+      {/* ─── Pagination Controls ─── */}
+      {!loading && !error && jobs.length > 0 && (
+        <Pagination
+          currentPage={currentPage}
+          totalPages={totalPages}
+          totalCount={totalCount}
+          pageSize={pageSize}
+          onPageChange={handlePageChange}
+          onPageSizeChange={handlePageSizeChange}
+          pageSizeOptions={[10, 20, 50]}
+        />
       )}
 
       {/* ─── Edit Job Modal ─── */}

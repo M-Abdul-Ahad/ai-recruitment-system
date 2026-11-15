@@ -2,7 +2,7 @@ import { useContext, useState, useEffect } from "react";
 import { AuthContext } from "../auth/AuthContext";
 import { useNavigate } from "react-router-dom";
 import { getJobs, publishJob, closeJob, deleteJob } from "../api/jobs";
-import { useToast } from "../components/ui";
+import { useToast, Pagination } from "../components/ui";
 import JobCard from "./components/JobCard";
 import ApplicantListModal from "./components/ApplicantListModal";
 import BulkUploadModal from "./components/BulkUploadModal";
@@ -16,18 +16,28 @@ const Jobs = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
+  // Pagination state
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize, setPageSize] = useState(9);
+  const [totalCount, setTotalCount] = useState(0);
+  const [totalPages, setTotalPages] = useState(1);
+
   const [selectedJobForApplicants, setSelectedJobForApplicants] = useState(null);
   const [selectedJobForBulkUpload, setSelectedJobForBulkUpload] = useState(null);
 
   useEffect(() => {
-    fetchJobs();
+    fetchJobs(1, pageSize);
   }, []);
 
-  const fetchJobs = async () => {
+  const fetchJobs = async (targetPage = currentPage, targetPageSize = pageSize) => {
     setLoading(true);
     try {
-      const response = await getJobs();
-      setJobs(response.data);
+      const response = await getJobs({ page: targetPage, page_size: targetPageSize });
+      const jobList = Array.isArray(response.data) ? response.data : (response.data.results || []);
+      setJobs(jobList);
+      setTotalCount(response.data?.count ?? jobList.length);
+      setTotalPages(response.data?.total_pages ?? Math.max(1, Math.ceil((response.data?.count ?? jobList.length) / targetPageSize)));
+      setCurrentPage(targetPage);
       setError(null);
     } catch (err) {
       console.error(err);
@@ -37,6 +47,14 @@ const Jobs = () => {
     }
   };
 
+  const handlePageChange = (newPage) => {
+    fetchJobs(newPage, pageSize);
+  };
+
+  const handlePageSizeChange = (newSize) => {
+    setPageSize(newSize);
+    fetchJobs(1, newSize);
+  };
 
   const handlePublish = async (jobId) => {
     try {
@@ -63,8 +81,8 @@ const Jobs = () => {
   const handleDeleteJob = async (jobId) => {
     try {
       await deleteJob(jobId);
-      setJobs(jobs.filter(j => j.id !== jobId));
       toast.success("Job deleted successfully.");
+      fetchJobs(currentPage, pageSize);
     } catch (err) {
       console.error(err);
       toast.error(err.response?.data?.error || "Failed to delete job.");
@@ -142,20 +160,32 @@ const Jobs = () => {
           </button>
         </div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {jobs.map(job => (
-            <JobCard
-              key={job.id}
-              job={job}
-              onPublish={handlePublish}
-              onClose={handleCloseJob}
-              onViewApplicants={handleViewApplicants}
-              onEdit={handleEditJob}
-              onDelete={handleDeleteJob}
-              onBulkUpload={handleBulkUpload}
-            />
-          ))}
-        </div>
+        <>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {jobs.map(job => (
+              <JobCard
+                key={job.id}
+                job={job}
+                onPublish={handlePublish}
+                onClose={handleCloseJob}
+                onViewApplicants={handleViewApplicants}
+                onEdit={handleEditJob}
+                onDelete={handleDeleteJob}
+                onBulkUpload={handleBulkUpload}
+              />
+            ))}
+          </div>
+
+          <Pagination
+            currentPage={currentPage}
+            totalPages={totalPages}
+            totalCount={totalCount}
+            pageSize={pageSize}
+            onPageChange={handlePageChange}
+            onPageSizeChange={handlePageSizeChange}
+            pageSizeOptions={[6, 9, 18, 36]}
+          />
+        </>
       )}
 
 

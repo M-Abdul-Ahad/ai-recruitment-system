@@ -9,7 +9,7 @@ import logging
 from django.conf import settings
 from django.contrib.auth import get_user_model
 from django.db import transaction, IntegrityError
-from django.db.models import Count
+from django.db.models import Count, Q
 from rest_framework import viewsets, permissions, status
 from rest_framework.decorators import action
 from rest_framework.response import Response
@@ -59,23 +59,36 @@ class JobViewSet(viewsets.ModelViewSet):
 
         # If user is recruiter -> return only their jobs
         if user.role == User.Role.RECRUITER:
-            return Job.objects.filter(created_by=user).select_related("company", "created_by").prefetch_related("skills", "applications")
-
+            qs = Job.objects.filter(created_by=user).select_related("company", "created_by").prefetch_related("skills", "applications")
         # If user is company_admin -> return all jobs of their company
-        if user.role == User.Role.COMPANY_ADMIN:
+        elif user.role == User.Role.COMPANY_ADMIN:
             if user.company:
-                return Job.objects.filter(company=user.company).select_related("company", "created_by").prefetch_related("skills", "applications")
+                qs = Job.objects.filter(company=user.company).select_related("company", "created_by").prefetch_related("skills", "applications")
+            else:
+                return Job.objects.none()
+        # If user is applicant -> return only ACTIVE jobs
+        elif user.role == User.Role.APPLICANT:
+            qs = Job.objects.filter(status=Job.JobStatus.ACTIVE).select_related("company").prefetch_related("skills")
+        # For Admin (system admin) or superuser, return all jobs
+        elif user.role == User.Role.ADMIN or user.is_superuser:
+            qs = Job.objects.all().select_related("company", "created_by").prefetch_related("skills", "applications")
+        else:
             return Job.objects.none()
 
-        # If user is applicant -> return only ACTIVE jobs
-        if user.role == User.Role.APPLICANT:
-            return Job.objects.filter(status=Job.JobStatus.ACTIVE).select_related("company").prefetch_related("skills")
+        search = self.request.query_params.get("search", "").strip()
+        if search:
+            qs = qs.filter(
+                Q(title__icontains=search) |
+                Q(company__name__icontains=search) |
+                Q(location__icontains=search) |
+                Q(skills__name__icontains=search)
+            ).distinct()
 
-        # For Admin (system admin) or superuser, return all jobs
-        if user.role == User.Role.ADMIN or user.is_superuser:
-            return Job.objects.all().select_related("company", "created_by").prefetch_related("skills", "applications")
+        job_status = self.request.query_params.get("status", "").strip()
+        if job_status and user.role != User.Role.APPLICANT:
+            qs = qs.filter(status=job_status)
 
-        return Job.objects.none()
+        return qs.order_by("-created_at")
 
     @action(detail=False, methods=["get"], url_path="dashboard-stats", permission_classes=[permissions.IsAuthenticated, IsRecruiter])
     def dashboard_stats(self, request):
@@ -753,6 +766,11 @@ class JobViewSet(viewsets.ModelViewSet):
     def my_applications(self, request):
         """GET /api/jobs/my-applications/ → logged-in applicant's applications."""
         applications = JobApplication.objects.filter(applicant=request.user).select_related('job', 'job__company', 'resume').order_by('-applied_at')
+        
+        status_param = request.query_params.get("status", "").strip()
+        if status_param and status_param != "ALL":
+            applications = applications.filter(status=status_param)
+
         paginator = StandardResultsSetPagination()
         page = paginator.paginate_queryset(applications, request, view=self)
         if page is not None:
@@ -765,6 +783,24 @@ class JobViewSet(viewsets.ModelViewSet):
     def applications(self, request, pk=None):
         job = self.get_object()
         applications = job.applications.select_related('applicant', 'resume').all().order_by('-applied_at')
+
+        status_param = request.query_params.get("status", "").strip()
+        if status_param and status_param != "ALL":
+            applications = applications.filter(status=status_param)
+
+        source_param = request.query_params.get("source_type", "").strip()
+        if source_param and source_param != "ALL":
+            applications = applications.filter(source_type=source_param)
+
+        search = request.query_params.get("search", "").strip()
+        if search:
+            applications = applications.filter(
+                Q(applicant__email__icontains=search) |
+                Q(applicant__first_name__icontains=search) |
+                Q(applicant__last_name__icontains=search) |
+                Q(resume__extracted_text__icontains=search)
+            )
+
         paginator = StandardResultsSetPagination()
         page = paginator.paginate_queryset(applications, request, view=self)
         if page is not None:

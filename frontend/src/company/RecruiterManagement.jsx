@@ -1,6 +1,6 @@
 import { useState, useEffect, useContext } from "react";
 import { AuthContext } from "../auth/AuthContext";
-import { useToast, Alert } from "../components/ui";
+import { useToast, Alert, Pagination } from "../components/ui";
 import api from "../api/axios";
 
 export default function RecruiterManagement() {
@@ -11,6 +11,18 @@ export default function RecruiterManagement() {
   const [loading, setLoading] = useState(true);
   const [invitationsLoading, setInvitationsLoading] = useState(true);
   
+  // Invitations pagination
+  const [invPage, setInvPage] = useState(1);
+  const [invPageSize, setInvPageSize] = useState(10);
+  const [invTotalCount, setInvTotalCount] = useState(0);
+  const [invTotalPages, setInvTotalPages] = useState(1);
+
+  // Members pagination
+  const [memberPage, setMemberPage] = useState(1);
+  const [memberPageSize, setMemberPageSize] = useState(10);
+  const [memberTotalCount, setMemberTotalCount] = useState(0);
+  const [memberTotalPages, setMemberTotalPages] = useState(1);
+
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
 
@@ -19,11 +31,17 @@ export default function RecruiterManagement() {
 
   const [deleteLoadingId, setDeleteLoadingId] = useState(null);
 
-  const fetchMembers = async () => {
+  const fetchMembers = async (targetPage = memberPage, targetSize = memberPageSize) => {
     setLoading(true);
     try {
-      const res = await api.get("/companies/members/");
-      setMembers(res.data);
+      const res = await api.get("/companies/members/", {
+        params: { page: targetPage, page_size: targetSize },
+      });
+      const list = Array.isArray(res.data) ? res.data : (res.data.results || []);
+      setMembers(list);
+      setMemberTotalCount(res.data?.count ?? list.length);
+      setMemberTotalPages(res.data?.total_pages ?? Math.max(1, Math.ceil((res.data?.count ?? list.length) / targetSize)));
+      setMemberPage(targetPage);
     } catch (err) {
       console.error("Failed to fetch company members:", err);
       setError("Could not load company members.");
@@ -32,11 +50,17 @@ export default function RecruiterManagement() {
     }
   };
 
-  const fetchInvitations = async () => {
+  const fetchInvitations = async (targetPage = invPage, targetSize = invPageSize) => {
     setInvitationsLoading(true);
     try {
-      const res = await api.get("/companies/invitations/");
-      setInvitations(res.data);
+      const res = await api.get("/companies/invitations/", {
+        params: { page: targetPage, page_size: targetSize },
+      });
+      const list = Array.isArray(res.data) ? res.data : (res.data.results || []);
+      setInvitations(list);
+      setInvTotalCount(res.data?.count ?? list.length);
+      setInvTotalPages(res.data?.total_pages ?? Math.max(1, Math.ceil((res.data?.count ?? list.length) / targetSize)));
+      setInvPage(targetPage);
     } catch (err) {
       console.error("Failed to fetch recruiter invitations:", err);
     } finally {
@@ -45,8 +69,8 @@ export default function RecruiterManagement() {
   };
 
   useEffect(() => {
-    fetchMembers();
-    fetchInvitations();
+    fetchMembers(1, memberPageSize);
+    fetchInvitations(1, invPageSize);
   }, []);
 
   const handleInviteRecruiter = async (e) => {
@@ -206,7 +230,7 @@ export default function RecruiterManagement() {
             </p>
           </div>
           <span className="text-xs font-bold text-[#8A8F76] bg-[#ECEEDF] dark:bg-[#2A2E1E] px-3 py-1 rounded-full">
-            {invitations.length} Total
+            {invTotalCount} Total
           </span>
         </div>
 
@@ -215,66 +239,81 @@ export default function RecruiterManagement() {
         ) : invitations.length === 0 ? (
           <div className="py-8 text-center text-xs text-[#8A8F76]">No recruiter invitations sent yet.</div>
         ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full text-left border-collapse">
-              <thead>
-                <tr className="border-b border-[#ECEEDF] dark:border-[#2A2E1E] text-[11px] font-extrabold uppercase text-[#8A8F76]">
-                  <th className="py-2.5 px-3">Email Address</th>
-                  <th className="py-2.5 px-3">Invited By</th>
-                  <th className="py-2.5 px-3">Sent Date</th>
-                  <th className="py-2.5 px-3">Expires</th>
-                  <th className="py-2.5 px-3">Status</th>
-                  <th className="py-2.5 px-3 text-right">Action</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-[#ECEEDF] dark:divide-[#2A2E1E] text-xs">
-                {invitations.map((inv) => {
-                  const isPending = inv.status === "pending";
-                  const isAccepted = inv.status === "accepted";
+          <>
+            <div className="overflow-x-auto">
+              <table className="w-full text-left border-collapse">
+                <thead>
+                  <tr className="border-b border-[#ECEEDF] dark:border-[#2A2E1E] text-[11px] font-extrabold uppercase text-[#8A8F76]">
+                    <th className="py-2.5 px-3">Email Address</th>
+                    <th className="py-2.5 px-3">Invited By</th>
+                    <th className="py-2.5 px-3">Sent Date</th>
+                    <th className="py-2.5 px-3">Expires</th>
+                    <th className="py-2.5 px-3">Status</th>
+                    <th className="py-2.5 px-3 text-right">Action</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-[#ECEEDF] dark:divide-[#2A2E1E] text-xs">
+                  {invitations.map((inv) => {
+                    const isPending = inv.status === "pending";
+                    const isAccepted = inv.status === "accepted";
 
-                  return (
-                    <tr key={inv.id} className="hover:bg-[#ECEEDF]/20 dark:hover:bg-[#2A2E1E]/20 transition-colors">
-                      <td className="py-3 px-3 font-bold text-[#22241B] dark:text-[#EBF0DA]">
-                        {inv.email}
-                      </td>
-                      <td className="py-3 px-3 text-[#8A8F76]">
-                        {inv.invited_by_email || "Company Admin"}
-                      </td>
-                      <td className="py-3 px-3 text-[#8A8F76]">
-                        {new Date(inv.created_at).toLocaleDateString()}
-                      </td>
-                      <td className="py-3 px-3 text-[#8A8F76]">
-                        {new Date(inv.expires_at).toLocaleDateString()}
-                      </td>
-                      <td className="py-3 px-3">
-                        <span
-                          className={`px-2.5 py-0.5 rounded-full text-[11px] font-bold ${
-                            isAccepted
-                              ? "bg-green-500/15 text-green-700 dark:text-green-400"
-                              : isPending
-                              ? "bg-amber-500/15 text-amber-700 dark:text-amber-400"
-                              : "bg-red-500/15 text-red-600 dark:text-red-400"
-                          }`}
-                        >
-                          {inv.status ? inv.status.toUpperCase() : "PENDING"}
-                        </span>
-                      </td>
-                      <td className="py-3 px-3 text-right">
-                        {isPending && (
-                          <button
-                            onClick={() => handleRevokeInvitation(inv.id)}
-                            className="text-xs text-red-600 hover:text-red-800 font-bold hover:underline"
+                    return (
+                      <tr key={inv.id} className="hover:bg-[#ECEEDF]/20 dark:hover:bg-[#2A2E1E]/20 transition-colors">
+                        <td className="py-3 px-3 font-bold text-[#22241B] dark:text-[#EBF0DA]">
+                          {inv.email}
+                        </td>
+                        <td className="py-3 px-3 text-[#8A8F76]">
+                          {inv.invited_by_email || "Company Admin"}
+                        </td>
+                        <td className="py-3 px-3 text-[#8A8F76]">
+                          {new Date(inv.created_at).toLocaleDateString()}
+                        </td>
+                        <td className="py-3 px-3 text-[#8A8F76]">
+                          {new Date(inv.expires_at).toLocaleDateString()}
+                        </td>
+                        <td className="py-3 px-3">
+                          <span
+                            className={`px-2.5 py-0.5 rounded-full text-[11px] font-bold ${
+                              isAccepted
+                                ? "bg-green-500/15 text-green-700 dark:text-green-400"
+                                : isPending
+                                ? "bg-amber-500/15 text-amber-700 dark:text-amber-400"
+                                : "bg-red-500/15 text-red-600 dark:text-red-400"
+                            }`}
                           >
-                            Revoke
-                          </button>
-                        )}
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
+                            {inv.status ? inv.status.toUpperCase() : "PENDING"}
+                          </span>
+                        </td>
+                        <td className="py-3 px-3 text-right">
+                          {isPending && (
+                            <button
+                              onClick={() => handleRevokeInvitation(inv.id)}
+                              className="text-xs text-red-600 hover:text-red-800 font-bold hover:underline"
+                            >
+                              Revoke
+                            </button>
+                          )}
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+
+            <Pagination
+              currentPage={invPage}
+              totalPages={invTotalPages}
+              totalCount={invTotalCount}
+              pageSize={invPageSize}
+              onPageChange={(p) => fetchInvitations(p, invPageSize)}
+              onPageSizeChange={(newSize) => {
+                setInvPageSize(newSize);
+                fetchInvitations(1, newSize);
+              }}
+              pageSizeOptions={[5, 10, 20]}
+            />
+          </>
         )}
       </div>
 
@@ -290,7 +329,7 @@ export default function RecruiterManagement() {
             </p>
           </div>
           <span className="text-xs font-bold text-[#8A8F76] bg-[#ECEEDF] dark:bg-[#2A2E1E] px-3 py-1 rounded-full">
-            {members.length} Total
+            {memberTotalCount} Total
           </span>
         </div>
 
@@ -299,57 +338,72 @@ export default function RecruiterManagement() {
         ) : members.length === 0 ? (
           <div className="py-12 text-center text-xs text-[#8A8F76]">No team members registered yet.</div>
         ) : (
-          <div className="divide-y divide-[#ECEEDF] dark:divide-[#2A2E1E]">
-            {members.map((member) => {
-              const isSelf = member.id === currentUser?.id;
-              return (
-                <div key={member.id} className="py-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-full bg-[#3D4127] text-[#D4DE95] font-extrabold text-xs flex items-center justify-center shadow-xs">
-                      {(member.username || member.email || "U").charAt(0).toUpperCase()}
-                    </div>
-                    <div>
-                      <div className="flex items-center gap-2">
-                        <h4 className="text-sm font-extrabold text-[#22241B] dark:text-[#EBF0DA]">
-                          {member.username || member.email}
-                        </h4>
-                        {isSelf && (
-                          <span className="px-2 py-0.5 rounded text-[10px] font-extrabold bg-[#D4DE95] text-[#3D4127]">
-                            You
-                          </span>
-                        )}
+          <>
+            <div className="divide-y divide-[#ECEEDF] dark:divide-[#2A2E1E]">
+              {members.map((member) => {
+                const isSelf = member.id === currentUser?.id;
+                return (
+                  <div key={member.id} className="py-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 rounded-full bg-[#3D4127] text-[#D4DE95] font-extrabold text-xs flex items-center justify-center shadow-xs">
+                        {(member.username || member.email || "U").charAt(0).toUpperCase()}
                       </div>
-                      <p className="text-xs text-[#8A8F76]">
-                        User ID: {member.id} &bull; Role: {member.role || "Member"}
-                      </p>
+                      <div>
+                        <div className="flex items-center gap-2">
+                          <h4 className="text-sm font-extrabold text-[#22241B] dark:text-[#EBF0DA]">
+                            {member.username || member.email}
+                          </h4>
+                          {isSelf && (
+                            <span className="px-2 py-0.5 rounded text-[10px] font-extrabold bg-[#D4DE95] text-[#3D4127]">
+                              You
+                            </span>
+                          )}
+                        </div>
+                        <p className="text-xs text-[#8A8F76]">
+                          User ID: {member.id} &bull; Role: {member.role || "Member"}
+                        </p>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center gap-3 self-end sm:self-auto">
+                      <span
+                        className={`px-3 py-1 rounded-full text-xs font-semibold ${
+                          member.is_hr
+                            ? "bg-[#4E7A33]/15 text-[#4E7A33]"
+                            : "bg-[#ECEEDF] dark:bg-[#2A2E1E] text-[#52564A] dark:text-[#9CA485]"
+                        }`}
+                      >
+                        {member.is_hr ? "HR / Recruiter Active" : "Member"}
+                      </span>
+
+                      {!isSelf && (
+                        <button
+                          onClick={() => handleDeleteMember(member.id, member.username || member.email)}
+                          disabled={deleteLoadingId === member.id}
+                          className="text-xs text-red-600 hover:text-red-800 font-bold px-3 py-1 rounded-lg hover:bg-red-500/10 transition-colors disabled:opacity-50"
+                        >
+                          {deleteLoadingId === member.id ? "Deleting..." : "Delete HR"}
+                        </button>
+                      )}
                     </div>
                   </div>
+                );
+              })}
+            </div>
 
-                  <div className="flex items-center gap-3 self-end sm:self-auto">
-                    <span
-                      className={`px-3 py-1 rounded-full text-xs font-semibold ${
-                        member.is_hr
-                          ? "bg-[#4E7A33]/15 text-[#4E7A33]"
-                          : "bg-[#ECEEDF] dark:bg-[#2A2E1E] text-[#52564A] dark:text-[#9CA485]"
-                      }`}
-                    >
-                      {member.is_hr ? "HR / Recruiter Active" : "Member"}
-                    </span>
-
-                    {!isSelf && (
-                      <button
-                        onClick={() => handleDeleteMember(member.id, member.username || member.email)}
-                        disabled={deleteLoadingId === member.id}
-                        className="text-xs text-red-600 hover:text-red-800 font-bold px-3 py-1 rounded-lg hover:bg-red-500/10 transition-colors disabled:opacity-50"
-                      >
-                        {deleteLoadingId === member.id ? "Deleting..." : "Delete HR"}
-                      </button>
-                    )}
-                  </div>
-                </div>
-              );
-            })}
-          </div>
+            <Pagination
+              currentPage={memberPage}
+              totalPages={memberTotalPages}
+              totalCount={memberTotalCount}
+              pageSize={memberPageSize}
+              onPageChange={(p) => fetchMembers(p, memberPageSize)}
+              onPageSizeChange={(newSize) => {
+                setMemberPageSize(newSize);
+                fetchMembers(1, newSize);
+              }}
+              pageSizeOptions={[5, 10, 20]}
+            />
+          </>
         )}
       </div>
     </div>

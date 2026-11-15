@@ -2,6 +2,7 @@ import React, { useState, useEffect, useContext, useCallback, useMemo } from "re
 import { AuthContext } from "../auth/AuthContext";
 import { useNavigate } from "react-router-dom";
 import { getJobs, getJobDetail, getMyApplications } from "../api/jobs";
+import { Pagination } from "../components/ui";
 import JobCard from "./components/JobCard";
 import ApplyModal from "./components/ApplyModal";
 
@@ -23,6 +24,12 @@ const Jobs = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
+  // Pagination
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize, setPageSize] = useState(9);
+  const [totalCount, setTotalCount] = useState(0);
+  const [totalPages, setTotalPages] = useState(1);
+
   const [appliedJobIds, setAppliedJobIds] = useState(new Set());
 
   // Detail drawer / modal
@@ -38,15 +45,20 @@ const Jobs = () => {
 
   /* ── initial data load ── */
   useEffect(() => {
-    fetchJobs();
     fetchAppliedJobs();
   }, []);
 
-  const fetchJobs = async () => {
+  const fetchJobs = async (targetPage = 1, targetPageSize = pageSize, search = searchTerm) => {
     setLoading(true);
     try {
-      const res = await getJobs();
-      setJobs(res.data);
+      const params = { page: targetPage, page_size: targetPageSize };
+      if (search?.trim()) params.search = search.trim();
+      const res = await getJobs(params);
+      const list = Array.isArray(res.data) ? res.data : (res.data.results || []);
+      setJobs(list);
+      setTotalCount(res.data?.count ?? list.length);
+      setTotalPages(res.data?.total_pages ?? Math.max(1, Math.ceil((res.data?.count ?? list.length) / targetPageSize)));
+      setCurrentPage(targetPage);
       setError(null);
     } catch (err) {
       console.error(err);
@@ -56,10 +68,19 @@ const Jobs = () => {
     }
   };
 
+  // Debounced search query
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      fetchJobs(1, pageSize, searchTerm);
+    }, 300);
+    return () => clearTimeout(timer);
+  }, [searchTerm]);
+
   const fetchAppliedJobs = async () => {
     try {
-      const res = await getMyApplications();
-      const ids = new Set(res.data.map((app) => app.job));
+      const res = await getMyApplications({ paginate: false });
+      const appList = Array.isArray(res.data) ? res.data : (res.data.results || []);
+      const ids = new Set(appList.map((app) => app.job));
       setAppliedJobIds(ids);
     } catch (err) {
       console.error("Failed to fetch applications:", err);
@@ -96,17 +117,7 @@ const Jobs = () => {
   }, []);
 
   /* ── search filter ── */
-  const filteredJobs = useMemo(() => {
-    if (!searchTerm.trim()) return jobs;
-    const q = searchTerm.toLowerCase();
-    return jobs.filter(
-      (j) =>
-        j.title?.toLowerCase().includes(q) ||
-        j.company_name?.toLowerCase().includes(q) ||
-        j.location?.toLowerCase().includes(q) ||
-        j.skills_data?.some((s) => s.name.toLowerCase().includes(q))
-    );
-  }, [jobs, searchTerm]);
+  const filteredJobs = jobs;
 
   /* ── salary helper for detail ── */
   const formatSalary = (min, max) => {
@@ -138,7 +149,7 @@ const Jobs = () => {
             Browse Jobs
           </h1>
           <p className="text-xs sm:text-sm text-[#52564A] dark:text-[#9CA485] mt-1">
-            {loading ? "Discovering open positions..." : `${filteredJobs.length} active job${filteredJobs.length !== 1 ? "s" : ""} available`}
+            {loading ? "Discovering open positions..." : `${totalCount} active job${totalCount !== 1 ? "s" : ""} available`}
           </p>
         </div>
 
@@ -224,17 +235,32 @@ const Jobs = () => {
         </div>
       ) : (
         /* ────────────── JOB GRID ────────────── */
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {filteredJobs.map((job) => (
-            <JobCard
-              key={job.id}
-              job={job}
-              isApplied={appliedJobIds.has(job.id)}
-              onViewDetails={handleViewDetails}
-              onApply={handleApplyClick}
-            />
-          ))}
-        </div>
+        <>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {jobs.map((job) => (
+              <JobCard
+                key={job.id}
+                job={job}
+                isApplied={appliedJobIds.has(job.id)}
+                onViewDetails={handleViewDetails}
+                onApply={handleApplyClick}
+              />
+            ))}
+          </div>
+
+          <Pagination
+            currentPage={currentPage}
+            totalPages={totalPages}
+            totalCount={totalCount}
+            pageSize={pageSize}
+            onPageChange={(p) => fetchJobs(p, pageSize, searchTerm)}
+            onPageSizeChange={(newSize) => {
+              setPageSize(newSize);
+              fetchJobs(1, newSize, searchTerm);
+            }}
+            pageSizeOptions={[6, 9, 18, 36]}
+          />
+        </>
       )}
 
       {/* ────────────── JOB DETAIL DRAWER ────────────── */}

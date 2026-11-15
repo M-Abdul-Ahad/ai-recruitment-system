@@ -3,7 +3,7 @@ import {
   getUsers, createUser, updateUser, deleteUser,
   getCompanies,
 } from "../api/admin";
-import { useToast } from "../components/ui";
+import { useToast, Pagination } from "../components/ui";
 
 /* ── Role pill colour map ── */
 const ROLE_PILL = {
@@ -102,19 +102,40 @@ export default function Users() {
   // Delete state
   const [deletingId, setDeletingId] = useState(null);
 
-  useEffect(() => { fetchAll(); }, []);
+  // Pagination state
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
+  const [totalPages, setTotalPages] = useState(1);
+  const [totalCount, setTotalCount] = useState(0);
 
-  const fetchAll = async () => {
+  useEffect(() => { fetchAll(1, pageSize); }, []);
+
+  const fetchAll = async (targetPage = currentPage, targetPageSize = pageSize) => {
     setLoading(true); setError(null);
     try {
-      const [usersRes, companyRes] = await Promise.all([getUsers(), getCompanies()]);
+      const [usersRes, companyRes] = await Promise.all([
+        getUsers({ page: targetPage, page_size: targetPageSize }),
+        getCompanies({ paginate: false }),
+      ]);
       setUsers(usersRes.data);
       setCompanies(companyRes.data);
+      setTotalPages(usersRes.data.total_pages || 1);
+      setTotalCount(usersRes.data.count ?? usersRes.data.length ?? 0);
+      setCurrentPage(targetPage);
     } catch (err) {
       setError(err.response?.data?.detail ?? "Failed to load data. Please try again.");
     } finally {
       setLoading(false);
     }
+  };
+
+  const handlePageChange = (newPage) => {
+    fetchAll(newPage, pageSize);
+  };
+
+  const handlePageSizeChange = (newSize) => {
+    setPageSize(newSize);
+    fetchAll(1, newSize);
   };
 
   const fmtErrors = (data) => {
@@ -137,10 +158,10 @@ export default function Users() {
       const payload = { ...addForm };
       if (!payload.company) delete payload.company;
       const res = await createUser(payload);
-      setUsers((prev) => [...prev, res.data]);
       setAddForm(EMPTY_ADD_FORM);
       setShowAdd(false);
       toast.success(`User "${res.data.username || res.data.email}" created successfully.`);
+      await fetchAll(1, pageSize);
     } catch (err) {
       setAddErr(fmtErrors(err.response?.data));
     } finally {
@@ -199,8 +220,8 @@ export default function Users() {
     setDeletingId(userId);
     try {
       await deleteUser(userId);
-      setUsers((prev) => prev.filter((u) => u.id !== userId));
       toast.success("User deleted successfully.");
+      await fetchAll(currentPage, pageSize);
     } catch (err) {
       toast.error(err.response?.data?.error ?? "Failed to delete user.");
     } finally {
@@ -347,6 +368,19 @@ export default function Users() {
             </tbody>
           </table>
         </div>
+      )}
+
+      {/* ─── Pagination Controls ─── */}
+      {!loading && !error && users.length > 0 && (
+        <Pagination
+          currentPage={currentPage}
+          totalPages={totalPages}
+          totalCount={totalCount}
+          pageSize={pageSize}
+          onPageChange={handlePageChange}
+          onPageSizeChange={handlePageSizeChange}
+          pageSizeOptions={[10, 20, 50]}
+        />
       )}
 
       {/* ─── Edit User Modal ─── */}

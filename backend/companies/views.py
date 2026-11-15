@@ -160,9 +160,11 @@ class CompanyMembersView(APIView):
     GET /api/companies/members/
     
     Returns all users belonging to the logged-in user's company.
+    Supports StandardResultsSetPagination and ?paginate=false.
     """
     
     permission_classes = [IsAuthenticated]
+    pagination_class = StandardResultsSetPagination
     
     def get(self, request):
         user = cast("User", request.user)
@@ -179,7 +181,22 @@ class CompanyMembersView(APIView):
                 status=status.HTTP_404_NOT_FOUND,
             )
             
-        members = _User.objects.filter(company=user.company)
+        members = _User.objects.filter(company=user.company).order_by("id")
+        search = request.query_params.get("search", "").strip()
+        if search:
+            from django.db.models import Q
+            members = members.filter(
+                Q(email__icontains=search) |
+                Q(username__icontains=search) |
+                Q(first_name__icontains=search) |
+                Q(last_name__icontains=search)
+            )
+
+        paginator = self.pagination_class()
+        page = paginator.paginate_queryset(members, request)
+        if page is not None:
+            serializer = CompanyMemberSerializer(page, many=True)
+            return paginator.get_paginated_response(serializer.data)
         serializer = CompanyMemberSerializer(members, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
 
@@ -255,6 +272,7 @@ class RecruiterInvitationView(APIView):
     """
     permission_classes = [IsAuthenticated, RolePermission]
     allowed_roles = ["company_admin", "admin"]
+    pagination_class = StandardResultsSetPagination
 
     def get(self, request):
         user = cast("User", request.user)
@@ -262,6 +280,19 @@ class RecruiterInvitationView(APIView):
             return Response({"error": "You do not belong to any company."}, status=status.HTTP_400_BAD_REQUEST)
 
         invitations = RecruiterInvitation.objects.filter(company=user.company).order_by("-created_at")
+        search = request.query_params.get("search", "").strip()
+        if search:
+            invitations = invitations.filter(email__icontains=search)
+
+        status_param = request.query_params.get("status", "").strip()
+        if status_param and status_param != "ALL":
+            invitations = invitations.filter(status=status_param.lower())
+
+        paginator = self.pagination_class()
+        page = paginator.paginate_queryset(invitations, request)
+        if page is not None:
+            serializer = RecruiterInvitationListSerializer(page, many=True)
+            return paginator.get_paginated_response(serializer.data)
         serializer = RecruiterInvitationListSerializer(invitations, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
 
@@ -383,13 +414,20 @@ class AdminCompanyListCreateView(APIView):
     def get(self, request):
         status_filter = request.query_params.get("status")
         companies = Company.objects.all().order_by("-created_at")
-        if status_filter:
+        if status_filter and status_filter != "all":
             companies = companies.filter(verification_status=status_filter)
         paginator = StandardResultsSetPagination()
         page = paginator.paginate_queryset(companies, request, view=self)
         if page is not None:
             serializer = CompanySerializer(page, many=True, context={'request': request})
-            return paginator.get_paginated_response(serializer.data)
+            res = paginator.get_paginated_response(serializer.data)
+            res.data['status_counts'] = {
+                'all': Company.objects.count(),
+                'pending': Company.objects.filter(verification_status="pending").count(),
+                'verified': Company.objects.filter(verification_status="verified").count(),
+                'rejected': Company.objects.filter(verification_status="rejected").count(),
+            }
+            return res
         serializer = CompanySerializer(companies, many=True, context={'request': request})
         return Response(serializer.data)
 

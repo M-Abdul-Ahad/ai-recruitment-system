@@ -18,7 +18,7 @@ export default function CompanyDashboard() {
       try {
         const [compRes, membRes, statsRes] = await Promise.allSettled([
           api.get("/companies/me/"),
-          api.get("/companies/members/"),
+          api.get("/companies/members/", { params: { paginate: false } }),
           api.get("/jobs/dashboard-stats/"),
         ]);
 
