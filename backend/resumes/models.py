@@ -1,6 +1,6 @@
 from django.db import models
 from django.conf import settings
-from pgvector.django import VectorField
+from pgvector.django import VectorField, HnswIndex
 
 
 class Resume(models.Model):
@@ -20,7 +20,7 @@ class Resume(models.Model):
     )
     extracted_text = models.TextField(null=True, blank=True)
     cleaned_text = models.TextField(null=True, blank=True)
-    uploaded_at = models.DateTimeField(auto_now_add=True)
+    uploaded_at = models.DateTimeField(auto_now_add=True, db_index=True)
 
     # 🔥 AI Fields
     ai_score = models.IntegerField(null=True, blank=True)
@@ -36,6 +36,19 @@ class Resume(models.Model):
         blank=True,
         help_text="Gemini text-embedding-004 vector representation (768 dimensions)"
     )
+
+    class Meta:
+        ordering = ["-uploaded_at"]
+        indexes = [
+            models.Index(fields=["user", "-uploaded_at"], name="resume_user_uploaded_idx"),
+            HnswIndex(
+                name="resume_emb_hnsw_idx",
+                fields=["embedding"],
+                m=16,
+                ef_construction=64,
+                opclasses=["vector_cosine_ops"],
+            ),
+        ]
 
     def __str__(self):
         return f"{self.user.username if self.user else 'Anonymous'} - Resume"

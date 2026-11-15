@@ -28,6 +28,7 @@ class User(AbstractUser):
         default=Role.APPLICANT,
         blank=False,
         null=False,
+        db_index=True,
     )
 
     role_fk = models.ForeignKey(
@@ -64,6 +65,12 @@ class User(AbstractUser):
 
     USERNAME_FIELD = "email"
     REQUIRED_FIELDS = ["username"]
+
+    class Meta:
+        indexes = [
+            models.Index(fields=["company", "is_hr"], name="user_company_hr_idx"),
+            models.Index(fields=["role", "date_joined"], name="user_role_joined_idx"),
+        ]
 
 
 class UserRole(models.Model):

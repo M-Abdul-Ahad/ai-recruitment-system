@@ -12,6 +12,7 @@ logger = logging.getLogger("companies.views")
 
 from users.permissions import RolePermission
 from users.permissions import IsAdmin
+from core.pagination import StandardResultsSetPagination
 from .models import Company
 from .serializers import CompanySerializer, CompanyCreateSerializer, AddHRSerializer, CompanyMemberSerializer
 from django.contrib.auth import get_user_model
@@ -384,6 +385,11 @@ class AdminCompanyListCreateView(APIView):
         companies = Company.objects.all().order_by("-created_at")
         if status_filter:
             companies = companies.filter(verification_status=status_filter)
+        paginator = StandardResultsSetPagination()
+        page = paginator.paginate_queryset(companies, request, view=self)
+        if page is not None:
+            serializer = CompanySerializer(page, many=True, context={'request': request})
+            return paginator.get_paginated_response(serializer.data)
         serializer = CompanySerializer(companies, many=True, context={'request': request})
         return Response(serializer.data)
 

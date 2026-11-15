@@ -51,6 +51,7 @@ class Company(models.Model):
         choices=VerificationStatus.choices,
         default=VerificationStatus.UNVERIFIED,
         help_text="Company business verification status",
+        db_index=True,
     )
     rejection_reason = models.TextField(
         blank=True,
@@ -58,12 +59,15 @@ class Company(models.Model):
         help_text="Reason provided by admin if registration was rejected",
     )
 
-    created_at = models.DateTimeField(auto_now_add=True)
+    created_at = models.DateTimeField(auto_now_add=True, db_index=True)
     updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:
         verbose_name_plural = "companies"
         ordering = ["-created_at"]
+        indexes = [
+            models.Index(fields=["verification_status", "-created_at"], name="comp_verify_created_idx"),
+        ]
 
     def __str__(self):
         return self.name
@@ -77,7 +81,7 @@ class RecruiterInvitation(models.Model):
         related_name="invitations",
     )
     email = models.EmailField(max_length=255)
-    token_hash = models.CharField(max_length=255)
+    token_hash = models.CharField(max_length=255, db_index=True)
     expires_at = models.DateTimeField()
     accepted_at = models.DateTimeField(null=True, blank=True)
     invited_by = models.ForeignKey(
@@ -88,10 +92,14 @@ class RecruiterInvitation(models.Model):
         db_column="invited_by_id",
         related_name="sent_invitations",
     )
-    created_at = models.DateTimeField(auto_now_add=True)
+    created_at = models.DateTimeField(auto_now_add=True, db_index=True)
 
     class Meta:
         db_table = "recruiter_invitations"
+        ordering = ["-created_at"]
+        indexes = [
+            models.Index(fields=["company", "-created_at"], name="rec_inv_comp_created_idx"),
+        ]
 
     def __str__(self):
         return f"Invitation for {self.email} to {self.company.name}"

@@ -9,9 +9,11 @@ import logging
 from django.conf import settings
 from django.contrib.auth import get_user_model
 from django.db import transaction, IntegrityError
+from django.db.models import Count
 from rest_framework import viewsets, permissions, status
 from rest_framework.decorators import action
 from rest_framework.response import Response
+from core.pagination import StandardResultsSetPagination
 
 from .models import Job, JobApplication, Skill, TemporaryResumeCandidate, CandidateInterviewKit
 from .serializers import (
@@ -48,6 +50,7 @@ class SkillViewSet(viewsets.ReadOnlyModelViewSet):
 
 class JobViewSet(viewsets.ModelViewSet):
     serializer_class = JobSerializer
+    pagination_class = StandardResultsSetPagination
 
     def get_queryset(self):
         user = self.request.user
@@ -83,7 +86,7 @@ class JobViewSet(viewsets.ModelViewSet):
         draft_jobs = qs.filter(status=Job.JobStatus.DRAFT).count()
         total_applicants = JobApplication.objects.filter(job__in=qs).count()
 
-        recent = qs.order_by("-created_at")[:5]
+        recent = qs.annotate(applicants_count=Count('applications')).order_by("-created_at")[:5]
         recent_list = []
         for j in recent:
             recent_list.append({
@@ -94,7 +97,7 @@ class JobViewSet(viewsets.ModelViewSet):
                 "experience_required": j.experience_required,
                 "salary_min": j.salary_min,
                 "salary_max": j.salary_max,
-                "applicants": j.applications.count(),
+                "applicants": j.applicants_count,
                 "created_at": j.created_at.isoformat() if j.created_at else None,
                 "created_by_name": f"{j.created_by.first_name} {j.created_by.last_name}".strip() or j.created_by.username if j.created_by else "",
                 "company_name": j.company.name if j.company else "",
@@ -749,14 +752,24 @@ class JobViewSet(viewsets.ModelViewSet):
     @action(detail=False, methods=["get"], url_path="my-applications", permission_classes=[permissions.IsAuthenticated, IsApplicant])
     def my_applications(self, request):
         """GET /api/jobs/my-applications/ → logged-in applicant's applications."""
-        applications = JobApplication.objects.filter(applicant=request.user).select_related('job', 'job__company', 'resume')
+        applications = JobApplication.objects.filter(applicant=request.user).select_related('job', 'job__company', 'resume').order_by('-applied_at')
+        paginator = StandardResultsSetPagination()
+        page = paginator.paginate_queryset(applications, request, view=self)
+        if page is not None:
+            serializer = JobApplicationSerializer(page, many=True, context={'request': request})
+            return paginator.get_paginated_response(serializer.data)
         serializer = JobApplicationSerializer(applications, many=True, context={'request': request})
         return Response(serializer.data)
 
     @action(detail=True, methods=["get"], permission_classes=[permissions.IsAuthenticated, IsRecruiter, IsJobOwner])
     def applications(self, request, pk=None):
         job = self.get_object()
-        applications = job.applications.select_related('applicant', 'resume').all()
+        applications = job.applications.select_related('applicant', 'resume').all().order_by('-applied_at')
+        paginator = StandardResultsSetPagination()
+        page = paginator.paginate_queryset(applications, request, view=self)
+        if page is not None:
+            serializer = RecruiterApplicationSerializer(page, many=True)
+            return paginator.get_paginated_response(serializer.data)
         return Response(RecruiterApplicationSerializer(applications, many=True).data)
 
     @action(detail=True, methods=["patch"], url_path='applications/(?P<app_id>[^/.]+)', permission_classes=[permissions.IsAuthenticated, IsRecruiter, IsJobOwner])
@@ -977,6 +990,11 @@ class AdminJobListCreateView(APIView):
 
     def get(self, request):
         jobs = Job.objects.select_related('company', 'created_by').prefetch_related('skills').order_by('-created_at')
+        paginator = StandardResultsSetPagination()
+        page = paginator.paginate_queryset(jobs, request, view=self)
+        if page is not None:
+            serializer = JobSerializer(page, many=True)
+            return paginator.get_paginated_response(serializer.data)
         serializer = JobSerializer(jobs, many=True)
         return Response(serializer.data)
 
