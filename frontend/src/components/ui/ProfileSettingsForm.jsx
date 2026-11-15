@@ -3,7 +3,7 @@ import api from "../../api/axios";
 import { useToast, Alert } from "./index";
 
 export default function ProfileSettingsForm({ roleTitle = "Profile" }) {
-  const { toast } = useToast();
+  const toast = useToast();
   const [profile, setProfile] = useState(null);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);

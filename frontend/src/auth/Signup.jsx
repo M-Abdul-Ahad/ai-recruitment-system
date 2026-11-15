@@ -175,37 +175,51 @@ export default function Signup() {
       return;
     }
 
-    if (!applicantForm.cnicNumber?.trim()) {
-      setError("CNIC / National ID Number is required.");
+    if (applicantForm.password.length < 8) {
+      setError("Password must be at least 8 characters long.");
       return;
     }
 
-    if (!cnicFile) {
-      setError("Please upload your CNIC document / image.");
-      return;
-    }
+    const cleanEmail = applicantForm.email.trim().toLowerCase();
+    const cleanUsername = applicantForm.username.trim().replace(/\s+/g, "_");
 
     const formData = new FormData();
     formData.append("role", "applicant");
-    formData.append("username", applicantForm.username);
-    formData.append("email", applicantForm.email);
+    formData.append("username", cleanUsername);
+    formData.append("email", cleanEmail);
     formData.append("password", applicantForm.password);
-    formData.append("cnic_number", applicantForm.cnicNumber.trim());
-    formData.append("cnic_image", cnicFile);
+
+    if (applicantForm.cnicNumber?.trim()) {
+      formData.append("cnic_number", applicantForm.cnicNumber.trim());
+    }
+    if (cnicFile) {
+      formData.append("cnic_image", cnicFile);
+    }
 
     setLoading(true);
     try {
       await signup(formData);
       toast.success("Applicant account created successfully! Please log in.");
-      navigate("/login");
+      navigate("/login", {
+        state: {
+          email: cleanEmail,
+          message: "Account created successfully! Please sign in with your password.",
+        },
+      });
     } catch (err) {
       console.error("API Error during signup:", err);
       const apiError = err.response?.data;
       let errMsgs = [];
       if (apiError && typeof apiError === "object") {
         for (const key in apiError) {
-          const msg = Array.isArray(apiError[key]) ? apiError[key].join(" ") : apiError[key];
-          errMsgs.push(`${key}: ${msg}`);
+          const val = apiError[key];
+          let msg = Array.isArray(val) ? val.join(" ") : String(val);
+          if (key === "email" && msg.toLowerCase().includes("already exists")) {
+            msg = "An account with this email address already exists.";
+          } else if (key === "username" && msg.toLowerCase().includes("already exists")) {
+            msg = "This username is already taken. Please choose another.";
+          }
+          errMsgs.push(msg);
         }
       }
       const errMsg = errMsgs.length > 0 ? errMsgs.join(" | ") : "Signup failed. Please check your details and try again.";
@@ -223,6 +237,11 @@ export default function Signup() {
 
     if (companyForm.password !== companyForm.confirmPassword) {
       setError("Passwords do not match.");
+      return;
+    }
+
+    if (companyForm.password.length < 8) {
+      setError("Password must be at least 8 characters long.");
       return;
     }
 
@@ -246,17 +265,21 @@ export default function Signup() {
       return;
     }
 
+    const cleanOwnerEmail = companyForm.ownerEmail.trim().toLowerCase();
+    const cleanCompanyEmail = companyForm.companyEmail.trim().toLowerCase();
+    const cleanOwnerUsername = companyForm.ownerName.trim().replace(/\s+/g, "_");
+
     const formData = new FormData();
     formData.append("role", "company_admin");
-    formData.append("username", companyForm.ownerName);
-    formData.append("email", companyForm.ownerEmail);
+    formData.append("username", cleanOwnerUsername);
+    formData.append("email", cleanOwnerEmail);
     formData.append("password", companyForm.password);
-    formData.append("company_name", companyForm.companyName);
-    formData.append("company_email", companyForm.companyEmail);
-    formData.append("website", companyForm.website);
+    formData.append("company_name", companyForm.companyName.trim());
+    formData.append("company_email", cleanCompanyEmail);
+    formData.append("website", companyForm.website.trim());
     formData.append("industry", companyForm.industry);
-    formData.append("phone", companyForm.phone);
-    formData.append("address", companyForm.address);
+    formData.append("phone", companyForm.phone.trim());
+    formData.append("address", companyForm.address.trim());
 
     formData.append("document_type", companyForm.documentType);
     formData.append("tax_id", companyForm.taxId.trim());
@@ -269,20 +292,27 @@ export default function Signup() {
     setLoading(true);
     try {
       await signup(formData);
-      toast.success({
-        title: "Registration Submitted",
-        message: "Your legal verification document is under review. A confirmation email has been sent.",
-        duration: 6000,
+      toast.success("Company registration submitted! You can now log in.");
+      navigate("/login", {
+        state: {
+          email: cleanOwnerEmail,
+          message: "Company registration submitted! You can now log in to your portal while your legal documents are under verification.",
+        },
       });
-      navigate("/login");
     } catch (err) {
       console.error("API Error during signup:", err);
       const apiError = err.response?.data;
       let errMsgs = [];
       if (apiError && typeof apiError === "object") {
         for (const key in apiError) {
-          const msg = Array.isArray(apiError[key]) ? apiError[key].join(" ") : apiError[key];
-          errMsgs.push(`${key}: ${msg}`);
+          const val = apiError[key];
+          let msg = Array.isArray(val) ? val.join(" ") : String(val);
+          if (key === "email" && msg.toLowerCase().includes("already exists")) {
+            msg = "An account with this owner email address already exists.";
+          } else if (key === "company_name" && msg.toLowerCase().includes("already exists")) {
+            msg = "A company with this name is already registered.";
+          }
+          errMsgs.push(msg);
         }
       }
       const errMsg = errMsgs.length > 0 ? errMsgs.join(" | ") : "Registration failed. Please check your details and try again.";
@@ -518,21 +548,20 @@ export default function Signup() {
               </div>
 
               {/* Identity / CNIC Section */}
-              <div className="auth-section-divider">Identity Verification *</div>
+              <div className="auth-section-divider">Identity Verification (Optional)</div>
 
               <AuthInput
                 id="apl-cnic"
-                label="CNIC / National ID Number *"
+                label="CNIC / National ID Number (Optional)"
                 icon={I.idCard}
                 placeholder="e.g. 42101-1234567-1"
                 value={applicantForm.cnicNumber}
                 onChange={(e) => setApplicantForm({ ...applicantForm, cnicNumber: e.target.value })}
-                required
               />
 
               <div className="auth-field">
-                <label className="auth-label">Upload CNIC Document / Image *</label>
-                <label className="auth-logo-upload" htmlFor="apl-cnic-file" title="Upload CNIC image">
+                <label className="auth-label">Upload CNIC Document / Image (Optional)</label>
+                <label className="auth-logo-upload" htmlFor="apl-cnic-file" title="Upload CNIC image (Optional)">
                   <div className="auth-logo-upload-preview">
                     {cnicPreview ? (
                       <img src={cnicPreview} alt="CNIC preview" />
@@ -575,7 +604,6 @@ export default function Signup() {
                     accept="image/png,image/jpeg,image/webp,image/jpg"
                     style={{ display: "none" }}
                     onChange={handleCnicChange}
-                    required
                   />
                 </label>
               </div>

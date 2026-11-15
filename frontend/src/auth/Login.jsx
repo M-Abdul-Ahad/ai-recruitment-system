@@ -1,5 +1,5 @@
 import { useState, useContext } from "react";
-import { useNavigate, Link } from "react-router-dom";
+import { useNavigate, useLocation, Link } from "react-router-dom";
 import "./auth.css";
 import { AuthContext } from "./AuthContext";
 import { useToast, Alert } from "../components/ui";
@@ -28,24 +28,38 @@ const BrainIcon = () => (
 export default function Login() {
   const { login } = useContext(AuthContext);
   const navigate = useNavigate();
+  const location = useLocation();
   const toast = useToast();
 
-  const [email, setEmail] = useState("");
+  const [email, setEmail] = useState(() => location.state?.email || "");
   const [password, setPassword] = useState("");
   const [showPw, setShowPw] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [infoMessage, setInfoMessage] = useState(() => location.state?.message || "");
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError("");
+    setInfoMessage("");
+
+    const cleanEmail = email.trim().toLowerCase();
+    if (!cleanEmail) {
+      setError("Please enter your email address.");
+      return;
+    }
+    if (!password) {
+      setError("Please enter your password.");
+      return;
+    }
+
     setLoading(true);
     try {
-      const loggedUser = await login({ email, password });
+      const loggedUser = await login({ email: cleanEmail, password });
       toast.success("Signed in successfully. Welcome back!");
 
-      // Seamless direct role routing
-      const role = loggedUser?.role?.toLowerCase();
+      // Direct seamless role routing
+      const role = (loggedUser?.role || "").toLowerCase();
       if (role === "applicant") {
         navigate("/applicant", { replace: true });
       } else if (role === "company_admin") {
@@ -59,7 +73,10 @@ export default function Login() {
       }
     } catch (err) {
       console.error("Login error:", err);
-      const msg = err.response?.data?.detail || err.response?.data?.error || "Invalid email or password. Please try again.";
+      let msg = err.response?.data?.detail || err.response?.data?.error || "Invalid email or password. Please try again.";
+      if (typeof msg === "string" && msg.toLowerCase().includes("no active account found")) {
+        msg = "Invalid email or password. Please verify your credentials and try again.";
+      }
       setError(msg);
       toast.error(msg);
     } finally {
@@ -163,6 +180,15 @@ export default function Login() {
             <h2 className="auth-form-title">Welcome Back</h2>
             <p className="auth-form-subtitle">Sign in to continue to your dashboard.</p>
           </div>
+
+          {infoMessage && (
+            <Alert
+              type="success"
+              message={infoMessage}
+              onClose={() => setInfoMessage("")}
+              style={{ marginBottom: "var(--sp-4)" }}
+            />
+          )}
 
           {error && (
             <Alert

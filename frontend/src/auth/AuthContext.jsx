@@ -29,28 +29,31 @@ export const AuthProvider = ({ children }) => {
   }, []);
 
   const signup = async (data) => {
-    await api.post("/auth/signup/", data);
+    return await api.post("/auth/signup/", data);
   };
 
   const login = async (data) => {
-    const res = await api.post("/auth/login/", data);
-    console.log("LOGIN RESPONSE:", res.data);
+    const payload = {
+      ...data,
+      email: data.email ? data.email.trim().toLowerCase() : "",
+    };
+    const res = await api.post("/auth/login/", payload);
 
-    console.log("STORING USER + TOKEN");
     localStorage.setItem("access", res.data.access);
     localStorage.setItem("refresh", res.data.refresh);
 
     const newUser = {
       id: res.data.user_id,
       email: res.data.email,
-      role: res.data.role,
+      username: res.data.username || "",
+      first_name: res.data.first_name || "",
+      last_name: res.data.last_name || "",
+      role: (res.data.role || "").toLowerCase(),
       is_hr: res.data.is_hr,
       company_id: res.data.company_id,
       company_name: res.data.company_name,
       company_verification_status: res.data.company_verification_status,
     };
-
-    console.log("FINAL USER:", newUser);
 
     setUser(newUser);
     localStorage.setItem("user", JSON.stringify(newUser));
@@ -63,7 +66,6 @@ export const AuthProvider = ({ children }) => {
     localStorage.removeItem("user");
     sessionStorage.clear();
     setUser(null);
-    console.log("USER CLEARED FROM CONTEXT");
   };
 
   return (

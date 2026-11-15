@@ -212,8 +212,8 @@ class CompanyDashboardStatsView(APIView):
         recruiters_count = members.filter(role="recruiter").count()
         pending_invitations = RecruiterInvitation.objects.filter(company=company).count()
 
-        # Job metrics
-        company_jobs = Job.objects.filter(company=company)
+        # Job metrics for company admin - their own jobs
+        company_jobs = Job.objects.filter(company=company, created_by=request.user)
         total_jobs = company_jobs.count()
         active_jobs = company_jobs.filter(status=Job.JobStatus.ACTIVE).count()
         draft_jobs = company_jobs.filter(status=Job.JobStatus.DRAFT).count()

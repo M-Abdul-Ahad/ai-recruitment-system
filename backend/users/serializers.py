@@ -93,6 +93,9 @@ class SignupSerializer(serializers.ModelSerializer):
         if 'username' in data_dict and isinstance(data_dict['username'], str):
             data_dict['username'] = data_dict['username'].strip().replace(' ', '_')
 
+        if 'email' in data_dict and isinstance(data_dict['email'], str):
+            data_dict['email'] = data_dict['email'].strip().lower()
+
         return super().to_internal_value(data_dict)
 
     def validate_role(self, value):
@@ -313,6 +316,10 @@ class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
     """Extends SimpleJWT's serializer to include user info in the payload."""
 
     def validate(self, attrs):
+        # Normalize email in attrs before validating
+        if 'email' in attrs and isinstance(attrs['email'], str):
+            attrs['email'] = attrs['email'].strip().lower()
+
         data = super().validate(attrs)
         user: User = self.user  # type: ignore[assignment]
         
@@ -322,6 +329,9 @@ class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
             {
                 'user_id': user.id,
                 'email': user.email,
+                'username': user.username,
+                'first_name': user.first_name,
+                'last_name': user.last_name,
                 'role': user.role,
                 'is_hr': user.is_hr,
                 'company_id': company.id if company else None,

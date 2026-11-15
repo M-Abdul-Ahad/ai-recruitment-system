@@ -241,7 +241,7 @@ export function useToast() {
   const context = useContext(ToastContext);
   if (!context) {
     // Fallback safe dummy object if used outside Provider
-    return {
+    const dummy = {
       show: () => {},
       success: (msg) => console.log("[Toast success]:", msg),
       error: (msg) => console.error("[Toast error]:", msg),
@@ -250,8 +250,9 @@ export function useToast() {
       dismiss: () => {},
       clearAll: () => {},
     };
+    return { ...dummy, toast: dummy };
   }
-  return context;
+  return { ...context, toast: context };
 }
 
 export default ToastContext;

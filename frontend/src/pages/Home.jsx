@@ -221,13 +221,13 @@ export default function Home() {
             {user ? (
               <Link
                 to={
-                  user.role === "applicant"
+                  user.role?.toLowerCase() === "applicant"
                     ? "/applicant"
-                    : user.role === "company_admin"
+                    : user.role?.toLowerCase() === "company_admin"
                     ? "/company"
-                    : user.role === "recruiter"
+                    : user.role?.toLowerCase() === "recruiter"
                     ? "/recruiter"
-                    : user.role === "admin"
+                    : user.role?.toLowerCase() === "admin"
                     ? "/admin"
                     : "/login"
                 }
@@ -258,13 +258,13 @@ export default function Home() {
             {user ? (
               <Link
                 to={
-                  user.role === "applicant"
+                  user.role?.toLowerCase() === "applicant"
                     ? "/applicant"
-                    : user.role === "company_admin"
+                    : user.role?.toLowerCase() === "company_admin"
                     ? "/company"
-                    : user.role === "recruiter"
+                    : user.role?.toLowerCase() === "recruiter"
                     ? "/recruiter"
-                    : user.role === "admin"
+                    : user.role?.toLowerCase() === "admin"
                     ? "/admin"
                     : "/login"
                 }

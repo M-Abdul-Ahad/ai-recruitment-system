@@ -54,22 +54,18 @@ class JobViewSet(viewsets.ModelViewSet):
         if not user.is_authenticated:
             return Job.objects.none()
 
-        # If user is recruiter -> return only their jobs
-        if user.role == User.Role.RECRUITER:
+        user_role = (getattr(user, "role", "") or "").lower()
+
+        # If user is recruiter or company_admin -> return only their own created jobs
+        if user_role in [User.Role.RECRUITER, User.Role.COMPANY_ADMIN]:
             return Job.objects.filter(created_by=user).select_related("company", "created_by").prefetch_related("skills", "applications")
 
-        # If user is company_admin -> return all jobs of their company
-        if user.role == User.Role.COMPANY_ADMIN:
-            if user.company:
-                return Job.objects.filter(company=user.company).select_related("company", "created_by").prefetch_related("skills", "applications")
-            return Job.objects.none()
-
         # If user is applicant -> return only ACTIVE jobs
-        if user.role == User.Role.APPLICANT:
+        if user_role == User.Role.APPLICANT:
             return Job.objects.filter(status=Job.JobStatus.ACTIVE).select_related("company").prefetch_related("skills")
 
         # For Admin (system admin) or superuser, return all jobs
-        if user.role == User.Role.ADMIN or user.is_superuser:
+        if user_role == User.Role.ADMIN or user.is_superuser:
             return Job.objects.all().select_related("company", "created_by").prefetch_related("skills", "applications")
 
         return Job.objects.none()

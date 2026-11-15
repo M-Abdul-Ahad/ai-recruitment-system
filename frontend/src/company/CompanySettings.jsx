@@ -6,7 +6,7 @@ import ProfileSettingsForm from "../components/ui/ProfileSettingsForm";
 
 export default function CompanySettings() {
   const { user } = useContext(AuthContext);
-  const { toast } = useToast();
+  const toast = useToast();
   const [activeTab, setActiveTab] = useState("company"); // 'company' | 'profile'
   const [company, setCompany] = useState(null);
   const [loading, setLoading] = useState(true);

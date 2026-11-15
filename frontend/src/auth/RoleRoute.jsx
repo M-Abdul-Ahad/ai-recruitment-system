@@ -5,27 +5,37 @@ import { AuthContext } from "./AuthContext";
 export default function RoleRoute({ children, allowedRoles }) {
   const { user, loading } = useContext(AuthContext);
 
-  console.log("RoleRoute - user:", user);
-  console.log("RoleRoute - allowedRoles:", allowedRoles);
-
   if (loading) {
-    console.log("Still loading auth state...");
-    return <div>Loading...</div>;
+    return (
+      <div style={{
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        minHeight: "100vh",
+        background: "#22241B",
+        color: "#D4DE95"
+      }}>
+        <div style={{
+          width: 32,
+          height: 32,
+          border: "3px solid rgba(212, 222, 149, 0.2)",
+          borderTopColor: "#D4DE95",
+          borderRadius: "50%",
+          animation: "spin 0.8s linear infinite"
+        }} />
+      </div>
+    );
   }
 
   if (!user) {
-    console.log("No user → redirect login");
     return <Navigate to="/login" replace />;
   }
 
   const role = user?.role?.toLowerCase();
-  console.log("Normalized role:", role);
 
   if (!allowedRoles.includes(role)) {
-    console.log("Role NOT allowed → redirect unauthorized");
     return <Navigate to="/unauthorized" replace />;
   }
 
-  console.log("Access granted");
   return children;
 }
