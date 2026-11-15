@@ -1,5 +1,5 @@
-import { NavLink, Link } from "react-router-dom";
-import { useContext } from "react";
+import { NavLink, Link, useLocation } from "react-router-dom";
+import { useContext, useState, useEffect } from "react";
 import { AuthContext } from "../auth/AuthContext";
 
 /* ── Lucide-style inline SVG icons ── */
@@ -46,19 +46,78 @@ const Icon = {
       <path d="M12 6v6l4 2"/>
     </svg>
   ),
+  Upload: () => (
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/>
+    </svg>
+  ),
+  Ranking: () => (
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
+      <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
+    </svg>
+  ),
+  Interview: () => (
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/>
+    </svg>
+  ),
+  Sliders: () => (
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
+      <line x1="4" y1="21" x2="4" y2="14"/><line x1="4" y1="10" x2="4" y2="3"/>
+      <line x1="12" y1="21" x2="12" y2="12"/><line x1="12" y1="8" x2="12" y2="3"/>
+      <line x1="20" y1="21" x2="20" y2="16"/><line x1="20" y1="12" x2="20" y2="3"/>
+      <line x1="1" y1="14" x2="7" y2="14"/><line x1="9" y1="8" x2="15" y2="8"/><line x1="17" y1="16" x2="23" y2="16"/>
+    </svg>
+  ),
+  ChevronDown: ({ open }) => (
+    <svg
+      width="13"
+      height="13"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      style={{
+        transition: "transform 0.2s ease",
+        transform: open ? "rotate(180deg)" : "rotate(0deg)",
+      }}
+    >
+      <polyline points="6 9 12 15 18 9"/>
+    </svg>
+  ),
 };
 
-const NAV_ITEMS = [
-  { to: "/recruiter",            label: "Dashboard",           Icon: Icon.Grid,      exact: true  },
-  { to: "/recruiter/jobs",       label: "Jobs",                Icon: Icon.Briefcase, exact: false },
-  { to: "/recruiter/candidates", label: "Candidates",          Icon: Icon.Users,     exact: false },
-  { to: "/recruiter/shortlist",  label: "AI Shortlisting",     Icon: Icon.Sparkles,  exact: false },
-  { to: "/recruiter/company",    label: "Company",             Icon: Icon.Building,  exact: false },
-  { to: "/recruiter/settings",   label: "Settings",            Icon: Icon.Settings,  exact: false },
+const SHORTLIST_SUB_ITEMS = [
+  { tab: "upload",    label: "Resume Ingestion",       Icon: Icon.Upload },
+  { tab: "shortlist", label: "AI Shortlisting",        Icon: Icon.Ranking },
+  { tab: "interview", label: "Interview Question Kit", Icon: Icon.Interview },
+  { tab: "config",    label: "Formula & Weights",      Icon: Icon.Sliders },
 ];
 
 export default function RecruiterSidebar({ collapsed, mobileOpen, onClose }) {
   const { user } = useContext(AuthContext);
+  const location = useLocation();
+
+  const isShortlistActive = location.pathname.startsWith("/recruiter/shortlist");
+  const [shortlistExpanded, setShortlistExpanded] = useState(true);
+
+  // Auto-expand when navigating to shortlist section
+  useEffect(() => {
+    if (isShortlistActive) {
+      setShortlistExpanded(true);
+    }
+  }, [isShortlistActive]);
+
+  // Extract job ID if available in route e.g. /recruiter/shortlist/:jobId
+  const jobMatch = location.pathname.match(/\/recruiter\/shortlist\/(\d+)/);
+  const currentJobId = jobMatch ? jobMatch[1] : null;
+  const baseShortlistPath = currentJobId ? `/recruiter/shortlist/${currentJobId}` : "/recruiter/shortlist";
+
+  // Parse current active tab from query params
+  const searchParams = new URLSearchParams(location.search);
+  const currentTab = searchParams.get("tab") || "upload";
 
   const initials = user?.email
     ? user.email.slice(0, 2).toUpperCase()
@@ -87,24 +146,128 @@ export default function RecruiterSidebar({ collapsed, mobileOpen, onClose }) {
       <nav className="apl-sb-nav" aria-label="Recruiter navigation">
         <span className="apl-sb-section-label">Menu</span>
 
-        {NAV_ITEMS.map(({ to, label, Icon: NavIcon, exact }) => (
-          <NavLink
-            key={to}
-            to={to}
-            end={exact}
-            onClick={onClose}
-            data-tooltip={label}
-            className={({ isActive }) =>
-              ["apl-sb-link", isActive ? "active" : ""].filter(Boolean).join(" ")
-            }
-            aria-label={label}
-          >
-            <span className="apl-sb-link-icon" aria-hidden="true">
-              <NavIcon />
-            </span>
-            <span className="apl-sb-link-label">{label}</span>
-          </NavLink>
-        ))}
+        {/* Dashboard */}
+        <NavLink
+          to="/recruiter"
+          end={true}
+          onClick={onClose}
+          data-tooltip="Dashboard"
+          className={({ isActive }) =>
+            ["apl-sb-link", isActive ? "active" : ""].filter(Boolean).join(" ")
+          }
+        >
+          <span className="apl-sb-link-icon" aria-hidden="true"><Icon.Grid /></span>
+          <span className="apl-sb-link-label">Dashboard</span>
+        </NavLink>
+
+        {/* Jobs */}
+        <NavLink
+          to="/recruiter/jobs"
+          onClick={onClose}
+          data-tooltip="Jobs"
+          className={({ isActive }) =>
+            ["apl-sb-link", isActive ? "active" : ""].filter(Boolean).join(" ")
+          }
+        >
+          <span className="apl-sb-link-icon" aria-hidden="true"><Icon.Briefcase /></span>
+          <span className="apl-sb-link-label">Jobs</span>
+        </NavLink>
+
+        {/* Candidates */}
+        <NavLink
+          to="/recruiter/candidates"
+          onClick={onClose}
+          data-tooltip="Candidates"
+          className={({ isActive }) =>
+            ["apl-sb-link", isActive ? "active" : ""].filter(Boolean).join(" ")
+          }
+        >
+          <span className="apl-sb-link-icon" aria-hidden="true"><Icon.Users /></span>
+          <span className="apl-sb-link-label">Candidates</span>
+        </NavLink>
+
+        {/* AI Shortlisting (With Nested Workflow & Config Submenus) */}
+        <div>
+          <div className="flex items-center">
+            <NavLink
+              to={baseShortlistPath}
+              onClick={onClose}
+              data-tooltip="AI Shortlisting"
+              className={["apl-sb-link flex-1", isShortlistActive ? "active" : ""].filter(Boolean).join(" ")}
+              aria-label="AI Shortlisting"
+            >
+              <span className="apl-sb-link-icon" aria-hidden="true"><Icon.Sparkles /></span>
+              <span className="apl-sb-link-label">AI Shortlisting</span>
+            </NavLink>
+
+            {!collapsed && (
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setShortlistExpanded((prev) => !prev);
+                }}
+                className="p-2 mr-1 text-[#9CA87C] hover:text-[#D4DE95] hover:bg-[rgba(212,222,149,0.08)] rounded-md transition"
+                aria-label="Toggle submenus"
+                title="Toggle Shortlisting Submenus"
+              >
+                <Icon.ChevronDown open={shortlistExpanded} />
+              </button>
+            )}
+          </div>
+
+          {/* Submenu tabs */}
+          {!collapsed && shortlistExpanded && (
+            <div className="apl-sb-submenu">
+              {SHORTLIST_SUB_ITEMS.map((sub) => {
+                const subTo = `${baseShortlistPath}?tab=${sub.tab}`;
+                const isSubActive = isShortlistActive && currentTab === sub.tab;
+                const SubIcon = sub.Icon;
+
+                return (
+                  <Link
+                    key={sub.tab}
+                    to={subTo}
+                    onClick={onClose}
+                    className={["apl-sb-sublink", isSubActive ? "active" : ""].filter(Boolean).join(" ")}
+                    title={sub.label}
+                  >
+                    <span className="apl-sb-sublink-icon" aria-hidden="true">
+                      <SubIcon />
+                    </span>
+                    <span>{sub.label}</span>
+                  </Link>
+                );
+              })}
+            </div>
+          )}
+        </div>
+
+        {/* Company */}
+        <NavLink
+          to="/recruiter/company"
+          onClick={onClose}
+          data-tooltip="Company"
+          className={({ isActive }) =>
+            ["apl-sb-link", isActive ? "active" : ""].filter(Boolean).join(" ")
+          }
+        >
+          <span className="apl-sb-link-icon" aria-hidden="true"><Icon.Building /></span>
+          <span className="apl-sb-link-label">Company</span>
+        </NavLink>
+
+        {/* Settings */}
+        <NavLink
+          to="/recruiter/settings"
+          onClick={onClose}
+          data-tooltip="Settings"
+          className={({ isActive }) =>
+            ["apl-sb-link", isActive ? "active" : ""].filter(Boolean).join(" ")
+          }
+        >
+          <span className="apl-sb-link-icon" aria-hidden="true"><Icon.Settings /></span>
+          <span className="apl-sb-link-label">Settings</span>
+        </NavLink>
 
         {user?.role === "company_admin" && (
           <>

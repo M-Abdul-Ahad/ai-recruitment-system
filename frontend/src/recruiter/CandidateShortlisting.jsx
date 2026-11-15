@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef, useMemo } from "react";
-import { useParams, useNavigate, Link } from "react-router-dom";
+import { useParams, useNavigate, useSearchParams, Link } from "react-router-dom";
 import {
   getJobs,
   getApplicants,
@@ -18,9 +18,80 @@ const TOTAL_GRID_SLOTS = 150; // Candidate matrix visualizer capacity
 const CandidateShortlisting = () => {
   const { jobId } = useParams();
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
 
-  // Workflow Step: 'upload' | 'shortlist' | 'interview'
-  const [currentWorkflowTab, setCurrentWorkflowTab] = useState("upload");
+  // Load algorithm configuration from localStorage if available
+  const savedAlgorithmConfig = useMemo(() => {
+    try {
+      const item = localStorage.getItem("ai_shortlist_algorithm_config");
+      return item ? JSON.parse(item) : null;
+    } catch {
+      return null;
+    }
+  }, []);
+
+  const [jdWeight, setJdWeight] = useState(() => savedAlgorithmConfig?.jdWeight ?? 70);
+  const [prefWeight, setPrefWeight] = useState(() => savedAlgorithmConfig?.prefWeight ?? 30);
+  const [poolMultiplier, setPoolMultiplier] = useState(() => savedAlgorithmConfig?.poolMultiplier ?? 2);
+  const [negativeStrictness, setNegativeStrictness] = useState(() => savedAlgorithmConfig?.negativeStrictness ?? "disqualify");
+  const [lockWeightSum, setLockWeightSum] = useState(true);
+  const [configSavedToast, setConfigSavedToast] = useState(false);
+
+  // Workflow Step: 'upload' | 'shortlist' | 'interview' | 'config'
+  const tabFromUrl = searchParams.get("tab");
+  const [currentWorkflowTab, setCurrentWorkflowTab] = useState(
+    () => (tabFromUrl && ["upload", "shortlist", "interview", "config"].includes(tabFromUrl) ? tabFromUrl : "upload")
+  );
+
+  // Sync tab with URL query parameter
+  useEffect(() => {
+    const tab = searchParams.get("tab");
+    if (tab && ["upload", "shortlist", "interview", "config"].includes(tab)) {
+      setCurrentWorkflowTab(tab);
+    }
+  }, [searchParams]);
+
+  const switchTab = (newTab) => {
+    setCurrentWorkflowTab(newTab);
+    setSearchParams((prev) => {
+      const next = new URLSearchParams(prev);
+      next.set("tab", newTab);
+      return next;
+    });
+  };
+
+  const handleJdWeightChange = (newJd) => {
+    const val = Math.max(0, Math.min(100, Number(newJd) || 0));
+    setJdWeight(val);
+    if (lockWeightSum) {
+      setPrefWeight(100 - val);
+    }
+  };
+
+  const handlePrefWeightChange = (newPref) => {
+    const val = Math.max(0, Math.min(100, Number(newPref) || 0));
+    setPrefWeight(val);
+    if (lockWeightSum) {
+      setJdWeight(100 - val);
+    }
+  };
+
+  const applyPreset = (jd, pref) => {
+    setJdWeight(jd);
+    setPrefWeight(pref);
+  };
+
+  const saveAlgorithmConfig = () => {
+    const config = {
+      jdWeight,
+      prefWeight,
+      poolMultiplier,
+      negativeStrictness,
+    };
+    localStorage.setItem("ai_shortlist_algorithm_config", JSON.stringify(config));
+    setConfigSavedToast(true);
+    setTimeout(() => setConfigSavedToast(false), 3000);
+  };
 
   // Job selection state
   const [jobs, setJobs] = useState([]);
@@ -117,9 +188,10 @@ const CandidateShortlisting = () => {
     }
   };
 
-  const selectJob = (job, shouldResetTab = true) => {
+  const selectJob = (job, shouldResetTab = false) => {
     setSelectedJob(job);
-    navigate(`/recruiter/shortlist/${job.id}`, { replace: true });
+    const targetTab = shouldResetTab ? "upload" : (searchParams.get("tab") || currentWorkflowTab || "upload");
+    navigate(`/recruiter/shortlist/${job.id}?tab=${targetTab}`, { replace: true });
     if (shouldResetTab) {
       setCurrentWorkflowTab("upload");
     }
@@ -237,8 +309,8 @@ const CandidateShortlisting = () => {
           source_type: app.source_type,
           is_promoted_import: app.source_type === "RECRUITER_UPLOAD",
           resume: app.resume,
-          file_url: app.resume?.file || "",
-          extracted_text: app.resume?.extracted_text || "",
+          file_url: app.resume_file || (app.resume ? `/api/resumes/${typeof app.resume === 'object' ? app.resume.id : app.resume}/stream/` : ""),
+          extracted_text: app.resume_text || app.resume?.extracted_text || "",
           shortlist_reason: app.shortlist_reason || "",
           match_insights: app.match_insights || null,
           has_interview_kit: Boolean(app.has_interview_kit),
@@ -459,6 +531,8 @@ const CandidateShortlisting = () => {
         session_id: sessionId || null,
         top_n: Number(topN) || 10,
         preferences: preferences.trim(),
+        jd_weight: jdWeight,
+        pref_weight: prefWeight,
       };
 
       const res = await shortlistCandidates(selectedJob.id, payload);
@@ -469,6 +543,8 @@ const CandidateShortlisting = () => {
         total_screened: res.data.total_screened,
         preferences_applied: res.data.preferences_applied,
         llm_insights_applied: res.data.llm_insights_applied,
+        jd_weight_used: res.data.jd_weight_used,
+        pref_weight_used: res.data.pref_weight_used,
       });
 
       // Clear staged candidates since they were either promoted to R2 or purged
@@ -499,14 +575,37 @@ const CandidateShortlisting = () => {
     }
   };
 
-  // Preview Handler
+  // Preview Handler: Rock-solid resume viewer for local and Cloudflare R2 resumes
   const handleOpenPreview = (candidate) => {
-    const url = candidate.resume?.file || candidate.file_url || "";
-    const name = candidate.applicant?.email || candidate.file_name || candidate.name || "Candidate Resume";
-    const text = candidate.resume?.extracted_text || candidate.extracted_text || "";
+    if (!candidate) return;
+
+    const resumeId =
+      candidate.resume?.id ||
+      (typeof candidate.resume === "number" ? candidate.resume : null) ||
+      candidate.resume_id ||
+      null;
+
+    const streamUrl = resumeId
+      ? `/api/resumes/${resumeId}/stream/`
+      : candidate.file_url || candidate.resume_file || candidate.resume?.file || "";
+
+    const name =
+      candidate.applicant_name ||
+      candidate.name ||
+      candidate.applicant?.email ||
+      candidate.email ||
+      candidate.file_name ||
+      "Candidate Resume";
+
+    const text =
+      candidate.resume?.extracted_text ||
+      candidate.resume_text ||
+      candidate.extracted_text ||
+      "";
+
     setPreviewModal({
       isOpen: true,
-      url,
+      url: streamUrl,
       name,
       text,
     });
@@ -744,7 +843,7 @@ const CandidateShortlisting = () => {
                 type="button"
                 role="tab"
                 aria-selected={isStep1Active}
-                onClick={() => setCurrentWorkflowTab("upload")}
+                onClick={() => switchTab("upload")}
                 className={`flex-1 flex items-center justify-between px-4 py-3 rounded-xl transition-all duration-200 text-left ${
                   isStep1Active
                     ? "bg-gradient-to-r from-[#F8F9F1] to-[#FFFFFF] dark:from-[#282D1D] dark:to-[#1E2015] text-[#22241B] dark:text-[#EBF0DA] shadow-sm border border-[#BAC095]/70 dark:border-[#383D28]"
@@ -815,7 +914,7 @@ const CandidateShortlisting = () => {
                 type="button"
                 role="tab"
                 aria-selected={isStep2Active}
-                onClick={() => setCurrentWorkflowTab("shortlist")}
+                onClick={() => switchTab("shortlist")}
                 className={`flex-1 flex items-center justify-between px-4 py-3 rounded-xl transition-all duration-200 text-left ${
                   isStep2Active
                     ? "bg-gradient-to-r from-[#F8F9F1] to-[#FFFFFF] dark:from-[#282D1D] dark:to-[#1E2015] text-[#22241B] dark:text-[#EBF0DA] shadow-sm border border-[#BAC095]/70 dark:border-[#383D28]"
@@ -885,7 +984,7 @@ const CandidateShortlisting = () => {
                 type="button"
                 role="tab"
                 aria-selected={isStep3Active}
-                onClick={() => setCurrentWorkflowTab("interview")}
+                onClick={() => switchTab("interview")}
                 className={`flex-1 flex items-center justify-between px-4 py-3 rounded-xl transition-all duration-200 text-left ${
                   isStep3Active
                     ? "bg-gradient-to-r from-[#F8F9F1] to-[#FFFFFF] dark:from-[#282D1D] dark:to-[#1E2015] text-[#22241B] dark:text-[#EBF0DA] shadow-sm border border-[#BAC095]/70 dark:border-[#383D28]"
@@ -1516,7 +1615,7 @@ const CandidateShortlisting = () => {
                     </span>
                     <button
                       type="button"
-                      onClick={() => setCurrentWorkflowTab("shortlist")}
+                      onClick={() => switchTab("shortlist")}
                       className="text-xs font-bold text-[#636B2F] dark:text-[#BAC095] hover:underline inline-flex items-center gap-1"
                     >
                       <span>Proceed to AI Shortlisting</span>
@@ -1601,9 +1700,19 @@ const CandidateShortlisting = () => {
                   <label className="block text-xs font-bold uppercase tracking-wider text-[#3D4127] dark:text-[#EBF0DA]">
                     Custom Recruiter Preferences
                   </label>
-                  <span className="text-[10px] font-semibold text-[#8A8F76] bg-[#ECEEDF] dark:bg-[#2A2E1E] px-2 py-0.5 rounded">
-                    Optional • 30% Weight
-                  </span>
+                  <div className="flex items-center gap-1.5">
+                    <span className="text-[10px] font-semibold text-[#8A8F76] bg-[#ECEEDF] dark:bg-[#2A2E1E] px-2 py-0.5 rounded">
+                      Formula: {jdWeight}% JD • {prefWeight}% Prefs
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => switchTab("config")}
+                      className="text-[10px] font-bold text-[#636B2F] dark:text-[#D4DE95] hover:underline flex items-center gap-0.5 ml-1"
+                      title="Adjust matching formula and similarity weights"
+                    >
+                      ⚙ Edit Formula
+                    </button>
+                  </div>
                 </div>
                 <textarea
                   rows={2}
@@ -2441,6 +2550,295 @@ const CandidateShortlisting = () => {
               </div>
             </div>
           )}
+        </div>
+      )}
+
+      {/* ================================================================ */}
+      {/* TAB 4 CONTENT: ALGORITHM & MATCHING FORMULA CONFIGURATION       */}
+      {/* ================================================================ */}
+      {currentWorkflowTab === "config" && (
+        <div className="space-y-6 apl-animate-fade">
+          {/* Main Config Card */}
+          <div className="apl-card p-6 border-2 border-[#D4DE95]/60 dark:border-[#383D28] bg-[#FFFFFF] dark:bg-[#1E2015] shadow-sm space-y-6">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-[#ECEEDF] dark:border-[#2A2E1E] pb-4">
+              <div>
+                <div className="flex items-center gap-2">
+                  <span className="w-2.5 h-2.5 rounded-full bg-[#4E7A33]" />
+                  <span className="text-xs font-bold uppercase tracking-wider text-[#3D4127] dark:text-[#D4DE95]">
+                    Matching Configuration & Parameters
+                  </span>
+                </div>
+                <h3 className="text-lg font-black text-[#22241B] dark:text-[#EBF0DA] mt-1">
+                  AI Shortlisting Formula & Cosine Similarity Weights
+                </h3>
+                <p className="text-xs text-[#8A8F76] dark:text-[#9CA485] mt-0.5">
+                  Fine-tune how closely candidates are scored against the Job Description versus your custom Recruiter Preferences.
+                </p>
+              </div>
+
+              {/* Toast feedback */}
+              {configSavedToast && (
+                <div className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-[#4E7A33]/15 text-[#4E7A33] border border-[#4E7A33]/30 text-xs font-bold animate-pulse">
+                  <span>✓</span>
+                  <span>Formula preferences saved!</span>
+                </div>
+              )}
+            </div>
+
+            {/* Formula Visualizer Card */}
+            <div className="p-4 rounded-2xl bg-gradient-to-r from-[#F8F9F1] via-[#FFFFFF] to-[#F8F9F1] dark:from-[#171911] dark:via-[#1E2015] dark:to-[#171911] border border-[#D3D6C4] dark:border-[#2A2E1E] space-y-2.5">
+              <div className="flex items-center justify-between">
+                <span className="text-[11px] font-black uppercase tracking-wider text-[#3D4127] dark:text-[#D4DE95] flex items-center gap-1.5">
+                  <span>📐</span> Active Mathematical Formula
+                </span>
+                <span className="text-[11px] font-mono px-2 py-0.5 rounded bg-[#D4DE95]/30 text-[#3D4127] dark:text-[#D4DE95] font-bold">
+                  Scale: 0 to 100%
+                </span>
+              </div>
+              <div className="p-3 rounded-xl bg-white dark:bg-[#151710] border border-[#ECEEDF] dark:border-[#2A2E1E] font-mono text-xs text-[#22241B] dark:text-[#EBF0DA] overflow-x-auto shadow-inner leading-relaxed">
+                <code>
+                  Score = (
+                  <span className="font-extrabold text-[#3D4127] dark:text-[#D4DE95]">{jdWeight}%</span>
+                  {" × Cosine(Resume, JD) + "}
+                  <span className="font-extrabold text-[#2563eb] dark:text-[#93c5fd]">{prefWeight}%</span>
+                  {" × Cosine(Resume, Recruiter_Prefs)) × 100"}
+                </code>
+              </div>
+              <p className="text-[11px] text-[#8A8F76] leading-relaxed">
+                Vector embeddings are generated using Gemini text embeddings. If positive preferences are supplied, the system decomposes them, cleans any negative criteria into negative guards, and applies this formula dynamically during shortlisting.
+              </p>
+            </div>
+
+            {/* Presets */}
+            <div className="space-y-2">
+              <label className="block text-xs font-bold uppercase tracking-wider text-[#3D4127] dark:text-[#EBF0DA]">
+                Quick Formula Presets
+              </label>
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
+                {[
+                  { label: "Balanced Standard", jd: 70, pref: 30, desc: "Default optimal mix" },
+                  { label: "JD Strict Focus", jd: 85, pref: 15, desc: "Rigid requirements" },
+                  { label: "Preference Heavy", jd: 50, pref: 50, desc: "Equal weighting" },
+                  { label: "Pure JD Only", jd: 100, pref: 0, desc: "Ignores custom prefs" },
+                ].map((p) => {
+                  const isSelected = jdWeight === p.jd && prefWeight === p.pref;
+                  return (
+                    <button
+                      key={p.label}
+                      type="button"
+                      onClick={() => applyPreset(p.jd, p.pref)}
+                      className={`p-3 rounded-xl border text-left transition-all ${
+                        isSelected
+                          ? "border-[#3D4127] dark:border-[#D4DE95] bg-[#D4DE95]/20 text-[#22241B] dark:text-[#EBF0DA] shadow-xs"
+                          : "border-[#ECEEDF] dark:border-[#2A2E1E] bg-white dark:bg-[#1A1C12] text-[#52564A] dark:text-[#BAC095] hover:border-[#BAC095]"
+                      }`}
+                    >
+                      <div className="flex items-center justify-between">
+                        <span className="text-xs font-bold">{p.label}</span>
+                        {isSelected && <span className="text-xs text-[#4E7A33]">✓</span>}
+                      </div>
+                      <div className="text-[11px] font-mono font-extrabold text-[#3D4127] dark:text-[#D4DE95] mt-1">
+                        {p.jd}% JD / {p.pref}% Pref
+                      </div>
+                      <div className="text-[10px] text-[#8A8F76] mt-0.5">{p.desc}</div>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* Sliders Section */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 p-5 rounded-2xl bg-[#F8F9F1] dark:bg-[#171911] border border-[#ECEEDF] dark:border-[#2A2E1E]">
+              {/* Slider 1: JD Match Weight */}
+              <div className="space-y-3">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <span className="text-xs font-extrabold text-[#22241B] dark:text-[#EBF0DA]">
+                      Job Description (JD) Weight
+                    </span>
+                    <p className="text-[11px] text-[#8A8F76]">Relevance against JD responsibilities & skills</p>
+                  </div>
+                  <div className="flex items-center gap-1.5">
+                    <input
+                      type="number"
+                      min="0"
+                      max="100"
+                      value={jdWeight}
+                      onChange={(e) => handleJdWeightChange(e.target.value)}
+                      className="w-16 px-2 py-1 text-center font-bold text-xs apl-font-mono rounded-lg border border-[#D3D6C4] dark:border-[#383D28] bg-white dark:bg-[#1E2015] text-[#22241B] dark:text-[#EBF0DA]"
+                    />
+                    <span className="text-xs font-extrabold text-[#3D4127] dark:text-[#D4DE95]">%</span>
+                  </div>
+                </div>
+
+                <input
+                  type="range"
+                  min="0"
+                  max="100"
+                  value={jdWeight}
+                  onChange={(e) => handleJdWeightChange(e.target.value)}
+                  className="w-full h-2 bg-[#D3D6C4] dark:bg-[#2A2E1E] rounded-lg appearance-none cursor-pointer accent-[#3D4127] dark:accent-[#D4DE95]"
+                />
+
+                <div className="flex justify-between text-[10px] text-[#8A8F76] font-mono">
+                  <span>0% (No JD)</span>
+                  <span>50%</span>
+                  <span>100% (Strict JD)</span>
+                </div>
+              </div>
+
+              {/* Slider 2: Recruiter Preferences Weight */}
+              <div className="space-y-3">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <span className="text-xs font-extrabold text-[#22241B] dark:text-[#EBF0DA]">
+                      Recruiter Preferences Weight
+                    </span>
+                    <p className="text-[11px] text-[#8A8F76]">Relevance against your custom instructions</p>
+                  </div>
+                  <div className="flex items-center gap-1.5">
+                    <input
+                      type="number"
+                      min="0"
+                      max="100"
+                      value={prefWeight}
+                      onChange={(e) => handlePrefWeightChange(e.target.value)}
+                      className="w-16 px-2 py-1 text-center font-bold text-xs apl-font-mono rounded-lg border border-[#D3D6C4] dark:border-[#383D28] bg-white dark:bg-[#1E2015] text-[#22241B] dark:text-[#EBF0DA]"
+                    />
+                    <span className="text-xs font-extrabold text-[#2563eb] dark:text-[#93c5fd]">%</span>
+                  </div>
+                </div>
+
+                <input
+                  type="range"
+                  min="0"
+                  max="100"
+                  value={prefWeight}
+                  onChange={(e) => handlePrefWeightChange(e.target.value)}
+                  className="w-full h-2 bg-[#D3D6C4] dark:bg-[#2A2E1E] rounded-lg appearance-none cursor-pointer accent-[#2563eb] dark:accent-[#93c5fd]"
+                />
+
+                <div className="flex justify-between text-[10px] text-[#8A8F76] font-mono">
+                  <span>0% (Disabled)</span>
+                  <span>50%</span>
+                  <span>100% (Maximum)</span>
+                </div>
+              </div>
+
+              {/* Lock toggle */}
+              <div className="md:col-span-2 pt-2 border-t border-[#ECEEDF] dark:border-[#2A2E1E] flex items-center justify-between">
+                <label className="flex items-center gap-2 cursor-pointer text-xs font-bold text-[#52564A] dark:text-[#BAC095]">
+                  <input
+                    type="checkbox"
+                    checked={lockWeightSum}
+                    onChange={(e) => setLockWeightSum(e.target.checked)}
+                    className="rounded border-[#D3D6C4] text-[#3D4127] focus:ring-[#3D4127]"
+                  />
+                  <span>Automatically balance weights to always total 100%</span>
+                </label>
+                <span className="text-xs font-mono font-bold text-[#3D4127] dark:text-[#D4DE95]">
+                  Total: {jdWeight + prefWeight}%
+                </span>
+              </div>
+            </div>
+
+            {/* Additional Parameters Section */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-2">
+              {/* Parameter: Pool Multiplier for LLM Re-Ranking */}
+              <div className="p-4 rounded-xl border border-[#ECEEDF] dark:border-[#2A2E1E] bg-[#FFFFFF] dark:bg-[#171911] space-y-2.5">
+                <label className="block text-xs font-bold uppercase tracking-wider text-[#3D4127] dark:text-[#EBF0DA]">
+                  LLM Re-Ranking Pool Depth
+                </label>
+                <p className="text-[11px] text-[#8A8F76] leading-relaxed">
+                  How many top cosine-ranked candidates are passed to the LLM reasoning agent for deep evaluation before final shortlisting.
+                </p>
+                <div className="flex gap-2 pt-1">
+                  {[
+                    { mult: 2, label: "N × 2 (Fast)", desc: "Optimal speed" },
+                    { mult: 3, label: "N × 3 (Deep)", desc: "Balanced rigor" },
+                    { mult: 4, label: "N × 4 (Max)", desc: "Broadest screening" },
+                  ].map((item) => (
+                    <button
+                      key={item.mult}
+                      type="button"
+                      onClick={() => setPoolMultiplier(item.mult)}
+                      className={`flex-1 p-2.5 rounded-lg border text-xs font-bold text-center transition ${
+                        poolMultiplier === item.mult
+                          ? "bg-[#3D4127] text-[#D4DE95] border-[#3D4127] shadow-xs"
+                          : "bg-[#F8F9F1] dark:bg-[#1E2015] text-[#52564A] dark:text-[#BAC095] border-[#D3D6C4] dark:border-[#2A2E1E] hover:border-[#BAC095]"
+                      }`}
+                    >
+                      <div>{item.label}</div>
+                      <div className="text-[9px] font-normal opacity-80">{item.desc}</div>
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Parameter: Negative Constraint Severity */}
+              <div className="p-4 rounded-xl border border-[#ECEEDF] dark:border-[#2A2E1E] bg-[#FFFFFF] dark:bg-[#171911] space-y-2.5">
+                <label className="block text-xs font-bold uppercase tracking-wider text-[#3D4127] dark:text-[#EBF0DA]">
+                  Negative Criteria Enforcement
+                </label>
+                <p className="text-[11px] text-[#8A8F76] leading-relaxed">
+                  How candidate violations of your negative preferences (e.g. "no agency experience", "not fresher") are penalized.
+                </p>
+                <div className="flex gap-2 pt-1">
+                  {[
+                    { mode: "disqualify", label: "🚫 Hard Disqualification", desc: "Sets score to 0%" },
+                    { mode: "penalty", label: "📉 Soft Penalty", desc: "-35% Match score" },
+                  ].map((item) => (
+                    <button
+                      key={item.mode}
+                      type="button"
+                      onClick={() => setNegativeStrictness(item.mode)}
+                      className={`flex-1 p-2.5 rounded-lg border text-xs font-bold text-center transition ${
+                        negativeStrictness === item.mode
+                          ? "bg-[#3D4127] text-[#D4DE95] border-[#3D4127] shadow-xs"
+                          : "bg-[#F8F9F1] dark:bg-[#1E2015] text-[#52564A] dark:text-[#BAC095] border-[#D3D6C4] dark:border-[#2A2E1E] hover:border-[#BAC095]"
+                      }`}
+                    >
+                      <div>{item.label}</div>
+                      <div className="text-[9px] font-normal opacity-80">{item.desc}</div>
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </div>
+
+            {/* Bottom Actions */}
+            <div className="pt-4 border-t border-[#ECEEDF] dark:border-[#2A2E1E] flex flex-wrap items-center justify-between gap-3">
+              <button
+                type="button"
+                onClick={() => applyPreset(70, 30)}
+                className="text-xs font-bold text-[#8A8F76] hover:text-[#22241B] dark:hover:text-[#EBF0DA] underline"
+              >
+                Reset to Default (70% JD / 30% Prefs)
+              </button>
+
+              <div className="flex items-center gap-3">
+                <button
+                  type="button"
+                  onClick={saveAlgorithmConfig}
+                  className="apl-btn apl-btn-secondary text-xs py-2 px-5 font-bold"
+                >
+                  Save Configuration
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => {
+                    saveAlgorithmConfig();
+                    switchTab("shortlist");
+                  }}
+                  className="apl-btn apl-btn-primary text-xs py-2 px-6 font-extrabold flex items-center gap-1.5 shadow-sm"
+                >
+                  <span>Apply & Run Shortlisting</span>
+                  <span>&rarr;</span>
+                </button>
+              </div>
+            </div>
+          </div>
         </div>
       )}
 

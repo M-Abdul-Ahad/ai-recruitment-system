@@ -8,12 +8,15 @@ const API_BASE = "http://localhost:8000";
  * - Authenticated Blob Fetching: Uses Axios with Bearer JWT token to fetch resume file bytes.
  * - PDFs: Rendered in-browser via blob URL in iframe/object.
  * - DOCX: Shows document info + direct download/open + Extracted Text tab (if text available).
+ * - Reliable Download: Directly triggers browser download of the streamed blob with proper filename and extension.
  * - Security: Preserves JWT authentication; blob URLs are scoped to the local session.
  *
  * @param {{ isOpen, onClose, resumeUrl, applicantName, resumeText }} props
  */
 const ResumePreviewModal = ({ isOpen, onClose, resumeUrl, applicantName, resumeText }) => {
   const [blobUrl, setBlobUrl] = useState(null);
+  const [detectedType, setDetectedType] = useState(null);
+  const [serverFilename, setServerFilename] = useState(null);
   const [loading, setLoading] = useState(false);
   const [fetchError, setFetchError] = useState(null);
   const [activeTab, setActiveTab] = useState("preview"); // 'preview' | 'text'
@@ -25,28 +28,49 @@ const ResumePreviewModal = ({ isOpen, onClose, resumeUrl, applicantName, resumeT
       setLoading(true);
       setFetchError(null);
       setBlobUrl(null);
+      setDetectedType(null);
+      setServerFilename(null);
       setActiveTab("preview");
 
-      const fullUrl = resumeUrl.startsWith("http")
-        ? resumeUrl
-        : `${API_BASE}${resumeUrl.startsWith("/") ? "" : "/"}${resumeUrl}`;
+      // Normalize URL: handle relative /api/... and /media/... paths properly with Axios baseURL
+      let fetchPath = resumeUrl;
+      if (fetchPath.includes("/api/")) {
+        fetchPath = fetchPath.substring(fetchPath.indexOf("/api/") + 4);
+      } else if (!fetchPath.startsWith("/")) {
+        fetchPath = "/" + fetchPath;
+      }
 
       // Fetch file with JWT auth via Axios
       api
-        .get(fullUrl, { responseType: "blob" })
+        .get(fetchPath, { responseType: "blob" })
         .then((res) => {
-          const isPdfFile = fullUrl.toLowerCase().endsWith(".pdf");
-          const contentType = res.headers["content-type"] || (isPdfFile ? "application/pdf" : "application/octet-stream");
+          const contentType = res.headers["content-type"] || "application/pdf";
+          setDetectedType(contentType);
+
+          // Extract server filename if exposed
+          const disposition = res.headers["content-disposition"];
+          if (disposition) {
+            const match = disposition.match(/filename=["']?([^"';]+)["']?/i);
+            if (match && match[1]) {
+              setServerFilename(match[1].trim());
+            }
+          }
+
           const blob = new Blob([res.data], { type: contentType });
           createdUrl = URL.createObjectURL(blob);
           setBlobUrl(createdUrl);
         })
         .catch((err) => {
           console.error("Error loading resume blob:", err);
-          setFetchError(
-            err.response?.data?.error ||
-              "Could not stream preview from server. You can still download or open the file."
-          );
+          // Fallback: If direct /api/ call had issues and URL starts with http, attempt direct link
+          if (resumeUrl.startsWith("http")) {
+            setBlobUrl(resumeUrl);
+          } else {
+            setFetchError(
+              err.response?.data?.error ||
+                "Could not stream preview from server. You can still download or open the file."
+            );
+          }
         })
         .finally(() => {
           setLoading(false);
@@ -66,20 +90,36 @@ const ResumePreviewModal = ({ isOpen, onClose, resumeUrl, applicantName, resumeT
     ? resumeUrl
     : `${API_BASE}${resumeUrl.startsWith("/") ? "" : "/"}${resumeUrl}`;
 
-  const isPdf = fullUrl.toLowerCase().endsWith(".pdf");
-  const isDocx = fullUrl.toLowerCase().endsWith(".docx");
+  const isDocx =
+    (detectedType && (detectedType.includes("word") || detectedType.includes("officedocument"))) ||
+    (serverFilename && (serverFilename.toLowerCase().endsWith(".docx") || serverFilename.toLowerCase().endsWith(".doc"))) ||
+    fullUrl.toLowerCase().endsWith(".docx") ||
+    fullUrl.toLowerCase().endsWith(".doc");
 
-  const extractFilename = (url) => {
-    try {
-      const parts = url.split("/");
-      const raw = parts[parts.length - 1];
-      return decodeURIComponent(raw.replace(/_[a-zA-Z0-9]{7,}\./g, ".")) || raw;
-    } catch {
-      return "resume_document";
+  const isPdf =
+    !isDocx && (
+      (detectedType && detectedType.toLowerCase().includes("pdf")) ||
+      (serverFilename && serverFilename.toLowerCase().endsWith(".pdf")) ||
+      fullUrl.toLowerCase().endsWith(".pdf") ||
+      fullUrl.includes("/stream") ||
+      Boolean(blobUrl)
+    );
+
+  const getCleanFilename = () => {
+    if (serverFilename) return serverFilename;
+    if (applicantName) {
+      const clean = applicantName.replace(/[^a-zA-Z0-9_\-\s]/g, "").trim().replace(/\s+/g, "_");
+      return `${clean}_Resume.${isDocx ? "docx" : "pdf"}`;
     }
+    const segments = fullUrl.split("/").filter(Boolean);
+    const last = segments[segments.length - 1] || "";
+    if (last.includes(".") && !last.includes("stream")) {
+      return decodeURIComponent(last.replace(/_[a-zA-Z0-9]{7,}\./g, "."));
+    }
+    return `Candidate_Resume.${isDocx ? "docx" : "pdf"}`;
   };
 
-  const filename = extractFilename(fullUrl);
+  const filename = getCleanFilename();
 
   const handleDownload = () => {
     const targetUrl = blobUrl || fullUrl;
@@ -165,6 +205,7 @@ const ResumePreviewModal = ({ isOpen, onClose, resumeUrl, applicantName, resumeT
               <button
                 onClick={handleDownload}
                 className="px-3.5 py-2 text-xs font-bold text-[#3D4127] dark:text-[#EBF0DA] bg-[#ECEEDF] dark:bg-[#2A2E1E] hover:bg-[#D3D6C4] dark:hover:bg-[#383D28] rounded-xl transition flex items-center gap-1.5"
+                title="Download this resume file directly"
               >
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
@@ -176,6 +217,7 @@ const ResumePreviewModal = ({ isOpen, onClose, resumeUrl, applicantName, resumeT
               <button
                 onClick={handleOpenInNewTab}
                 className="px-3.5 py-2 text-xs font-bold text-[#3D4127] dark:text-[#EBF0DA] bg-[#ECEEDF] dark:bg-[#2A2E1E] hover:bg-[#D3D6C4] dark:hover:bg-[#383D28] rounded-xl transition flex items-center gap-1.5"
+                title="Open resume in a new browser tab"
               >
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
@@ -286,6 +328,9 @@ const ResumePreviewModal = ({ isOpen, onClose, resumeUrl, applicantName, resumeT
                     onClick={handleOpenInNewTab}
                     className="apl-btn apl-btn-secondary py-2.5 px-5 text-xs flex items-center gap-2"
                   >
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                    </svg>
                     Open in New Tab
                   </button>
                 </div>

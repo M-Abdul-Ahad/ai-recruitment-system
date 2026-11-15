@@ -119,7 +119,7 @@ class RecruiterApplicationSerializer(serializers.ModelSerializer):
     """Serializer for recruiter viewing applications on their jobs."""
     applicant_email = serializers.SerializerMethodField()
     applicant_name = serializers.SerializerMethodField()
-    resume_file = serializers.FileField(source='resume.file', read_only=True)
+    resume_file = serializers.SerializerMethodField()
     resume_text = serializers.CharField(source='resume.extracted_text', read_only=True, default="")
     has_interview_kit = serializers.SerializerMethodField()
     interview_kit_id = serializers.SerializerMethodField()
@@ -133,6 +133,11 @@ class RecruiterApplicationSerializer(serializers.ModelSerializer):
             'has_interview_kit', 'interview_kit_id', 'applied_at',
         ]
         read_only_fields = ['id', 'job', 'applicant', 'applied_at']
+
+    def get_resume_file(self, obj):
+        if obj.resume_id:
+            return f"/api/resumes/{obj.resume_id}/stream/"
+        return ""
 
     def get_applicant_email(self, obj):
         return extract_candidate_email(obj)

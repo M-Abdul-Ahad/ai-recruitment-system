@@ -6,6 +6,9 @@ from rest_framework.response import Response
 from rest_framework import status
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.decorators import api_view, permission_classes
+from django.http import HttpResponse, Http404, FileResponse
+import mimetypes
+from core.r2_storage import get_r2_client, get_bucket_name, generate_r2_presigned_url
 
 from .models import Resume
 from .serializers import ResumeDetailSerializer, ResumeUploadSerializer
@@ -383,5 +386,78 @@ def tailor_resume_for_job(request):
             {"error": f"AI ATS optimization failed: {str(e)}"},
             status=status.HTTP_500_INTERNAL_SERVER_ERROR
         )
+
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def stream_resume_document(request, resume_id):
+    """
+    GET /api/resumes/<resume_id>/stream/
+    Securely streams resume bytes (PDF/DOCX) to authenticated clients:
+    - If stored in Cloudflare R2, streams object bytes from R2 directly.
+    - If stored in local MEDIA_ROOT, serves local file via FileResponse.
+    - Supports inline preview and download with proper Content-Type & Content-Disposition.
+    """
+    try:
+        resume = Resume.objects.get(id=resume_id)
+    except Resume.DoesNotExist:
+        return Response({"error": "Resume not found."}, status=status.HTTP_404_NOT_FOUND)
+
+    # Permission check: User can access if applicant owns it, or user is recruiter/company_admin/admin
+    is_owner = resume.user == request.user
+    is_staff_or_recruiter = getattr(request.user, "role", "") in ["recruiter", "company_admin", "admin"] or request.user.is_staff
+    if not (is_owner or is_staff_or_recruiter):
+        return Response({"error": "You do not have permission to view this resume."}, status=status.HTTP_403_FORBIDDEN)
+
+    file_field = resume.file
+    file_name = file_field.name or ""
+
+    # Detect extension and content type
+    content_type, _ = mimetypes.guess_type(file_name)
+    if not content_type:
+        content_type = "application/pdf" if file_name.lower().endswith(".pdf") else "application/octet-stream"
+
+    filename_only = os.path.basename(file_name)
+
+    # 1. Try local filesystem first if local file exists
+    try:
+        if file_field and hasattr(file_field, "path") and os.path.exists(file_field.path):
+            resp = FileResponse(open(file_field.path, "rb"), content_type=content_type)
+            resp["Content-Disposition"] = f'inline; filename="{filename_only}"'
+            resp["Access-Control-Expose-Headers"] = "Content-Disposition, Content-Type, Content-Length"
+            return resp
+    except Exception:
+        pass
+
+    # 2. Try Cloudflare R2
+    try:
+        r2_key = file_name
+        # In case the key is stored with leading slash
+        if r2_key.startswith("/"):
+            r2_key = r2_key[1:]
+
+        client = get_r2_client()
+        bucket = get_bucket_name()
+        s3_obj = client.get_object(Bucket=bucket, Key=r2_key)
+        file_bytes = s3_obj["Body"].read()
+
+        response = HttpResponse(file_bytes, content_type=content_type)
+        response["Content-Disposition"] = f'inline; filename="{filename_only}"'
+        response["Content-Length"] = len(file_bytes)
+        response["Access-Control-Expose-Headers"] = "Content-Disposition, Content-Type, Content-Length"
+        return response
+    except Exception as e:
+        logger.error("Failed to stream resume #%s from R2 (%s): %s", resume_id, file_name, e)
+        # 3. Fallback: Presigned URL redirect if direct byte read fails
+        presigned = generate_r2_presigned_url(file_name)
+        if presigned:
+            from django.shortcuts import redirect
+            return redirect(presigned)
+
+        return Response(
+            {"error": "Resume file could not be accessed from storage."},
+            status=status.HTTP_404_NOT_FOUND,
+        )
+
 
 

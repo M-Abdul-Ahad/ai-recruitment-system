@@ -649,6 +649,20 @@ class JobViewSet(viewsets.ModelViewSet):
         top_n = int(request.data.get('top_n', 10))
         preferences = (request.data.get('preferences') or '').strip()
 
+        # Dynamic formula weight configuration (defaults: 70% JD match, 30% recruiter preferences)
+        try:
+            jd_weight = float(request.data.get('jd_weight', 70)) / 100.0
+            pref_weight = float(request.data.get('pref_weight', 30)) / 100.0
+            # Normalize if sum isn't 1.0
+            total_w = jd_weight + pref_weight
+            if total_w > 0:
+                jd_weight = jd_weight / total_w
+                pref_weight = pref_weight / total_w
+            else:
+                jd_weight, pref_weight = 0.7, 0.3
+        except (ValueError, TypeError):
+            jd_weight, pref_weight = 0.7, 0.3
+
         session_id = None
         if session_id_str:
             try:
@@ -695,7 +709,7 @@ class JobViewSet(viewsets.ModelViewSet):
             jd_sim = calculate_cosine_similarity(vec, job.jd_embedding)
             if pref_vector:
                 pref_sim = calculate_cosine_similarity(vec, pref_vector)
-                score = (0.7 * jd_sim + 0.3 * pref_sim) * 100.0
+                score = (jd_weight * jd_sim + pref_weight * pref_sim) * 100.0
             else:
                 score = jd_sim * 100.0
 
@@ -732,7 +746,7 @@ class JobViewSet(viewsets.ModelViewSet):
             jd_sim = calculate_cosine_similarity(vec, job.jd_embedding)
             if pref_vector:
                 pref_sim = calculate_cosine_similarity(vec, pref_vector)
-                score = (0.7 * jd_sim + 0.3 * pref_sim) * 100.0
+                score = (jd_weight * jd_sim + pref_weight * pref_sim) * 100.0
             else:
                 score = jd_sim * 100.0
 
@@ -798,6 +812,8 @@ class JobViewSet(viewsets.ModelViewSet):
                 app.match_insights = match_insights
                 app.save(update_fields=['status', 'match_score', 'shortlist_reason', 'match_insights'])
 
+                stream_url = f"/api/resumes/{app.resume_id}/stream/" if app.resume_id else item["file_url"]
+
                 shortlisted_results.append({
                     "application_id": app.id,
                     "name": extract_candidate_name(app),
@@ -805,7 +821,7 @@ class JobViewSet(viewsets.ModelViewSet):
                     "match_score": score_val,
                     "status": JobApplication.ApplicationStatus.SHORTLISTED,
                     "source_type": app.source_type,
-                    "file_url": item["file_url"],
+                    "file_url": stream_url,
                     "is_promoted_import": False,
                     "shortlist_reason": shortlist_reason,
                     "match_insights": match_insights,
@@ -864,7 +880,7 @@ class JobViewSet(viewsets.ModelViewSet):
                     "match_score": score_val,
                     "status": JobApplication.ApplicationStatus.SHORTLISTED,
                     "source_type": JobApplication.SourceType.RECRUITER_UPLOAD,
-                    "file_url": presigned_url or permanent_resume.file.url,
+                    "file_url": f"/api/resumes/{permanent_resume.id}/stream/",
                     "is_promoted_import": True,
                     "shortlist_reason": shortlist_reason,
                     "match_insights": match_insights,
@@ -882,6 +898,8 @@ class JobViewSet(viewsets.ModelViewSet):
             "shortlisted_count": len(shortlisted_results),
             "total_screened": len(candidates_to_score),
             "preferences_applied": bool(preferences),
+            "jd_weight_used": round(jd_weight * 100, 1),
+            "pref_weight_used": round(pref_weight * 100, 1),
             "llm_insights_applied": any(
                 bool(c.get("shortlist_reason")) for c in shortlisted_results
             ),
