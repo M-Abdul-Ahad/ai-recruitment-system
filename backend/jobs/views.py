@@ -9,9 +9,11 @@ import logging
 from django.conf import settings
 from django.contrib.auth import get_user_model
 from django.db import transaction, IntegrityError
+from django.db.models import Count, Q
 from rest_framework import viewsets, permissions, status
 from rest_framework.decorators import action
 from rest_framework.response import Response
+from core.pagination import StandardResultsSetPagination
 
 from .models import Job, JobApplication, Skill, TemporaryResumeCandidate, CandidateInterviewKit
 from .serializers import (
@@ -48,27 +50,45 @@ class SkillViewSet(viewsets.ReadOnlyModelViewSet):
 
 class JobViewSet(viewsets.ModelViewSet):
     serializer_class = JobSerializer
+    pagination_class = StandardResultsSetPagination
 
     def get_queryset(self):
         user = self.request.user
         if not user.is_authenticated:
             return Job.objects.none()
 
-        user_role = (getattr(user, "role", "") or "").lower()
-
-        # If user is recruiter or company_admin -> return only their own created jobs
-        if user_role in [User.Role.RECRUITER, User.Role.COMPANY_ADMIN]:
-            return Job.objects.filter(created_by=user).select_related("company", "created_by").prefetch_related("skills", "applications")
-
+        # If user is recruiter -> return only their jobs
+        if user.role == User.Role.RECRUITER:
+            qs = Job.objects.filter(created_by=user).select_related("company", "created_by").prefetch_related("skills", "applications")
+        # If user is company_admin -> return all jobs of their company
+        elif user.role == User.Role.COMPANY_ADMIN:
+            if user.company:
+                qs = Job.objects.filter(company=user.company).select_related("company", "created_by").prefetch_related("skills", "applications")
+            else:
+                return Job.objects.none()
         # If user is applicant -> return only ACTIVE jobs
-        if user_role == User.Role.APPLICANT:
-            return Job.objects.filter(status=Job.JobStatus.ACTIVE).select_related("company").prefetch_related("skills")
-
+        elif user.role == User.Role.APPLICANT:
+            qs = Job.objects.filter(status=Job.JobStatus.ACTIVE).select_related("company").prefetch_related("skills")
         # For Admin (system admin) or superuser, return all jobs
-        if user_role == User.Role.ADMIN or user.is_superuser:
-            return Job.objects.all().select_related("company", "created_by").prefetch_related("skills", "applications")
+        elif user.role == User.Role.ADMIN or user.is_superuser:
+            qs = Job.objects.all().select_related("company", "created_by").prefetch_related("skills", "applications")
+        else:
+            return Job.objects.none()
 
-        return Job.objects.none()
+        search = self.request.query_params.get("search", "").strip()
+        if search:
+            qs = qs.filter(
+                Q(title__icontains=search) |
+                Q(company__name__icontains=search) |
+                Q(location__icontains=search) |
+                Q(skills__name__icontains=search)
+            ).distinct()
+
+        job_status = self.request.query_params.get("status", "").strip()
+        if job_status and user.role != User.Role.APPLICANT:
+            qs = qs.filter(status=job_status)
+
+        return qs.order_by("-created_at")
 
     @action(detail=False, methods=["get"], url_path="dashboard-stats", permission_classes=[permissions.IsAuthenticated, IsRecruiter])
     def dashboard_stats(self, request):
@@ -95,7 +115,7 @@ class JobViewSet(viewsets.ModelViewSet):
         ).order_by('-job_count')[:6]
         top_skills = [{"name": s.name, "count": s.job_count} for s in top_skills_qs]
 
-        recent = qs.order_by("-created_at")[:5]
+        recent = qs.annotate(applicants_count=Count('applications')).order_by("-created_at")[:5]
         recent_list = []
         for j in recent:
             recent_list.append({
@@ -106,7 +126,7 @@ class JobViewSet(viewsets.ModelViewSet):
                 "experience_required": j.experience_required,
                 "salary_min": j.salary_min,
                 "salary_max": j.salary_max,
-                "applicants": j.applications.count(),
+                "applicants": j.applicants_count,
                 "created_at": j.created_at.isoformat() if j.created_at else None,
                 "created_by_name": f"{j.created_by.first_name} {j.created_by.last_name}".strip() or j.created_by.username if j.created_by else "",
                 "company_name": j.company.name if j.company else "",
@@ -813,14 +833,47 @@ class JobViewSet(viewsets.ModelViewSet):
     @action(detail=False, methods=["get"], url_path="my-applications", permission_classes=[permissions.IsAuthenticated, IsApplicant])
     def my_applications(self, request):
         """GET /api/jobs/my-applications/ → logged-in applicant's applications."""
-        applications = JobApplication.objects.filter(applicant=request.user).select_related('job', 'job__company', 'resume')
+        applications = JobApplication.objects.filter(applicant=request.user).select_related('job', 'job__company', 'resume').order_by('-applied_at')
+        
+        status_param = request.query_params.get("status", "").strip()
+        if status_param and status_param != "ALL":
+            applications = applications.filter(status=status_param)
+
+        paginator = StandardResultsSetPagination()
+        page = paginator.paginate_queryset(applications, request, view=self)
+        if page is not None:
+            serializer = JobApplicationSerializer(page, many=True, context={'request': request})
+            return paginator.get_paginated_response(serializer.data)
         serializer = JobApplicationSerializer(applications, many=True, context={'request': request})
         return Response(serializer.data)
 
     @action(detail=True, methods=["get"], permission_classes=[permissions.IsAuthenticated, IsRecruiter, IsJobOwner])
     def applications(self, request, pk=None):
         job = self.get_object()
-        applications = job.applications.select_related('applicant', 'resume').all()
+        applications = job.applications.select_related('applicant', 'resume').all().order_by('-applied_at')
+
+        status_param = request.query_params.get("status", "").strip()
+        if status_param and status_param != "ALL":
+            applications = applications.filter(status=status_param)
+
+        source_param = request.query_params.get("source_type", "").strip()
+        if source_param and source_param != "ALL":
+            applications = applications.filter(source_type=source_param)
+
+        search = request.query_params.get("search", "").strip()
+        if search:
+            applications = applications.filter(
+                Q(applicant__email__icontains=search) |
+                Q(applicant__first_name__icontains=search) |
+                Q(applicant__last_name__icontains=search) |
+                Q(resume__extracted_text__icontains=search)
+            )
+
+        paginator = StandardResultsSetPagination()
+        page = paginator.paginate_queryset(applications, request, view=self)
+        if page is not None:
+            serializer = RecruiterApplicationSerializer(page, many=True)
+            return paginator.get_paginated_response(serializer.data)
         return Response(RecruiterApplicationSerializer(applications, many=True).data)
 
     @action(detail=True, methods=["patch"], url_path='applications/(?P<app_id>[^/.]+)', permission_classes=[permissions.IsAuthenticated, IsRecruiter, IsJobOwner])
@@ -1041,6 +1094,11 @@ class AdminJobListCreateView(APIView):
 
     def get(self, request):
         jobs = Job.objects.select_related('company', 'created_by').prefetch_related('skills').order_by('-created_at')
+        paginator = StandardResultsSetPagination()
+        page = paginator.paginate_queryset(jobs, request, view=self)
+        if page is not None:
+            serializer = JobSerializer(page, many=True)
+            return paginator.get_paginated_response(serializer.data)
         serializer = JobSerializer(jobs, many=True)
         return Response(serializer.data)
 

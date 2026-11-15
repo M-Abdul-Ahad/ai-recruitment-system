@@ -97,7 +97,7 @@ const CandidateShortlisting = () => {
   const fetchJobs = async () => {
     setLoadingJobs(true);
     try {
-      const res = await getJobs();
+      const res = await getJobs({ paginate: false });
       const jobList = res.data || [];
       setJobs(jobList);
 
@@ -215,7 +215,7 @@ const CandidateShortlisting = () => {
   const fetchApplicants = async (id) => {
     setLoadingApplicants(true);
     try {
-      const res = await getApplicants(id);
+      const res = await getApplicants(id, { paginate: false });
       const appList = res.data || [];
       setApplicants(appList);
 

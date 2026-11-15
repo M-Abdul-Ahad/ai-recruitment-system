@@ -14,6 +14,32 @@ export default function CompanyDashboard() {
   const [error, setError] = useState("");
 
   useEffect(() => {
+    async function fetchData() {
+      setLoading(true);
+      setError("");
+      try {
+        const [compRes, membRes, statsRes] = await Promise.allSettled([
+          api.get("/companies/me/"),
+          api.get("/companies/members/", { params: { paginate: false } }),
+          api.get("/jobs/dashboard-stats/"),
+        ]);
+
+        if (compRes.status === "fulfilled") {
+          setCompany(compRes.value.data);
+        }
+        if (membRes.status === "fulfilled") {
+          setMembers(membRes.value.data);
+        }
+        if (statsRes.status === "fulfilled") {
+          setJobStats(statsRes.value.data);
+        }
+      } catch (err) {
+        console.error("Error loading company dashboard:", err);
+        setError("Could not fetch company details.");
+      } finally {
+        setLoading(false);
+      }
+    }
     fetchData();
   }, []);
 

@@ -1,6 +1,6 @@
 from django.db import models
 from django.contrib.auth import get_user_model
-from pgvector.django import VectorField
+from pgvector.django import VectorField, HnswIndex
 
 
 User = get_user_model()
@@ -43,13 +43,14 @@ class Job(models.Model):
         max_length=20,
         choices=JobStatus.choices,
         default=JobStatus.DRAFT,
+        db_index=True,
     )
     
     location = models.CharField(max_length=255, blank=True)
     salary_min = models.IntegerField(null=True, blank=True)
     salary_max = models.IntegerField(null=True, blank=True)
     
-    created_at = models.DateTimeField(auto_now_add=True)
+    created_at = models.DateTimeField(auto_now_add=True, db_index=True)
     updated_at = models.DateTimeField(auto_now=True)
     jd_embedding = VectorField(
         dimensions=768,
@@ -57,6 +58,21 @@ class Job(models.Model):
         blank=True,
         help_text="Gemini text-embedding-004 vector representation of JD (768 dimensions)"
     )
+
+    class Meta:
+        ordering = ["-created_at"]
+        indexes = [
+            models.Index(fields=["status", "-created_at"], name="job_status_created_idx"),
+            models.Index(fields=["company", "status"], name="job_comp_status_idx"),
+            models.Index(fields=["created_by", "status"], name="job_creator_status_idx"),
+            HnswIndex(
+                name="job_jd_emb_hnsw_idx",
+                fields=["jd_embedding"],
+                m=16,
+                ef_construction=64,
+                opclasses=["vector_cosine_ops"],
+            ),
+        ]
 
     def __str__(self):
         return f"{self.title} at {self.company.name}"
@@ -97,13 +113,15 @@ class JobApplication(models.Model):
         max_length=20,
         choices=ApplicationStatus.choices,
         default=ApplicationStatus.APPLIED,
+        db_index=True,
     )
     tags = models.JSONField(default=list, blank=True, help_text="Candidate tags for filtering")
     recruiter_notes = models.TextField(blank=True, default="")
-    match_score = models.FloatField(null=True, blank=True, help_text="AI-generated match score")
-    applied_at = models.DateTimeField(auto_now_add=True)
+    match_score = models.FloatField(null=True, blank=True, db_index=True, help_text="AI-generated match score")
+    applied_at = models.DateTimeField(auto_now_add=True, db_index=True)
 
     class Meta:
+        ordering = ["-applied_at"]
         unique_together = ['job', 'applicant']
         constraints = [
             models.UniqueConstraint(
@@ -111,6 +129,12 @@ class JobApplication(models.Model):
                 condition=models.Q(resume__isnull=False),
                 name='unique_job_resume',
             ),
+        ]
+        indexes = [
+            models.Index(fields=["job", "status"], name="jobapp_job_status_idx"),
+            models.Index(fields=["job", "-applied_at"], name="jobapp_job_applied_idx"),
+            models.Index(fields=["job", "-match_score"], name="jobapp_job_score_idx"),
+            models.Index(fields=["applicant", "-applied_at"], name="jobapp_user_applied_idx"),
         ]
 
     def __str__(self):

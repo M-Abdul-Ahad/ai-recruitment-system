@@ -7,7 +7,7 @@ import {
   approveCompany,
   rejectCompany,
 } from "../api/admin";
-import { useToast } from "../components/ui";
+import { useToast, Pagination } from "../components/ui";
 
 /* ── Inline SVG icons ── */
 const PlusIcon = () => (
@@ -113,18 +113,52 @@ export default function Companies() {
   const [approvingId, setApprovingId] = useState(null);
   const [deletingId, setDeletingId] = useState(null);
 
-  useEffect(() => { fetchCompanies(); }, []);
+  // Pagination states
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
+  const [totalPages, setTotalPages] = useState(1);
+  const [totalCount, setTotalCount] = useState(0);
+  const [statusCounts, setStatusCounts] = useState({ all: 0, pending: 0, verified: 0, rejected: 0 });
 
-  const fetchCompanies = async () => {
+  useEffect(() => { fetchCompanies(1, pageSize, statusFilter); }, []);
+
+  const fetchCompanies = async (targetPage = currentPage, targetPageSize = pageSize, filter = statusFilter) => {
     setLoading(true); setError(null);
     try {
-      const res = await getCompanies();
+      const params = {
+        page: targetPage,
+        page_size: targetPageSize,
+      };
+      if (filter && filter !== "all") {
+        params.status = filter;
+      }
+      const res = await getCompanies(params);
       setCompanies(res.data);
+      setTotalPages(res.data.total_pages || 1);
+      setTotalCount(res.data.count ?? res.data.length ?? 0);
+      if (res.data.status_counts) {
+        setStatusCounts(res.data.status_counts);
+      }
+      setCurrentPage(targetPage);
     } catch (err) {
       setError(err.response?.data?.detail ?? "Failed to load companies.");
     } finally {
       setLoading(false);
     }
+  };
+
+  const handlePageChange = (newPage) => {
+    fetchCompanies(newPage, pageSize, statusFilter);
+  };
+
+  const handlePageSizeChange = (newSize) => {
+    setPageSize(newSize);
+    fetchCompanies(1, newSize, statusFilter);
+  };
+
+  const handleStatusFilterChange = (newStatus) => {
+    setStatusFilter(newStatus);
+    fetchCompanies(1, pageSize, newStatus);
   };
 
   const fmtErrors = (data) => {
@@ -137,9 +171,9 @@ export default function Companies() {
     e.preventDefault(); setAddErr(null); setAddSaving(true);
     try {
       const res = await createCompany(addForm);
-      setCompanies((prev) => [res.data, ...prev]);
       setAddForm(EMPTY_FORM); setShowAdd(false);
       toast.success(`Company "${res.data.name}" created successfully.`);
+      await fetchCompanies(1, pageSize, statusFilter);
     } catch (err) {
       setAddErr(fmtErrors(err.response?.data));
     } finally {
@@ -177,6 +211,7 @@ export default function Companies() {
       setCompanies((prev) => prev.map((c) => (c.id === editingCompany.id ? res.data : c)));
       closeEditModal();
       toast.success("Company updated successfully.");
+      await fetchCompanies(currentPage, pageSize, statusFilter);
     } catch (err) {
       setEditErr(fmtErrors(err.response?.data));
     } finally {
@@ -199,6 +234,7 @@ export default function Companies() {
         message: `Verification approved for "${company.name}". Official activation email sent.`,
         duration: 5000,
       });
+      await fetchCompanies(currentPage, pageSize, statusFilter);
     } catch (err) {
       toast.error(err.response?.data?.error || err.response?.data?.detail || "Failed to approve company.");
     } finally {
@@ -234,6 +270,7 @@ export default function Companies() {
         title: "Registration Rejected",
         message: `Registration for "${rejectingCompany.name}" rejected. Notice sent to owner.`,
       });
+      await fetchCompanies(currentPage, pageSize, statusFilter);
     } catch (err) {
       setRejectErr(err.response?.data?.detail || "Failed to reject company.");
     } finally {
@@ -247,8 +284,8 @@ export default function Companies() {
     setDeletingId(id);
     try {
       await deleteCompany(id);
-      setCompanies((prev) => prev.filter((c) => c.id !== id));
       toast.success("Company deleted successfully.");
+      await fetchCompanies(currentPage, pageSize, statusFilter);
     } catch (err) {
       toast.error(err.response?.data?.error ?? "Failed to delete company.");
     } finally {
@@ -256,13 +293,10 @@ export default function Companies() {
     }
   };
 
-  // Filtered list
-  const filteredCompanies = companies.filter((c) => {
-    if (statusFilter === "all") return true;
-    return (c.verification_status || "unverified") === statusFilter;
-  });
-
-  const pendingCount = companies.filter((c) => c.verification_status === "pending").length;
+  const totalAllCount = statusCounts.all || totalCount;
+  const pendingCount = statusCounts.pending;
+  const verifiedCount = statusCounts.verified;
+  const rejectedCount = statusCounts.rejected;
 
   return (
     <div className="apl-animate-fade">
@@ -281,17 +315,17 @@ export default function Companies() {
       {/* ─── Status Filter Tabs ─── */}
       <div style={{ display: "flex", gap: "8px", marginBottom: "20px", borderBottom: "1px solid var(--apl-neutral-200, #eaeaea)", paddingBottom: "12px", flexWrap: "wrap" }}>
         {[
-          { key: "all", label: "All Companies", count: companies.length },
+          { key: "all", label: "All Companies", count: totalAllCount },
           { key: "pending", label: "Pending Requests", count: pendingCount, highlight: pendingCount > 0 },
-          { key: "verified", label: "Verified", count: companies.filter((c) => c.verification_status === "verified").length },
-          { key: "rejected", label: "Rejected", count: companies.filter((c) => c.verification_status === "rejected").length },
+          { key: "verified", label: "Verified", count: verifiedCount },
+          { key: "rejected", label: "Rejected", count: rejectedCount },
         ].map((tab) => {
           const isActive = statusFilter === tab.key;
           return (
             <button
               key={tab.key}
               type="button"
-              onClick={() => setStatusFilter(tab.key)}
+              onClick={() => handleStatusFilterChange(tab.key)}
               style={{
                 display: "inline-flex",
                 alignItems: "center",
@@ -386,7 +420,7 @@ export default function Companies() {
         <div className="apl-card" style={{ padding: "48px", textAlign: "center", color: "var(--apl-neutral-500)" }}>Loading companies…</div>
       ) : error ? (
         <div className="apl-card" style={{ padding: "32px", textAlign: "center", color: "var(--apl-danger)", background: "var(--apl-danger-bg)", border: "1px solid rgba(180,69,61,0.2)" }}>{error}</div>
-      ) : filteredCompanies.length === 0 ? (
+      ) : companies.length === 0 ? (
         <div className="apl-card" style={{ padding: "48px", textAlign: "center" }}>
           <p style={{ color: "var(--apl-neutral-500)", fontSize: "15px" }}>
             No companies matching &quot;{statusFilter}&quot; status.
@@ -407,7 +441,7 @@ export default function Companies() {
               </tr>
             </thead>
             <tbody>
-              {filteredCompanies.map((company) => {
+              {companies.map((company) => {
                 const status = company.verification_status || "unverified";
                 const isPending = status === "pending";
                 const isVerified = status === "verified";
@@ -578,6 +612,19 @@ export default function Companies() {
             </tbody>
           </table>
         </div>
+      )}
+
+      {/* ─── Pagination Controls ─── */}
+      {!loading && !error && companies.length > 0 && (
+        <Pagination
+          currentPage={currentPage}
+          totalPages={totalPages}
+          totalCount={totalCount}
+          pageSize={pageSize}
+          onPageChange={handlePageChange}
+          onPageSizeChange={handlePageSizeChange}
+          pageSizeOptions={[10, 20, 50]}
+        />
       )}
 
       {/* ─── Reject Company Modal ─── */}

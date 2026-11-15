@@ -2,12 +2,10 @@ import { useState, useEffect, useContext, useCallback, useMemo } from "react";
 import { AuthContext } from "../auth/AuthContext";
 import { Link, useSearchParams } from "react-router-dom";
 import { getJobs, getApplicants, updateApplicationDetails, removeCandidate } from "../api/jobs";
-import { useToast } from "../components/ui";
+import { useToast, Pagination } from "../components/ui";
 import ApplicantCard from "./components/ApplicantCard";
 import ResumePreviewModal from "./components/ResumePreviewModal";
 import BulkUploadModal from "./components/BulkUploadModal";
-
-const ITEMS_PER_PAGE = 9;
 
 const CandidateManagement = () => {
   const { user } = useContext(AuthContext);
@@ -31,6 +29,7 @@ const CandidateManagement = () => {
   const [sourceFilter, setSourceFilter] = useState("ALL"); // ALL | APPLICATION | RECRUITER_UPLOAD
   const [searchTerm, setSearchTerm] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize, setPageSize] = useState(9);
 
   // Resume preview
   const [resumePreview, setResumePreview] = useState(null);
@@ -44,8 +43,8 @@ const CandidateManagement = () => {
   const fetchJobs = async () => {
     setJobsLoading(true);
     try {
-      const res = await getJobs();
-      const jobList = res.data;
+      const res = await getJobs({ paginate: false });
+      const jobList = Array.isArray(res.data) ? res.data : (res.data.results || []);
       setJobs(jobList);
       if (urlJobId && jobList.some((j) => String(j.id) === String(urlJobId))) {
         setSelectedJobId(Number(urlJobId) || urlJobId);
@@ -65,8 +64,9 @@ const CandidateManagement = () => {
     setAppLoading(true);
     setAppError(null);
     try {
-      const res = await getApplicants(jobId);
-      setApplicants(res.data);
+      const res = await getApplicants(jobId, { paginate: false });
+      const list = Array.isArray(res.data) ? res.data : (res.data.results || []);
+      setApplicants(list);
     } catch (err) {
       console.error(err);
       setAppError("Failed to load applicants.");
@@ -126,10 +126,10 @@ const CandidateManagement = () => {
   }, [applicants, statusFilter, sourceFilter, searchTerm]);
 
   // Pagination
-  const totalPages = Math.max(1, Math.ceil(filtered.length / ITEMS_PER_PAGE));
-  const paginated = filtered.slice((currentPage - 1) * ITEMS_PER_PAGE, currentPage * ITEMS_PER_PAGE);
+  const totalPages = Math.max(1, Math.ceil(filtered.length / pageSize));
+  const paginated = filtered.slice((currentPage - 1) * pageSize, currentPage * pageSize);
 
-  useEffect(() => { setCurrentPage(1); }, [statusFilter, sourceFilter, searchTerm, selectedJobId]);
+  useEffect(() => { setCurrentPage(1); }, [statusFilter, sourceFilter, searchTerm, selectedJobId, pageSize]);
 
   const selectedJob = jobs.find(j => j.id === selectedJobId);
   const statusCounts = useMemo(() => ({
@@ -317,34 +317,19 @@ const CandidateManagement = () => {
               </div>
 
               {/* Pagination */}
-              {totalPages > 1 && (
-                <div className="flex items-center justify-center gap-2 mt-8">
-                  <button
-                    onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
-                    disabled={currentPage === 1}
-                    className="apl-btn apl-btn-secondary py-2 px-3 text-xs disabled:opacity-40"
-                  >
-                    ← Prev
-                  </button>
-                  {Array.from({ length: totalPages }, (_, i) => i + 1).map(p => (
-                    <button
-                      key={p}
-                      onClick={() => setCurrentPage(p)}
-                      className={`w-9 h-9 rounded-lg text-xs font-bold transition ${
-                        currentPage === p ? "apl-btn-primary" : "apl-btn-secondary"
-                      }`}
-                    >
-                      {p}
-                    </button>
-                  ))}
-                  <button
-                    onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
-                    disabled={currentPage === totalPages}
-                    className="apl-btn apl-btn-secondary py-2 px-3 text-xs disabled:opacity-40"
-                  >
-                    Next →
-                  </button>
-                </div>
+              {filtered.length > 0 && (
+                <Pagination
+                  currentPage={currentPage}
+                  totalPages={totalPages}
+                  totalCount={filtered.length}
+                  pageSize={pageSize}
+                  onPageChange={(p) => setCurrentPage(p)}
+                  onPageSizeChange={(newSize) => {
+                    setPageSize(newSize);
+                    setCurrentPage(1);
+                  }}
+                  pageSizeOptions={[6, 9, 18, 36, 50]}
+                />
               )}
             </>
           )}

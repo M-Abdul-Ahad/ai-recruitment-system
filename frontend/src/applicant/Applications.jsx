@@ -2,6 +2,7 @@ import React, { useState, useEffect, useContext } from "react";
 import { AuthContext } from "../auth/AuthContext";
 import { Link, useNavigate } from "react-router-dom";
 import { getMyApplications } from "../api/jobs";
+import { Pagination } from "../components/ui";
 import ApplicationStatusBadge from "./components/ApplicationStatusBadge";
 
 /* ======================================================================
@@ -21,6 +22,8 @@ const Applications = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [statusFilter, setStatusFilter] = useState("ALL");
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
 
   /* ── initial load ── */
   useEffect(() => {
@@ -30,8 +33,9 @@ const Applications = () => {
   const fetchApplications = async () => {
     setLoading(true);
     try {
-      const res = await getMyApplications();
-      setApplications(res.data);
+      const res = await getMyApplications({ paginate: false });
+      const list = Array.isArray(res.data) ? res.data : (res.data.results || []);
+      setApplications(list);
       setError(null);
     } catch (err) {
       console.error(err);
@@ -48,6 +52,17 @@ const Applications = () => {
     statusFilter === "ALL"
       ? applications
       : applications.filter((a) => a.status === statusFilter);
+
+  // Pagination calculations
+  const totalPages = Math.max(1, Math.ceil(filteredApplications.length / pageSize));
+  const paginatedApplications = filteredApplications.slice(
+    (currentPage - 1) * pageSize,
+    currentPage * pageSize
+  );
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [statusFilter, pageSize]);
 
   /* ── stats ── */
   const stats = {
@@ -204,38 +219,53 @@ const Applications = () => {
         </div>
       ) : (
         /* ────────────── APPLICATIONS LIST ────────────── */
-        <div className="space-y-4">
-          {filteredApplications.map((app) => (
-            <div
-              key={app.id}
-              className="apl-card apl-card-hover flex flex-col sm:flex-row sm:items-center justify-between gap-4"
-            >
-              <div className="flex items-start gap-4">
-                <div className="w-11 h-11 rounded-xl bg-[#D4DE95] text-[#3D4127] flex items-center justify-center font-bold text-sm flex-shrink-0">
-                  💼
-                </div>
+        <>
+          <div className="space-y-4">
+            {paginatedApplications.map((app) => (
+              <div
+                key={app.id}
+                className="apl-card apl-card-hover flex flex-col sm:flex-row sm:items-center justify-between gap-4"
+              >
+                <div className="flex items-start gap-4">
+                  <div className="w-11 h-11 rounded-xl bg-[#D4DE95] text-[#3D4127] flex items-center justify-center font-bold text-sm flex-shrink-0">
+                    💼
+                  </div>
 
-                <div className="space-y-1 min-w-0">
-                  <h3 className="text-base font-bold text-[#22241B] dark:text-[#EBF0DA] truncate">
-                    {app.job_title}
-                  </h3>
-                  <div className="flex flex-wrap items-center gap-3 text-xs text-[#52564A] dark:text-[#9CA485]">
-                    <span className="font-semibold text-[#636B2F] dark:text-[#D4DE95]">
-                      🏢 {app.company_name || "Company"}
-                    </span>
-                    <span>•</span>
-                    <span>Applied {formatDate(app.applied_at)}</span>
-                    <span className="text-[#8A8F76]">({timeAgo(app.applied_at)})</span>
+                  <div className="space-y-1 min-w-0">
+                    <h3 className="text-base font-bold text-[#22241B] dark:text-[#EBF0DA] truncate">
+                      {app.job_title}
+                    </h3>
+                    <div className="flex flex-wrap items-center gap-3 text-xs text-[#52564A] dark:text-[#9CA485]">
+                      <span className="font-semibold text-[#636B2F] dark:text-[#D4DE95]">
+                        🏢 {app.company_name || "Company"}
+                      </span>
+                      <span>•</span>
+                      <span>Applied {formatDate(app.applied_at)}</span>
+                      <span className="text-[#8A8F76]">({timeAgo(app.applied_at)})</span>
+                    </div>
                   </div>
                 </div>
-              </div>
 
-              <div className="flex items-center gap-3 self-end sm:self-center">
-                <ApplicationStatusBadge status={app.status} />
+                <div className="flex items-center gap-3 self-end sm:self-center">
+                  <ApplicationStatusBadge status={app.status} />
+                </div>
               </div>
-            </div>
-          ))}
-        </div>
+            ))}
+          </div>
+
+          <Pagination
+            currentPage={currentPage}
+            totalPages={totalPages}
+            totalCount={filteredApplications.length}
+            pageSize={pageSize}
+            onPageChange={(p) => setCurrentPage(p)}
+            onPageSizeChange={(newSize) => {
+              setPageSize(newSize);
+              setCurrentPage(1);
+            }}
+            pageSizeOptions={[5, 10, 20, 50]}
+          />
+        </>
       )}
     </div>
   );

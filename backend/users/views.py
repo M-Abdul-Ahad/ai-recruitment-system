@@ -9,6 +9,7 @@ from .serializers import (
 )
 from rest_framework_simplejwt.views import TokenObtainPairView
 from django.contrib.auth import get_user_model
+from core.pagination import StandardResultsSetPagination
 from .models import Role
 
 class CustomTokenObtainPairView(TokenObtainPairView):
@@ -149,6 +150,11 @@ class AdminUserListCreateView(APIView):
 
     def get(self, request):
         users = User.objects.select_related('role_fk', 'company').order_by('id')
+        paginator = StandardResultsSetPagination()
+        page = paginator.paginate_queryset(users, request, view=self)
+        if page is not None:
+            serializer = AdminUserSerializer(page, many=True)
+            return paginator.get_paginated_response(serializer.data)
         serializer = AdminUserSerializer(users, many=True)
         return Response(serializer.data)
 

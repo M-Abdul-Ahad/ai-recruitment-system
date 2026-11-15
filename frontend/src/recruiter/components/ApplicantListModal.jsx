@@ -1,24 +1,32 @@
 import React, { useState, useEffect } from 'react';
 import { getApplicants, updateApplicantStatus } from '../../api/jobs';
-import { useToast } from '../../components/ui';
+import { useToast, Pagination } from '../../components/ui';
 
 const ApplicantListModal = ({ isOpen, onClose, job }) => {
   const [applicants, setApplicants] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize, setPageSize] = useState(5);
+  const [totalCount, setTotalCount] = useState(0);
+  const [totalPages, setTotalPages] = useState(1);
   const toast = useToast();
 
   useEffect(() => {
     if (isOpen && job) {
-      fetchApplicants();
+      fetchApplicants(1, pageSize);
     }
   }, [isOpen, job]);
 
-  const fetchApplicants = async () => {
+  const fetchApplicants = async (targetPage = 1, targetPageSize = pageSize) => {
     setLoading(true);
     try {
-      const response = await getApplicants(job.id);
-      setApplicants(response.data);
+      const response = await getApplicants(job.id, { page: targetPage, page_size: targetPageSize });
+      const list = Array.isArray(response.data) ? response.data : (response.data.results || []);
+      setApplicants(list);
+      setTotalCount(response.data?.count ?? list.length);
+      setTotalPages(response.data?.total_pages ?? Math.max(1, Math.ceil((response.data?.count ?? list.length) / targetPageSize)));
+      setCurrentPage(targetPage);
       setError(null);
     } catch (err) {
       console.error(err);
@@ -26,6 +34,15 @@ const ApplicantListModal = ({ isOpen, onClose, job }) => {
     } finally {
       setLoading(false);
     }
+  };
+
+  const handlePageChange = (newPage) => {
+    fetchApplicants(newPage, pageSize);
+  };
+
+  const handlePageSizeChange = (newSize) => {
+    setPageSize(newSize);
+    fetchApplicants(1, newSize);
   };
 
   const handleUpdateStatus = async (appId, newStatus) => {
@@ -121,6 +138,18 @@ const ApplicantListModal = ({ isOpen, onClose, job }) => {
                 </div>
               ))}
             </div>
+          )}
+
+          {!loading && applicants.length > 0 && (
+            <Pagination
+              currentPage={currentPage}
+              totalPages={totalPages}
+              totalCount={totalCount}
+              pageSize={pageSize}
+              onPageChange={handlePageChange}
+              onPageSizeChange={handlePageSizeChange}
+              pageSizeOptions={[5, 10, 20]}
+            />
           )}
         </div>
       </div>

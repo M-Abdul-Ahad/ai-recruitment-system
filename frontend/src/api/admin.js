@@ -3,7 +3,7 @@ import api from './axios';
 // ─── Admin — User Management ───────────────────────────────────────────────
 
 /** GET /api/auth/admin/users/ — list all users */
-export const getUsers = () => api.get('/auth/admin/users/');
+export const getUsers = (params) => api.get('/auth/admin/users/', { params });
 
 /** POST /api/auth/admin/users/ — create a new user */
 export const createUser = (data) => api.post('/auth/admin/users/', data);
@@ -51,7 +51,7 @@ export const rejectCompany = (id, data) => api.post(`/companies/admin/${id}/reje
 // ─── Admin — Job Management ───────────────────────────────────────────────
 
 /** GET /api/jobs/admin/ — list all jobs */
-export const getJobs = () => api.get('/jobs/admin/');
+export const getJobs = (params) => api.get('/jobs/admin/', { params });
 
 /** POST /api/jobs/admin/ — create a new job */
 export const createJob = (data) => api.post('/jobs/admin/', data);
