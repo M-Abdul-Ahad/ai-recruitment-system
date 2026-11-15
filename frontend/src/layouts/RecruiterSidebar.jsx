@@ -57,7 +57,7 @@ const NAV_ITEMS = [
   { to: "/recruiter/settings",   label: "Settings",            Icon: Icon.Settings,  exact: false },
 ];
 
-export default function RecruiterSidebar({ collapsed, mobileOpen }) {
+export default function RecruiterSidebar({ collapsed, mobileOpen, onClose }) {
   const { user } = useContext(AuthContext);
 
   const initials = user?.email
@@ -92,6 +92,7 @@ export default function RecruiterSidebar({ collapsed, mobileOpen }) {
             key={to}
             to={to}
             end={exact}
+            onClick={onClose}
             data-tooltip={label}
             className={({ isActive }) =>
               ["apl-sb-link", isActive ? "active" : ""].filter(Boolean).join(" ")
@@ -110,6 +111,8 @@ export default function RecruiterSidebar({ collapsed, mobileOpen }) {
             <span className="apl-sb-section-label" style={{ marginTop: "16px" }}>Company Admin</span>
             <NavLink
               to="/company"
+              end={true}
+              onClick={onClose}
               data-tooltip="Company Portal"
               className={({ isActive }) =>
                 ["apl-sb-link", isActive ? "active" : ""].filter(Boolean).join(" ")

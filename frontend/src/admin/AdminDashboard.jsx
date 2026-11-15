@@ -75,6 +75,7 @@ export default function AdminDashboard() {
       label: "Total Users",
       value: loading ? "—" : data?.total_users ?? 0,
       sub: `${data?.users_by_role?.applicant ?? 0} applicants • ${data?.users_by_role?.recruiter ?? 0} recruiters`,
+      to: "/admin/users",
       color: "bg-[#D4DE95]/20 text-[#3D4127] dark:text-[#D4DE95]",
       icon: "M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2",
     },
@@ -82,6 +83,7 @@ export default function AdminDashboard() {
       label: "Companies",
       value: loading ? "—" : data?.total_companies ?? 0,
       sub: `${data?.companies_by_status?.verified ?? 0} verified • ${data?.companies_by_status?.pending ?? 0} pending`,
+      to: "/admin/companies",
       color: "bg-[#4E7A33]/20 text-[#4E7A33]",
       icon: "M19 21V5a2 2 0 0 0-2-2H7a2 2 0 0 0-2 2v16",
     },
@@ -89,6 +91,7 @@ export default function AdminDashboard() {
       label: "Total Jobs",
       value: loading ? "—" : data?.total_jobs ?? 0,
       sub: `${data?.jobs_by_status?.active ?? 0} active • ${data?.jobs_by_status?.closed ?? 0} closed`,
+      to: "/admin/jobs",
       color: "bg-[#3D4127]/20 text-[#3D4127] dark:text-[#EBF0DA]",
       icon: "M21 13.255A23.931 23.931 0 0 1 12 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2m4 6h.01M5 20h14a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2z",
     },
@@ -96,6 +99,7 @@ export default function AdminDashboard() {
       label: "Resumes & Applications",
       value: loading ? "—" : (data?.total_applications ?? 0) + (data?.total_resumes ?? 0),
       sub: `${data?.total_applications ?? 0} applications • ${data?.total_resumes ?? 0} parsed resumes`,
+      to: "/admin/jobs",
       color: "bg-[#C99A3E]/20 text-[#C99A3E]",
       icon: "M9 12h6m-6 4h6m2 5H7a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5.586a1 1 0 0 1 .707.293l5.414 5.414a1 1 0 0 1 .293.707V19a2 2 0 0 1-2 2z",
     },
@@ -148,9 +152,13 @@ export default function AdminDashboard() {
       {/* Real Stats Grid */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-5">
         {statCards.map((st, i) => (
-          <div key={i} className="apl-card apl-card-hover flex flex-col justify-between">
+          <Link
+            key={i}
+            to={st.to}
+            className="apl-card apl-card-hover flex flex-col justify-between group transition-transform active:scale-[0.98] cursor-pointer"
+          >
             <div className="flex items-center justify-between mb-3">
-              <span className="text-xs font-bold uppercase tracking-wider text-[#8A8F76] dark:text-[#9CA485]">
+              <span className="text-xs font-bold uppercase tracking-wider text-[#8A8F76] dark:text-[#9CA485] group-hover:text-[#3D4127] dark:group-hover:text-[#D4DE95] transition-colors">
                 {st.label}
               </span>
               <div className={`w-9 h-9 rounded-xl flex items-center justify-center font-bold ${st.color}`}>
@@ -167,7 +175,7 @@ export default function AdminDashboard() {
                 {st.sub}
               </p>
             </div>
-          </div>
+          </Link>
         ))}
       </div>
 

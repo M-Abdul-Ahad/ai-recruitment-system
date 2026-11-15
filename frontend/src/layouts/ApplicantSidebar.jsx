@@ -56,7 +56,7 @@ const NAV_ITEMS = [
   { to: "/applicant/settings",     label: "Settings",        Icon: Icon.Settings,    exact: false },
 ];
 
-export default function ApplicantSidebar({ collapsed, mobileOpen }) {
+export default function ApplicantSidebar({ collapsed, mobileOpen, onClose }) {
   const { user } = useContext(AuthContext);
 
   const initials = user?.email
@@ -91,6 +91,7 @@ export default function ApplicantSidebar({ collapsed, mobileOpen }) {
             key={to}
             to={to}
             end={exact}
+            onClick={onClose}
             data-tooltip={label}
             className={({ isActive }) =>
               ["apl-sb-link", isActive ? "active" : ""].filter(Boolean).join(" ")

@@ -102,39 +102,48 @@ export default function CompanyDashboard() {
           </span>
         </div>
 
-        <div className="apl-card space-y-1">
-          <span className="text-[10px] font-extrabold uppercase tracking-wider text-[#8A8F76]">
+        <Link
+          to="/company/recruiters"
+          className="apl-card space-y-1 hover:border-[#D4DE95] transition-all cursor-pointer block group"
+        >
+          <span className="text-[10px] font-extrabold uppercase tracking-wider text-[#8A8F76] group-hover:text-[#3D4127] dark:group-hover:text-[#D4DE95] transition-colors">
             Team Strength
           </span>
           <div className="text-2xl font-extrabold text-[#22241B] dark:text-[#EBF0DA] font-mono">
             {loading ? "…" : stats?.total_members ?? members.length}
           </div>
           <span className="text-xs text-[#8A8F76]">
-            {stats?.hr_count ?? 1} recruiters / HR active
+            {stats?.hr_count ?? 1} recruiters / HR active &rarr;
           </span>
-        </div>
+        </Link>
 
-        <div className="apl-card space-y-1">
-          <span className="text-[10px] font-extrabold uppercase tracking-wider text-[#8A8F76]">
+        <Link
+          to="/recruiter/jobs"
+          className="apl-card space-y-1 hover:border-[#D4DE95] transition-all cursor-pointer block group"
+        >
+          <span className="text-[10px] font-extrabold uppercase tracking-wider text-[#8A8F76] group-hover:text-[#3D4127] dark:group-hover:text-[#D4DE95] transition-colors">
             Company Jobs
           </span>
           <div className="text-2xl font-extrabold text-[#3D4127] dark:text-[#D4DE95] font-mono">
             {loading ? "…" : stats?.total_jobs ?? 0}
           </div>
           <span className="text-xs text-[#8A8F76]">
-            {stats?.active_jobs ?? 0} active openings
+            {stats?.active_jobs ?? 0} active openings &rarr;
           </span>
-        </div>
+        </Link>
 
-        <div className="apl-card space-y-1">
-          <span className="text-[10px] font-extrabold uppercase tracking-wider text-[#8A8F76]">
+        <Link
+          to="/recruiter/candidates"
+          className="apl-card space-y-1 hover:border-[#D4DE95] transition-all cursor-pointer block group"
+        >
+          <span className="text-[10px] font-extrabold uppercase tracking-wider text-[#8A8F76] group-hover:text-[#3D4127] dark:group-hover:text-[#D4DE95] transition-colors">
             Candidate Inflow
           </span>
           <div className="text-2xl font-extrabold text-[#4E7A33] font-mono">
             {loading ? "…" : stats?.total_applicants ?? 0}
           </div>
-          <span className="text-xs text-[#8A8F76]">Total applications received</span>
-        </div>
+          <span className="text-xs text-[#8A8F76]">Total applications received &rarr;</span>
+        </Link>
       </div>
 
       {/* Real Charts: Hiring Pipeline & Job Status Distribution */}

@@ -71,7 +71,7 @@ export default function CompanyLayout() {
       />
 
       {/* Sidebar */}
-      <CompanySidebar collapsed={collapsed} mobileOpen={mobileOpen} />
+      <CompanySidebar collapsed={collapsed} mobileOpen={mobileOpen} onClose={handleBackdropClick} />
 
       {/* Main area */}
       <div className="apl-main">

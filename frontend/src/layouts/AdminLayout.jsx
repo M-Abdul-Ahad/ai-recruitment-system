@@ -69,7 +69,7 @@ export default function AdminLayout() {
       />
 
       {/* Sidebar */}
-      <AdminSidebar collapsed={collapsed} mobileOpen={mobileOpen} />
+      <AdminSidebar collapsed={collapsed} mobileOpen={mobileOpen} onClose={handleBackdropClick} />
 
       {/* Main area */}
       <div className="apl-main">

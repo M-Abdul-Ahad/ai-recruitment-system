@@ -53,24 +53,28 @@ const RecruiterDashboard = () => {
       name: 'Total Jobs',
       value: loading ? '—' : statsData?.total_jobs ?? 0,
       subtext: isCompanyAdmin ? 'Across company' : 'Created by you',
+      to: '/recruiter/jobs',
       icon: 'M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 002-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10'
     },
     {
       name: 'Active Listings',
       value: loading ? '—' : statsData?.active_jobs ?? 0,
       subtext: 'Open to candidates',
+      to: '/recruiter/jobs',
       icon: 'M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z'
     },
     {
       name: 'Draft / Closed',
       value: loading ? '—' : (statsData?.draft_jobs ?? 0) + (statsData?.closed_jobs ?? 0),
       subtext: `${statsData?.draft_jobs ?? 0} draft • ${statsData?.closed_jobs ?? 0} closed`,
+      to: '/recruiter/jobs',
       icon: 'M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z'
     },
     {
       name: 'Candidate Applications',
       value: loading ? '—' : statsData?.total_applicants ?? 0,
       subtext: 'In your pipeline',
+      to: '/recruiter/candidates',
       icon: 'M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z'
     },
   ];
@@ -137,9 +141,13 @@ const RecruiterDashboard = () => {
       {/* ── REAL DYNAMIC STATS GRID ── */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-5">
         {stats.map((stat, idx) => (
-          <div key={idx} className="apl-card apl-card-hover flex flex-col justify-between group">
+          <Link
+            key={idx}
+            to={stat.to}
+            className="apl-card apl-card-hover flex flex-col justify-between group transition-transform active:scale-[0.98] cursor-pointer"
+          >
             <div className="flex items-center justify-between mb-3">
-              <span className="text-xs font-bold uppercase tracking-wider text-[#8A8F76] dark:text-[#9CA485]">
+              <span className="text-xs font-bold uppercase tracking-wider text-[#8A8F76] dark:text-[#9CA485] group-hover:text-[#3D4127] dark:group-hover:text-[#D4DE95] transition-colors">
                 {stat.name}
               </span>
               <div className="w-9 h-9 rounded-xl bg-[#D4DE95]/20 group-hover:bg-[#D4DE95] text-[#3D4127] flex items-center justify-center font-bold flex-shrink-0 transition-colors duration-200">
@@ -156,7 +164,7 @@ const RecruiterDashboard = () => {
                 {stat.subtext}
               </p>
             </div>
-          </div>
+          </Link>
         ))}
       </div>
 
@@ -257,9 +265,12 @@ const RecruiterDashboard = () => {
                 className="p-4 sm:p-5 hover:bg-[#D4DE95]/10 transition-colors flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4"
               >
                 <div className="flex-1 min-w-0">
-                  <h3 className="text-sm sm:text-base font-bold text-[#22241B] dark:text-[#EBF0DA] mb-1 truncate">
+                  <Link
+                    to={`/recruiter/candidates?jobId=${job.id}`}
+                    className="text-sm sm:text-base font-bold text-[#22241B] dark:text-[#EBF0DA] hover:text-[#636B2F] dark:hover:text-[#D4DE95] mb-1 truncate block transition-colors"
+                  >
                     {job.title}
-                  </h3>
+                  </Link>
                   <div className="flex flex-wrap items-center gap-3 text-xs font-medium text-[#8A8F76] dark:text-[#9CA485]">
                     <span className="flex items-center gap-1">
                       <svg className="w-3.5 h-3.5 text-[#8A8F76]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -279,15 +290,19 @@ const RecruiterDashboard = () => {
                   </div>
                 </div>
 
-                <div className="flex items-center gap-4 sm:gap-6 flex-shrink-0 w-full sm:w-auto justify-between sm:justify-end">
-                  <div className="text-left sm:text-right">
+                <div className="flex items-center gap-3 sm:gap-4 flex-shrink-0 w-full sm:w-auto justify-between sm:justify-end">
+                  <Link
+                    to={`/recruiter/candidates?jobId=${job.id}`}
+                    className="text-left sm:text-right hover:opacity-80 transition-opacity"
+                    title="View Applicants in Candidate Pipeline"
+                  >
                     <p className="text-lg font-extrabold text-[#22241B] dark:text-[#EBF0DA] apl-font-mono">
                       {job.applicants}
                     </p>
                     <p className="text-[10px] text-[#8A8F76] dark:text-[#9CA485] uppercase font-semibold tracking-wider">
                       Applicants
                     </p>
-                  </div>
+                  </Link>
 
                   <div className="text-right">
                     <span
@@ -308,15 +323,22 @@ const RecruiterDashboard = () => {
                     </span>
                   </div>
 
-                  <Link
-                    to="/recruiter/jobs"
-                    className="p-1.5 rounded-lg text-[#8A8F76] hover:text-[#3D4127] dark:hover:text-[#D4DE95] hover:bg-[#ECEEDF] dark:hover:bg-[#2A2E1E] transition-colors"
-                    title="View Job"
-                  >
-                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5l7 7-7 7" />
-                    </svg>
-                  </Link>
+                  <div className="flex items-center gap-1.5">
+                    <Link
+                      to={`/recruiter/candidates?jobId=${job.id}`}
+                      className="px-2.5 py-1 rounded-lg text-xs font-bold bg-[#D4DE95] text-[#3D4127] hover:bg-[#C6D17E] transition-all"
+                      title="Candidate Pipeline"
+                    >
+                      Candidates
+                    </Link>
+                    <Link
+                      to={`/recruiter/shortlist/${job.id}`}
+                      className="px-2.5 py-1 rounded-lg text-xs font-bold bg-[#3D4127] text-[#D4DE95] hover:bg-[#2E311D] transition-all"
+                      title="AI Shortlist"
+                    >
+                      AI Shortlist
+                    </Link>
+                  </div>
                 </div>
               </div>
             ))}

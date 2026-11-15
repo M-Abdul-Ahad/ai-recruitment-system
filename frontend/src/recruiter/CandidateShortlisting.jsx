@@ -702,6 +702,14 @@ const CandidateShortlisting = () => {
 
         {selectedJob && (
           <div className="flex items-center gap-2 self-start sm:self-auto">
+            <Link
+              to={`/recruiter/candidates?jobId=${selectedJob.id}`}
+              className="text-xs font-bold text-[#3D4127] dark:text-[#D4DE95] hover:underline inline-flex items-center gap-1 px-3 py-1.5 rounded-xl bg-[#ECEEDF] dark:bg-[#2A2E1E] transition-colors"
+              title="View full candidates pipeline"
+            >
+              <span>Candidate Pipeline</span>
+              <span>&rarr;</span>
+            </Link>
             <div className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-[#FFFFFF] dark:bg-[#1E2015] border border-[#D3D6C4] dark:border-[#2A2E1E] text-xs shadow-sm">
               <span className="w-2 h-2 rounded-full bg-[#4E7A33]" />
               <span className="text-[11px] text-[#8A8F76] font-medium">Requisition:</span>

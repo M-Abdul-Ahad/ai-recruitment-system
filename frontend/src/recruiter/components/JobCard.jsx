@@ -1,4 +1,5 @@
 import React from 'react';
+import { Link } from 'react-router-dom';
 
 /**
  * Professional, compact, and animated JobCard for Recruiter workspace.
@@ -138,25 +139,43 @@ const JobCard = ({ job, onPublish, onClose, onViewApplicants, onEdit, onDelete, 
       </div>
 
       {/* Compact Interactive Footer Actions */}
-      <div className="pt-3 border-t border-[#ECEEDF] dark:border-[#2A2E1E] flex items-center justify-between gap-2">
-        {/* Left Action Buttons */}
-        <div className="flex items-center gap-1.5 flex-1 min-w-0">
+      <div className="pt-3 border-t border-[#ECEEDF] dark:border-[#2A2E1E] flex flex-wrap items-center justify-between gap-2">
+        {/* Primary Action Links */}
+        <div className="flex flex-wrap items-center gap-1.5 flex-1 min-w-0">
+          <Link
+            to={`/recruiter/candidates?jobId=${job.id}`}
+            className="py-1.5 px-3 rounded-xl text-xs font-bold transition-all duration-200 active:scale-95 text-center bg-[#D4DE95] text-[#3D4127] hover:bg-[#C6D17E] shadow-xs hover:shadow-sm"
+            title="Open Candidates Pipeline"
+          >
+            Candidates
+          </Link>
+
+          <Link
+            to={`/recruiter/shortlist/${job.id}`}
+            className="py-1.5 px-3 rounded-xl text-xs font-bold transition-all duration-200 active:scale-95 text-center bg-[#3D4127] text-[#D4DE95] hover:bg-[#2E311D] shadow-xs flex items-center gap-1"
+            title="Open AI Candidate Shortlisting"
+          >
+            <span>AI Shortlist</span>
+          </Link>
+
           <button
+            type="button"
             onClick={() => onViewApplicants(job)}
             disabled={isDraft}
-            className={`flex-1 py-1.5 px-3 rounded-xl text-xs font-bold transition-all duration-200 active:scale-95 text-center truncate ${
+            className={`py-1.5 px-2.5 rounded-xl text-xs font-bold transition-all duration-200 active:scale-95 text-center ${
               isDraft
                 ? 'opacity-40 cursor-not-allowed bg-[#ECEEDF] dark:bg-[#2A2E1E] text-[#8A8F76]'
-                : 'bg-[#D4DE95] text-[#3D4127] hover:bg-[#C6D17E] shadow-xs hover:shadow-sm'
+                : 'bg-[#ECEEDF] dark:bg-[#2A2E1E] text-[#52564A] dark:text-[#BAC095] hover:bg-[#D3D6C4]'
             }`}
+            title="Quick Modal List"
           >
-            Applicants
+            List
           </button>
 
           {isDraft && (
             <button
               onClick={() => onPublish(job.id)}
-              className="py-1.5 px-3 rounded-xl text-xs font-bold bg-[#3D4127] text-white hover:bg-[#2E311D] transition-all duration-200 active:scale-95 shadow-xs"
+              className="py-1.5 px-3 rounded-xl text-xs font-bold bg-[#4E7A33] text-white hover:bg-[#3D6128] transition-all duration-200 active:scale-95 shadow-xs"
             >
               Publish
             </button>

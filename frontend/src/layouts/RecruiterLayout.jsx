@@ -71,7 +71,7 @@ export default function RecruiterLayout() {
       />
 
       {/* Sidebar */}
-      <RecruiterSidebar collapsed={collapsed} mobileOpen={mobileOpen} />
+      <RecruiterSidebar collapsed={collapsed} mobileOpen={mobileOpen} onClose={handleBackdropClick} />
 
       {/* Main area */}
       <div className="apl-main">

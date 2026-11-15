@@ -41,6 +41,7 @@ const Dashboard = () => {
       title: "Applications Submitted",
       value: loading ? "—" : stats?.total_applied ?? 0,
       sub: "Total jobs applied",
+      to: "/applicant/applications",
       icon: (
         <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5.586a1 1 0 0 1 .707.293l5.414 5.414a1 1 0 0 1 .293.707V19a2 2 0 0 1-2 2z" />
@@ -52,6 +53,7 @@ const Dashboard = () => {
       title: "Shortlisted",
       value: loading ? "—" : stats?.status_breakdown?.shortlisted ?? 0,
       sub: "Advanced to review",
+      to: "/applicant/applications",
       icon: (
         <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" />
@@ -63,6 +65,7 @@ const Dashboard = () => {
       title: "Interviews Scheduled",
       value: loading ? "—" : stats?.status_breakdown?.interview ?? 0,
       sub: "Direct interviews",
+      to: "/applicant/applications",
       icon: (
         <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2z" />
@@ -74,6 +77,7 @@ const Dashboard = () => {
       title: "Latest AI Resume Score",
       value: loading ? "—" : stats?.resume_stats?.ai_score ? `${stats.resume_stats.ai_score}/100` : "No upload",
       sub: stats?.resume_stats?.ai_score ? "AI quality analysis" : "Upload to calculate",
+      to: "/applicant/resume",
       icon: (
         <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 10V3L4 14h7v7l9-11h-7z" />
@@ -145,9 +149,13 @@ const Dashboard = () => {
       {/* ── REAL DYNAMIC METRICS ── */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-5">
         {statCards.map((st, i) => (
-          <div key={i} className="apl-card apl-card-hover flex flex-col justify-between">
+          <Link
+            key={i}
+            to={st.to}
+            className="apl-card apl-card-hover flex flex-col justify-between group transition-transform active:scale-[0.98] cursor-pointer"
+          >
             <div className="flex items-center justify-between mb-3">
-              <span className="text-xs font-bold uppercase tracking-wider text-[#8A8F76] dark:text-[#9CA485]">
+              <span className="text-xs font-bold uppercase tracking-wider text-[#8A8F76] dark:text-[#9CA485] group-hover:text-[#3D4127] dark:group-hover:text-[#D4DE95] transition-colors">
                 {st.title}
               </span>
               <div className={`w-9 h-9 rounded-xl flex items-center justify-center font-bold ${st.color}`}>
@@ -162,7 +170,7 @@ const Dashboard = () => {
                 {st.sub}
               </p>
             </div>
-          </div>
+          </Link>
         ))}
       </div>
 

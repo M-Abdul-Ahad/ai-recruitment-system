@@ -1,6 +1,6 @@
 import { useState, useEffect, useContext, useCallback, useMemo } from "react";
 import { AuthContext } from "../auth/AuthContext";
-import { Link } from "react-router-dom";
+import { Link, useSearchParams } from "react-router-dom";
 import { getJobs, getApplicants, updateApplicationDetails, removeCandidate } from "../api/jobs";
 import { useToast } from "../components/ui";
 import ApplicantCard from "./components/ApplicantCard";
@@ -12,6 +12,8 @@ const ITEMS_PER_PAGE = 9;
 const CandidateManagement = () => {
   const { user } = useContext(AuthContext);
   const toast = useToast();
+  const [searchParams, setSearchParams] = useSearchParams();
+  const urlJobId = searchParams.get("jobId");
 
   // Jobs
   const [jobs, setJobs] = useState([]);
@@ -45,7 +47,11 @@ const CandidateManagement = () => {
       const res = await getJobs();
       const jobList = res.data;
       setJobs(jobList);
-      if (jobList.length > 0) setSelectedJobId(jobList[0].id);
+      if (urlJobId && jobList.some((j) => String(j.id) === String(urlJobId))) {
+        setSelectedJobId(Number(urlJobId) || urlJobId);
+      } else if (jobList.length > 0) {
+        setSelectedJobId(jobList[0].id);
+      }
     } catch (err) { console.error(err); }
     finally { setJobsLoading(false); }
   };
@@ -143,15 +149,25 @@ const CandidateManagement = () => {
           <p className="text-xs sm:text-sm text-[#8A8F76] dark:text-[#9CA485] mt-1">Review applicants, manage statuses, and preview candidate resumes</p>
         </div>
         {selectedJobId && (
-          <button
-            onClick={() => setBulkUploadOpen(true)}
-            className="flex items-center gap-2 apl-btn py-2 px-4 text-xs font-bold text-[#3D4127] dark:text-[#D4DE95] bg-[#D4DE95]/15 dark:bg-[#D4DE95]/10 hover:bg-[#D4DE95]/30 border border-[#D4DE95]/40 rounded-xl transition-all whitespace-nowrap"
-          >
-            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
-            </svg>
-            Bulk Import Resumes
-          </button>
+          <div className="flex items-center gap-2">
+            <Link
+              to={`/recruiter/shortlist/${selectedJobId}`}
+              className="flex items-center gap-1.5 apl-btn py-2 px-3.5 text-xs font-bold text-[#D4DE95] bg-[#3D4127] hover:bg-[#2E311D] rounded-xl transition-all whitespace-nowrap shadow-xs"
+              title="Run AI Candidate Shortlisting"
+            >
+              <span>AI Shortlisting</span>
+              <span>&rarr;</span>
+            </Link>
+            <button
+              onClick={() => setBulkUploadOpen(true)}
+              className="flex items-center gap-2 apl-btn py-2 px-4 text-xs font-bold text-[#3D4127] dark:text-[#D4DE95] bg-[#D4DE95]/15 dark:bg-[#D4DE95]/10 hover:bg-[#D4DE95]/30 border border-[#D4DE95]/40 rounded-xl transition-all whitespace-nowrap"
+            >
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
+              </svg>
+              Bulk Import Resumes
+            </button>
+          </div>
         )}
       </div>
 
@@ -167,7 +183,10 @@ const CandidateManagement = () => {
             {jobs.map(job => (
               <button
                 key={job.id}
-                onClick={() => setSelectedJobId(job.id)}
+                onClick={() => {
+                  setSelectedJobId(job.id);
+                  setSearchParams({ jobId: job.id });
+                }}
                 className={`px-4 py-2 rounded-full text-xs font-bold transition-all border ${
                   selectedJobId === job.id
                     ? "bg-[#D4DE95] text-[#3D4127] border-[#3D4127]/20 shadow-xs"

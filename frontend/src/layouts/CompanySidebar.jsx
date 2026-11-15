@@ -54,7 +54,7 @@ const COMPANY_NAV_ITEMS = [
   { to: "/company/settings",   label: "Company Settings",     Icon: Icon.Settings,  exact: false },
 ];
 
-export default function CompanySidebar({ collapsed, mobileOpen }) {
+export default function CompanySidebar({ collapsed, mobileOpen, onClose }) {
   const { user } = useContext(AuthContext);
 
   const initials = user?.email
@@ -89,6 +89,7 @@ export default function CompanySidebar({ collapsed, mobileOpen }) {
             key={to}
             to={to}
             end={exact}
+            onClick={onClose}
             data-tooltip={label}
             className={({ isActive }) =>
               ["apl-sb-link", isActive ? "active" : ""].filter(Boolean).join(" ")
@@ -106,6 +107,7 @@ export default function CompanySidebar({ collapsed, mobileOpen }) {
         <NavLink
           to="/recruiter"
           end={true}
+          onClick={onClose}
           data-tooltip="Recruiter Portal"
           className={({ isActive }) =>
             ["apl-sb-link", isActive ? "active" : ""].filter(Boolean).join(" ")
@@ -119,6 +121,7 @@ export default function CompanySidebar({ collapsed, mobileOpen }) {
         </NavLink>
         <NavLink
           to="/recruiter/jobs"
+          onClick={onClose}
           data-tooltip="Jobs"
           className={({ isActive }) =>
             ["apl-sb-link", isActive ? "active" : ""].filter(Boolean).join(" ")
@@ -132,6 +135,7 @@ export default function CompanySidebar({ collapsed, mobileOpen }) {
         </NavLink>
         <NavLink
           to="/recruiter/candidates"
+          onClick={onClose}
           data-tooltip="Candidates"
           className={({ isActive }) =>
             ["apl-sb-link", isActive ? "active" : ""].filter(Boolean).join(" ")
@@ -145,6 +149,7 @@ export default function CompanySidebar({ collapsed, mobileOpen }) {
         </NavLink>
         <NavLink
           to="/recruiter/shortlist"
+          onClick={onClose}
           data-tooltip="AI Shortlisting"
           className={({ isActive }) =>
             ["apl-sb-link", isActive ? "active" : ""].filter(Boolean).join(" ")
