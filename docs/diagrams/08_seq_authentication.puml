@@ -1,0 +1,46 @@
+@startuml Seq_Authentication
+title Sequence Diagram — User Sign Up & Login (JWT)
+skinparam shadowing false
+autonumber
+actor User
+participant "React UI\n(Signup / Login)" as UI
+participant "AuthContext" as AC
+participant "SignupView\n/api/auth/signup/" as SV
+participant "TokenObtainPairView\n/api/auth/login/" as LV
+participant "SignupSerializer" as SS
+participant "R2Storage" as R2
+database "PostgreSQL" as DB
+
+== Sign Up ==
+User -> UI : Fill form (email, username,\npassword, role, CNIC)
+UI -> SV : POST signup data
+SV -> SS : validate(data)
+SS -> SS : block admin role,\ncheck role-specific fields
+alt invalid
+  SS --> SV : errors
+  SV --> UI : 400 Bad Request
+  UI --> User : Show validation errors
+else valid
+  opt CNIC image provided
+    SS -> R2 : upload_user_cnic(file)
+    R2 --> SS : storage key
+  end
+  SS -> DB : create User (hashed password, role)
+  SV --> UI : 201 Created
+  UI --> User : Redirect to login
+end
+
+== Login ==
+User -> UI : Enter email & password
+UI -> LV : POST credentials
+LV -> DB : find user by email,\ncheck_password()
+alt wrong credentials
+  LV --> UI : 401 Unauthorized
+  UI --> User : Show error
+else valid
+  LV --> UI : access + refresh JWT (with role)
+  UI -> AC : store tokens, decode role
+  AC --> UI : authenticated user
+  UI --> User : Redirect to role dashboard
+end
+@enduml

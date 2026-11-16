@@ -1,0 +1,87 @@
+@startuml Collaboration_Overall
+title AI Recruitment System — Overall Collaboration Diagram
+skinparam shadowing false
+left to right direction
+skinparam defaultFontSize 11
+skinparam ArrowColor #52564A
+skinparam actor {
+  BorderColor #3D4127
+  BackgroundColor #D4DE95
+}
+skinparam rectangle {
+  BackgroundColor #FFFFFF
+  BorderColor #636B2F
+}
+skinparam database {
+  BackgroundColor #D4DE95
+  BorderColor #3D4127
+}
+skinparam cloud {
+  BackgroundColor #ECEEDF
+  BorderColor #3D4127
+}
+
+actor ":Company Admin" as CA
+actor ":System Admin" as SA
+actor ":Recruiter" as RC
+actor ":Applicant" as AP
+
+rectangle ":React SPA\n(AuthContext + Axios)" as UI
+rectangle ":AuthViews\n(users)" as AUTH
+rectangle ":CompanyViews\n(companies)" as COMP
+rectangle ":JobViewSet\n(jobs)" as JOBS
+rectangle ":ResumeViews\n(resumes)" as RES
+
+rectangle ":ResumeParser" as PARSER
+rectangle ":GeminiEmbeddingService" as EMB
+rectangle ":GeminiResumeAI" as RAI
+rectangle ":JDGenerator" as JDG
+rectangle ":PreferenceParser" as PP
+rectangle ":ShortlistScorer" as SS
+rectangle ":InterviewKitService" as KIT
+rectangle ":EmailService" as MAIL
+
+database ":PostgreSQL + pgvector" as DB
+cloud ":Google Gemini" as G
+cloud ":Cloudflare R2" as R2
+
+' ---- actors to UI
+CA -- UI : 1: signUp()\n3: registerCompany(details, doc)\n7: inviteRecruiter(email)
+SA -- UI : 5: approveCompany(id) / reject(reason)
+RC -- UI : 8: acceptInvite(token, password)\n9: createJob(data)\n15: shortlist(prefs, weights, topN)\n20: generateKit() / sendEmails()
+AP -- UI : 11: uploadResume(file)\n13: applyToJob(jobId, resumeId)\n22: trackApplications()
+
+' ---- UI to API
+UI -- AUTH : 1.1: POST /auth/signup\n2: POST /auth/login → JWT
+UI -- COMP : 3.1: POST /companies/register\n5.1: POST /admin/{id}/approve\n7.1: POST /invitations\n8.1: POST /invitations/accept
+UI -- JOBS : 9.1: POST /jobs (+ generate-jd)\n10: POST /jobs/{id}/publish\n13.1: POST /jobs/{id}/apply\n15.1: POST /jobs/{id}/shortlist\n20.1: interview-kit / send-shortlist-emails
+UI -- RES : 11.1: POST /resumes/upload\n12: POST /resumes/ai-feedback/{id}
+
+' ---- API to services
+COMP -- R2 : 3.2: upload_company_document()\n5.2: presigned view URL
+COMP -- MAIL : 3.3: registration email\n5.3: approved / rejected email\n7.2: send_invitation_email()
+RES -- PARSER : 11.2: extract text & parse\nskills, education, experience
+RES -- EMB : 11.3: generate_embedding(resume)
+RES -- RAI : 12.1: generate_ai_resume_feedback()
+JOBS -- JDG : 9.2: generate_job_description()
+JOBS -- EMB : 15.2: embed JD & preferences\n15.4: cosine similarity scores
+JOBS -- PP : 15.3: decompose_preferences_with_llm()\n(positive query, negative keywords)
+JOBS -- SS : 15.5: llm_rerank_and_explain(topN)
+JOBS -- KIT : 20.2: generate_candidate_interview_kit()
+JOBS -- MAIL : 20.3: send_candidate_shortlist_email()
+JOBS -- R2 : 15.6: upload shortlisted resumes
+
+' ---- services to external
+EMB -- G : 11.4 / 15.2.1: embed content (768-d)
+RAI -- G : 12.2: analysis prompt
+JDG -- G : 9.3: JD prompt
+PP -- G : 15.3.1: decomposition prompt
+SS -- G : 15.5.1: batch re-rank prompt
+KIT -- G : 20.2.1: interview questions prompt
+
+' ---- persistence
+AUTH -- DB : 1.2: create User\n2.1: verify password
+COMP -- DB : 3.4: Company (PENDING)\n5.4: status VERIFIED / REJECTED\n7.3: RecruiterInvitation (token hash)\n8.2: create recruiter User
+JOBS -- DB : 9.4: Job (DRAFT)\n10.1: status ACTIVE\n13.2: JobApplication (APPLIED)\n15.7: SHORTLISTED + insights\n20.4: CandidateInterviewKit
+RES -- DB : 11.5: Resume + parsed data + embedding\n12.3: save AI feedback
+@enduml

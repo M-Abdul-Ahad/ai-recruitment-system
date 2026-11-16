@@ -1,0 +1,42 @@
+@startuml Seq_Resume_Analysis
+title Sequence Diagram — Resume Upload & AI Analysis
+skinparam shadowing false
+autonumber
+actor Applicant
+participant "React UI\n(ResumeAnalysis)" as UI
+participant "ResumeUploadView\n/api/resumes/upload/" as UV
+participant "ResumeParser" as RP
+participant "GeminiEmbedding\nService" as EMB
+participant "generate_ai_feedback\n/api/resumes/ai-feedback/{id}/" as FV
+participant "GeminiResumeAI" as AI
+participant "Google Gemini" as G
+database "PostgreSQL" as DB
+
+Applicant -> UI : Select resume (PDF / DOCX)
+UI -> UV : POST file (JWT)
+alt wrong file type
+  UV --> UI : 400 Only PDF and DOCX allowed
+else valid
+  UV -> DB : create Resume(user, file)
+  UV -> RP : extract_text_from_pdf / docx()
+  RP --> UV : raw text
+  UV -> DB : save extracted_text
+  UV -> RP : parse_and_store_resume_data(resume)
+  RP -> DB : save cleaned text, skills,\neducation, experience
+  UV -> EMB : generate_embedding(resume text)
+  EMB -> G : embed content
+  G --> EMB : 768-d vector
+  UV -> DB : save embedding
+  UV --> UI : 201 Created {resume_id, parsed data}
+end
+Applicant -> UI : Request AI analysis
+UI -> FV : POST resume_id
+FV -> DB : load resume + parsed data
+FV -> AI : generate_ai_resume_feedback(data)
+AI -> G : analysis prompt
+G --> AI : score, strengths, weaknesses,\nsuggestions, certifications
+AI --> FV : feedback JSON
+FV -> DB : save ai_* fields
+FV --> UI : AI feedback
+UI --> Applicant : Show score, category scores\n& suggestions
+@enduml

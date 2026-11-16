@@ -1,0 +1,251 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1500" height="1665" viewBox="0 0 1500 1665" font-family="'Segoe UI', Inter, Arial, Helvetica, sans-serif">
+<title>AI Recruitment System — System Architecture</title>
+<defs>
+  <marker id="arrow" viewBox="0 0 12 12" refX="11" refY="6" markerWidth="12" markerHeight="12" markerUnits="userSpaceOnUse" orient="auto-start-reverse"><path d="M1,1.5 L11,6 L1,10.5" fill="none" stroke="#52564A" stroke-width="1.5"/></marker>
+  <marker id="arrowfill" viewBox="0 0 12 12" refX="11" refY="6" markerWidth="12" markerHeight="12" markerUnits="userSpaceOnUse" orient="auto-start-reverse"><path d="M0,0.5 L12,6 L0,11.5 z" fill="#3D4127"/></marker>
+  <marker id="arrowinfo" viewBox="0 0 12 12" refX="11" refY="6" markerWidth="12" markerHeight="12" markerUnits="userSpaceOnUse" orient="auto-start-reverse"><path d="M0,0.5 L12,6 L0,11.5 z" fill="#2F6C82"/></marker>
+  <marker id="tri" viewBox="0 0 18 18" refX="17" refY="9" markerWidth="18" markerHeight="18" markerUnits="userSpaceOnUse" orient="auto-start-reverse"><path d="M1,1.5 L17,9 L1,16.5 z" fill="#fff" stroke="#52564A" stroke-width="1.4"/></marker>
+  <marker id="diamond" viewBox="0 0 22 12" refX="1" refY="6" markerWidth="22" markerHeight="12" markerUnits="userSpaceOnUse" orient="auto-start-reverse"><path d="M1,6 L11,1 L21,6 L11,11 z" fill="#3D4127" stroke="#3D4127" stroke-width="1"/></marker>
+  <marker id="odiamond" viewBox="0 0 22 12" refX="1" refY="6" markerWidth="22" markerHeight="12" markerUnits="userSpaceOnUse" orient="auto-start-reverse"><path d="M1,6 L11,1 L21,6 L11,11 z" fill="#fff" stroke="#52564A" stroke-width="1.3"/></marker>
+  <filter id="sh" x="-5%" y="-5%" width="110%" height="115%"><feDropShadow dx="0" dy="1.5" stdDeviation="1.5" flood-color="#3D4127" flood-opacity="0.16"/></filter>
+</defs>
+<rect width="100%" height="100%" fill="#FFFFFF"/>
+<rect x="22" y="84" width="30" height="116" rx="6" fill="#ECEEDF"/>
+<text x="37" y="142.0" font-size="11.5" font-weight="700" fill="#636B2F" text-anchor="middle" transform="rotate(-90 37 142.0)" dominant-baseline="middle">Users</text>
+<rect x="70" y="222" width="1400" height="330" rx="12" fill="#F8F9F1" stroke="#3D4127" stroke-width="1.6"/>
+<rect x="70" y="222" width="1400" height="34" rx="12" fill="#3D4127"/>
+<rect x="70" y="242" width="1400" height="14" fill="#3D4127"/>
+<text x="86.0" y="245.0" font-size="14.5" font-weight="700" fill="#D4DE95" text-anchor="start" font-family="'Segoe UI', Inter, Arial, Helvetica, sans-serif">Frontend  ·  React 19 + Vite + Tailwind CSS 4  (Single-Page App)</text>
+<text x="1454.0" y="245.0" font-size="11.5" font-weight="400" fill="#E8ECCB" text-anchor="end" font-family="'Segoe UI', Inter, Arial, Helvetica, sans-serif">react-router-dom 7 · axios · jwt-decode · react-markdown</text>
+<path d="M215.6,196.0 L215.6,222.0" fill="none" stroke="#3D4127" stroke-width="2.2" stroke-linejoin="round"/>
+<path d="M492.8,196.0 L492.8,222.0" fill="none" stroke="#3D4127" stroke-width="2.2" stroke-linejoin="round"/>
+<path d="M770.0,196.0 L770.0,222.0" fill="none" stroke="#3D4127" stroke-width="2.2" stroke-linejoin="round"/>
+<path d="M1047.2,196.0 L1047.2,222.0" fill="none" stroke="#3D4127" stroke-width="2.2" stroke-linejoin="round"/>
+<path d="M1324.4,196.0 L1324.4,222.0" fill="none" stroke="#3D4127" stroke-width="2.2" stroke-linejoin="round"/>
+<rect x="22" y="222" width="30" height="330" rx="6" fill="#ECEEDF"/>
+<text x="37" y="387.0" font-size="11.5" font-weight="700" fill="#636B2F" text-anchor="middle" transform="rotate(-90 37 387.0)" dominant-baseline="middle">Presentation</text>
+<rect x="70" y="622" width="1400" height="562" rx="12" fill="#F8F9F1" stroke="#3D4127" stroke-width="1.6"/>
+<rect x="70" y="622" width="1400" height="34" rx="12" fill="#3D4127"/>
+<rect x="70" y="642" width="1400" height="14" fill="#3D4127"/>
+<text x="86.0" y="645.0" font-size="14.5" font-weight="700" fill="#D4DE95" text-anchor="start" font-family="'Segoe UI', Inter, Arial, Helvetica, sans-serif">Backend  ·  Django 6 + Django REST Framework 3.16</text>
+<text x="1454.0" y="645.0" font-size="11.5" font-weight="400" fill="#E8ECCB" text-anchor="end" font-family="'Segoe UI', Inter, Arial, Helvetica, sans-serif">SimpleJWT 5.5 · django-cors-headers · psycopg 3</text>
+<rect x="22" y="672" width="30" height="58" rx="6" fill="#ECEEDF"/>
+<text x="37" y="701.0" font-size="11.5" font-weight="700" fill="#636B2F" text-anchor="middle" transform="rotate(-90 37 701.0)" dominant-baseline="middle">API</text>
+<rect x="22" y="754" width="30" height="132" rx="6" fill="#ECEEDF"/>
+<text x="37" y="820.0" font-size="11.5" font-weight="700" fill="#636B2F" text-anchor="middle" transform="rotate(-90 37 820.0)" dominant-baseline="middle">Apps (Django)</text>
+<rect x="22" y="932" width="30" height="156" rx="6" fill="#ECEEDF"/>
+<text x="37" y="1010.0" font-size="11.5" font-weight="700" fill="#636B2F" text-anchor="middle" transform="rotate(-90 37 1010.0)" dominant-baseline="middle">Services</text>
+<rect x="22" y="1116" width="30" height="42" rx="6" fill="#ECEEDF"/>
+<text x="37" y="1137.0" font-size="11.5" font-weight="700" fill="#636B2F" text-anchor="middle" transform="rotate(-90 37 1137.0)" dominant-baseline="middle">I/O</text>
+<line x1="85" y1="1110" x2="1455" y2="1110" stroke="#D3D6C4" stroke-dasharray="4 4"/>
+<rect x="22" y="1234" width="30" height="112" rx="6" fill="#ECEEDF"/>
+<text x="37" y="1290.0" font-size="11.5" font-weight="700" fill="#636B2F" text-anchor="middle" transform="rotate(-90 37 1290.0)" dominant-baseline="middle">Data &amp; external</text>
+<rect x="70" y="1386" width="1400" height="249" rx="12" fill="#FFFFFF" stroke="#3D4127" stroke-width="1.4"/>
+<rect x="22" y="1386" width="30" height="249" rx="6" fill="#ECEEDF"/>
+<text x="37" y="1510.5" font-size="11.5" font-weight="700" fill="#636B2F" text-anchor="middle" transform="rotate(-90 37 1510.5)" dominant-baseline="middle">Flows</text>
+<text x="30.0" y="38.0" font-size="22" font-weight="700" fill="#3D4127" text-anchor="start" font-family="'Segoe UI', Inter, Arial, Helvetica, sans-serif">AI Recruitment System — Overall System Architecture</text>
+<text x="30.0" y="60.0" font-size="12.5" font-weight="400" fill="#52564A" text-anchor="start" font-family="'Segoe UI', Inter, Arial, Helvetica, sans-serif">Role-based recruitment platform with AI resume analysis, semantic (vector) candidate shortlisting and LLM insights</text>
+<circle cx="215.6" cy="102" r="11" fill="#ECEEDF" stroke="#3D4127" stroke-width="1.6"/>
+<path d="M215.6,113 V145 M196.6,124 H234.6 M215.6,145 L201.6,169 M215.6,145 L229.6,169" fill="none" stroke="#3D4127" stroke-width="1.8" stroke-linecap="round"/>
+<text x="215.6" y="187.0" font-size="13" font-weight="700" fill="#3D4127" text-anchor="middle" font-family="'Segoe UI', Inter, Arial, Helvetica, sans-serif" paint-order="stroke" stroke="#ffffff" stroke-width="4" stroke-linejoin="round">Visitor</text>
+<circle cx="492.79999999999995" cy="102" r="11" fill="#D4DE95" stroke="#3D4127" stroke-width="1.6"/>
+<path d="M492.79999999999995,113 V145 M473.79999999999995,124 H511.79999999999995 M492.79999999999995,145 L478.79999999999995,169 M492.79999999999995,145 L506.79999999999995,169" fill="none" stroke="#3D4127" stroke-width="1.8" stroke-linecap="round"/>
+<text x="492.8" y="187.0" font-size="13" font-weight="700" fill="#3D4127" text-anchor="middle" font-family="'Segoe UI', Inter, Arial, Helvetica, sans-serif" paint-order="stroke" stroke="#ffffff" stroke-width="4" stroke-linejoin="round">Applicant</text>
+<circle cx="770.0" cy="102" r="11" fill="#D4DE95" stroke="#3D4127" stroke-width="1.6"/>
+<path d="M770.0,113 V145 M751.0,124 H789.0 M770.0,145 L756.0,169 M770.0,145 L784.0,169" fill="none" stroke="#3D4127" stroke-width="1.8" stroke-linecap="round"/>
+<text x="770.0" y="187.0" font-size="13" font-weight="700" fill="#3D4127" text-anchor="middle" font-family="'Segoe UI', Inter, Arial, Helvetica, sans-serif" paint-order="stroke" stroke="#ffffff" stroke-width="4" stroke-linejoin="round">Recruiter</text>
+<circle cx="1047.1999999999998" cy="102" r="11" fill="#D4DE95" stroke="#3D4127" stroke-width="1.6"/>
+<path d="M1047.1999999999998,113 V145 M1028.1999999999998,124 H1066.1999999999998 M1047.1999999999998,145 L1033.1999999999998,169 M1047.1999999999998,145 L1061.1999999999998,169" fill="none" stroke="#3D4127" stroke-width="1.8" stroke-linecap="round"/>
+<text x="1047.2" y="187.0" font-size="13" font-weight="700" fill="#3D4127" text-anchor="middle" font-family="'Segoe UI', Inter, Arial, Helvetica, sans-serif" paint-order="stroke" stroke="#ffffff" stroke-width="4" stroke-linejoin="round">Company Admin</text>
+<circle cx="1324.3999999999999" cy="102" r="11" fill="#D4DE95" stroke="#3D4127" stroke-width="1.6"/>
+<path d="M1324.3999999999999,113 V145 M1305.3999999999999,124 H1343.3999999999999 M1324.3999999999999,145 L1310.3999999999999,169 M1324.3999999999999,145 L1338.3999999999999,169" fill="none" stroke="#3D4127" stroke-width="1.8" stroke-linecap="round"/>
+<text x="1324.4" y="187.0" font-size="13" font-weight="700" fill="#3D4127" text-anchor="middle" font-family="'Segoe UI', Inter, Arial, Helvetica, sans-serif" paint-order="stroke" stroke="#ffffff" stroke-width="4" stroke-linejoin="round">System Admin</text>
+<rect x="85.0" y="272" width="261.2" height="150" rx="8" fill="#FFFFFF" stroke="#636B2F" stroke-width="1.4" filter="url(#sh)"/>
+<path d="M85.0,300 V280 Q85.0,272 93.0,272 H338.2 Q346.2,272 346.2,280 V300 Z" fill="#ECEEDF" stroke="#636B2F" stroke-width="1.4"/>
+<text x="97.0" y="291.0" font-size="13.5" font-weight="700" fill="#3D4127" text-anchor="start" font-family="'Segoe UI', Inter, Arial, Helvetica, sans-serif">Public</text>
+<text x="97.0" y="313.0" font-size="11.5" font-weight="400" fill="#52564A" text-anchor="start" font-family="'Segoe UI', Inter, Arial, Helvetica, sans-serif">Home / landing</text>
+<text x="97.0" y="329.5" font-size="11.5" font-weight="400" fill="#52564A" text-anchor="start" font-family="'Segoe UI', Inter, Arial, Helvetica, sans-serif">Login · Sign up</text>
+<text x="97.0" y="346.0" font-size="11.5" font-weight="400" fill="#52564A" text-anchor="start" font-family="'Segoe UI', Inter, Arial, Helvetica, sans-serif">Setup password</text>
+<text x="97.0" y="362.5" font-size="11.5" font-weight="400" fill="#52564A" text-anchor="start" font-family="'Segoe UI', Inter, Arial, Helvetica, sans-serif">Accept recruiter invite</text>
+<rect x="362.2" y="272" width="261.2" height="150" rx="8" fill="#FFFFFF" stroke="#636B2F" stroke-width="1.4" filter="url(#sh)"/>
+<path d="M362.2,300 V280 Q362.2,272 370.2,272 H615.4 Q623.4,272 623.4,280 V300 Z" fill="#D4DE95" stroke="#636B2F" stroke-width="1.4"/>
+<text x="374.2" y="291.0" font-size="13.5" font-weight="700" fill="#3D4127" text-anchor="start" font-family="'Segoe UI', Inter, Arial, Helvetica, sans-serif">Applicant Portal</text>
+<text x="374.2" y="313.0" font-size="11.5" font-weight="400" fill="#52564A" text-anchor="start" font-family="'Segoe UI', Inter, Arial, Helvetica, sans-serif">Dashboard (stats)</text>
+<text x="374.2" y="329.5" font-size="11.5" font-weight="400" fill="#52564A" text-anchor="start" font-family="'Segoe UI', Inter, Arial, Helvetica, sans-serif">Resume upload &amp; AI analysis</text>
+<text x="374.2" y="346.0" font-size="11.5" font-weight="400" fill="#52564A" text-anchor="start" font-family="'Segoe UI', Inter, Arial, Helvetica, sans-serif">Resume builder (20 templates)</text>
+<text x="374.2" y="362.5" font-size="11.5" font-weight="400" fill="#52564A" text-anchor="start" font-family="'Segoe UI', Inter, Arial, Helvetica, sans-serif">Job board · Apply</text>
+<text x="374.2" y="379.0" font-size="11.5" font-weight="400" fill="#52564A" text-anchor="start" font-family="'Segoe UI', Inter, Arial, Helvetica, sans-serif">My applications</text>
+<rect x="639.4" y="272" width="261.2" height="150" rx="8" fill="#FFFFFF" stroke="#636B2F" stroke-width="1.4" filter="url(#sh)"/>
+<path d="M639.4,300 V280 Q639.4,272 647.4,272 H892.5999999999999 Q900.5999999999999,272 900.5999999999999,280 V300 Z" fill="#D4DE95" stroke="#636B2F" stroke-width="1.4"/>
+<text x="651.4" y="291.0" font-size="13.5" font-weight="700" fill="#3D4127" text-anchor="start" font-family="'Segoe UI', Inter, Arial, Helvetica, sans-serif">Recruiter Portal</text>
+<text x="651.4" y="313.0" font-size="11.5" font-weight="400" fill="#52564A" text-anchor="start" font-family="'Segoe UI', Inter, Arial, Helvetica, sans-serif">Dashboard · Company</text>
+<text x="651.4" y="329.5" font-size="11.5" font-weight="400" fill="#52564A" text-anchor="start" font-family="'Segoe UI', Inter, Arial, Helvetica, sans-serif">Jobs · Create job (AI JD)</text>
+<text x="651.4" y="346.0" font-size="11.5" font-weight="400" fill="#52564A" text-anchor="start" font-family="'Segoe UI', Inter, Arial, Helvetica, sans-serif">Candidate management</text>
+<text x="651.4" y="362.5" font-size="11.5" font-weight="400" fill="#52564A" text-anchor="start" font-family="'Segoe UI', Inter, Arial, Helvetica, sans-serif">AI shortlisting + weights</text>
+<text x="651.4" y="379.0" font-size="11.5" font-weight="400" fill="#52564A" text-anchor="start" font-family="'Segoe UI', Inter, Arial, Helvetica, sans-serif">Candidate detail · kit</text>
+<rect x="916.5999999999999" y="272" width="261.2" height="150" rx="8" fill="#FFFFFF" stroke="#636B2F" stroke-width="1.4" filter="url(#sh)"/>
+<path d="M916.5999999999999,300 V280 Q916.5999999999999,272 924.5999999999999,272 H1169.8 Q1177.8,272 1177.8,280 V300 Z" fill="#D4DE95" stroke="#636B2F" stroke-width="1.4"/>
+<text x="928.6" y="291.0" font-size="13.5" font-weight="700" fill="#3D4127" text-anchor="start" font-family="'Segoe UI', Inter, Arial, Helvetica, sans-serif">Company Portal</text>
+<text x="928.6" y="313.0" font-size="11.5" font-weight="400" fill="#52564A" text-anchor="start" font-family="'Segoe UI', Inter, Arial, Helvetica, sans-serif">Company dashboard</text>
+<text x="928.6" y="329.5" font-size="11.5" font-weight="400" fill="#52564A" text-anchor="start" font-family="'Segoe UI', Inter, Arial, Helvetica, sans-serif">Recruiter management</text>
+<text x="928.6" y="346.0" font-size="11.5" font-weight="400" fill="#52564A" text-anchor="start" font-family="'Segoe UI', Inter, Arial, Helvetica, sans-serif">Invitations · HR roles</text>
+<text x="928.6" y="362.5" font-size="11.5" font-weight="400" fill="#52564A" text-anchor="start" font-family="'Segoe UI', Inter, Arial, Helvetica, sans-serif">Company settings · docs</text>
+<rect x="1193.8" y="272" width="261.2" height="150" rx="8" fill="#FFFFFF" stroke="#636B2F" stroke-width="1.4" filter="url(#sh)"/>
+<path d="M1193.8,300 V280 Q1193.8,272 1201.8,272 H1447.0 Q1455.0,272 1455.0,280 V300 Z" fill="#D4DE95" stroke="#636B2F" stroke-width="1.4"/>
+<text x="1205.8" y="291.0" font-size="13.5" font-weight="700" fill="#3D4127" text-anchor="start" font-family="'Segoe UI', Inter, Arial, Helvetica, sans-serif">Admin Portal</text>
+<text x="1205.8" y="313.0" font-size="11.5" font-weight="400" fill="#52564A" text-anchor="start" font-family="'Segoe UI', Inter, Arial, Helvetica, sans-serif">Platform dashboard</text>
+<text x="1205.8" y="329.5" font-size="11.5" font-weight="400" fill="#52564A" text-anchor="start" font-family="'Segoe UI', Inter, Arial, Helvetica, sans-serif">Users · Roles</text>
+<text x="1205.8" y="346.0" font-size="11.5" font-weight="400" fill="#52564A" text-anchor="start" font-family="'Segoe UI', Inter, Arial, Helvetica, sans-serif">Companies (verify)</text>
+<text x="1205.8" y="362.5" font-size="11.5" font-weight="400" fill="#52564A" text-anchor="start" font-family="'Segoe UI', Inter, Arial, Helvetica, sans-serif">Jobs</text>
+<text x="1205.8" y="379.0" font-size="11.5" font-weight="400" fill="#52564A" text-anchor="start" font-family="'Segoe UI', Inter, Arial, Helvetica, sans-serif">Settings</text>
+<path d="M215.6,256.0 L215.6,272.0" fill="none" stroke="#3D4127" stroke-width="2.2" stroke-linejoin="round" marker-end="url(#arrowfill)"/>
+<path d="M492.8,256.0 L492.8,272.0" fill="none" stroke="#3D4127" stroke-width="2.2" stroke-linejoin="round" marker-end="url(#arrowfill)"/>
+<path d="M770.0,256.0 L770.0,272.0" fill="none" stroke="#3D4127" stroke-width="2.2" stroke-linejoin="round" marker-end="url(#arrowfill)"/>
+<path d="M1047.2,256.0 L1047.2,272.0" fill="none" stroke="#3D4127" stroke-width="2.2" stroke-linejoin="round" marker-end="url(#arrowfill)"/>
+<path d="M1324.4,256.0 L1324.4,272.0" fill="none" stroke="#3D4127" stroke-width="2.2" stroke-linejoin="round" marker-end="url(#arrowfill)"/>
+<rect x="85" y="438" width="1370" height="46" rx="8" fill="#FFFFFF" stroke="#636B2F" stroke-width="1.4" filter="url(#sh)"/>
+<text x="97.0" y="457.0" font-size="13.5" font-weight="700" fill="#3D4127" text-anchor="start" font-family="'Segoe UI', Inter, Arial, Helvetica, sans-serif">Shared layer:</text>
+<text x="190.0" y="457.0" font-size="11.5" font-weight="400" fill="#52564A" text-anchor="start" font-family="'Segoe UI', Inter, Arial, Helvetica, sans-serif">AuthContext (JWT session) · ProtectedRoute / RoleRoute / HRRoute / PublicRoute guards · role layouts &amp; sidebars</text>
+<text x="190.0" y="474.0" font-size="11.5" font-weight="400" fill="#52564A" text-anchor="start" font-family="'Segoe UI', Inter, Arial, Helvetica, sans-serif">UI kit: Toast · Alert · Pagination · DashboardCharts (SVG) · ProfileSettingsForm · Resume template library</text>
+<rect x="85" y="496" width="1370" height="40" rx="8" fill="#D4DE95" stroke="#3D4127" stroke-width="1.4" filter="url(#sh)"/>
+<text x="97.0" y="515.0" font-size="13.5" font-weight="700" fill="#3D4127" text-anchor="start" font-family="'Segoe UI', Inter, Arial, Helvetica, sans-serif">API client (axios):</text>
+<text x="230.0" y="515.5" font-size="11.5" font-weight="400" fill="#3D4127" text-anchor="start" font-family="'Segoe UI', Inter, Arial, Helvetica, sans-serif">base URL /api · attaches  Authorization: Bearer &lt;access JWT&gt;  · auto-refresh via /api/auth/refresh/ on 401</text>
+<path d="M750.0,536.0 L750.0,622.0" fill="none" stroke="#3D4127" stroke-width="2.6" stroke-linejoin="round" marker-start="url(#arrowfill)" marker-end="url(#arrowfill)"/>
+<text x="760.0" y="583.0" font-size="11" font-weight="400" fill="#52564A" text-anchor="start" font-family="'Segoe UI', Inter, Arial, Helvetica, sans-serif" paint-order="stroke" stroke="#ffffff" stroke-width="4" stroke-linejoin="round">HTTPS · REST / JSON  ·  JWT</text>
+<rect x="85" y="672" width="1370" height="58" rx="8" fill="#FFFFFF" stroke="#636B2F" stroke-width="1.4" filter="url(#sh)"/>
+<text x="97.0" y="691.0" font-size="13.5" font-weight="700" fill="#3D4127" text-anchor="start" font-family="'Segoe UI', Inter, Arial, Helvetica, sans-serif">core  —  API gateway &amp; cross-cutting concerns</text>
+<text x="97.0" y="710.0" font-size="11.5" font-weight="400" fill="#52564A" text-anchor="start" font-family="'Segoe UI', Inter, Arial, Helvetica, sans-serif">URL router: /api/auth · /api/companies · /api/jobs · /api/resumes  ·  JWT authentication  ·  RoleMiddleware  ·  permissions (IsApplicant, IsRecruiter, IsJobOwner, company-admin)  ·  pagination</text>
+<rect x="85.0" y="754" width="330.5" height="132" rx="8" fill="#FFFFFF" stroke="#636B2F" stroke-width="1.4" filter="url(#sh)"/>
+<path d="M85.0,782 V762 Q85.0,754 93.0,754 H407.5 Q415.5,754 415.5,762 V782 Z" fill="#D4DE95" stroke="#636B2F" stroke-width="1.4"/>
+<text x="97.0" y="773.0" font-size="13.5" font-weight="700" fill="#3D4127" text-anchor="start" font-family="'Segoe UI', Inter, Arial, Helvetica, sans-serif">users  app</text>
+<text x="97.0" y="795.0" font-size="11.5" font-weight="400" fill="#52564A" text-anchor="start" font-family="'Segoe UI', Inter, Arial, Helvetica, sans-serif">signup · login (JWT pair) · refresh</text>
+<text x="97.0" y="811.5" font-size="11.5" font-weight="400" fill="#52564A" text-anchor="start" font-family="'Segoe UI', Inter, Arial, Helvetica, sans-serif">profile (me) · change password</text>
+<text x="97.0" y="828.0" font-size="11.5" font-weight="400" fill="#52564A" text-anchor="start" font-family="'Segoe UI', Inter, Arial, Helvetica, sans-serif">admin: users · roles · platform stats</text>
+<text x="403.5" y="773.0" font-size="11" font-weight="400" fill="#636B2F" text-anchor="end" font-family="Consolas, 'JetBrains Mono', 'Courier New', monospace">/api/auth/*</text>
+<path d="M250.2,730.0 L250.2,754.0" fill="none" stroke="#52564A" stroke-width="1.6" stroke-linejoin="round" marker-end="url(#arrowfill)"/>
+<rect x="431.5" y="754" width="330.5" height="132" rx="8" fill="#FFFFFF" stroke="#636B2F" stroke-width="1.4" filter="url(#sh)"/>
+<path d="M431.5,782 V762 Q431.5,754 439.5,754 H754.0 Q762.0,754 762.0,762 V782 Z" fill="#D4DE95" stroke="#636B2F" stroke-width="1.4"/>
+<text x="443.5" y="773.0" font-size="13.5" font-weight="700" fill="#3D4127" text-anchor="start" font-family="'Segoe UI', Inter, Arial, Helvetica, sans-serif">companies  app</text>
+<text x="443.5" y="795.0" font-size="11.5" font-weight="400" fill="#52564A" text-anchor="start" font-family="'Segoe UI', Inter, Arial, Helvetica, sans-serif">register + verification document</text>
+<text x="443.5" y="811.5" font-size="11.5" font-weight="400" fill="#52564A" text-anchor="start" font-family="'Segoe UI', Inter, Arial, Helvetica, sans-serif">members · HR flag · dashboard stats</text>
+<text x="443.5" y="828.0" font-size="11.5" font-weight="400" fill="#52564A" text-anchor="start" font-family="'Segoe UI', Inter, Arial, Helvetica, sans-serif">invitations: send · verify · accept · revoke</text>
+<text x="443.5" y="844.5" font-size="11.5" font-weight="400" fill="#52564A" text-anchor="start" font-family="'Segoe UI', Inter, Arial, Helvetica, sans-serif">admin: approve / reject company</text>
+<text x="750.0" y="773.0" font-size="11" font-weight="400" fill="#636B2F" text-anchor="end" font-family="Consolas, 'JetBrains Mono', 'Courier New', monospace">/api/companies/*</text>
+<path d="M596.8,730.0 L596.8,754.0" fill="none" stroke="#52564A" stroke-width="1.6" stroke-linejoin="round" marker-end="url(#arrowfill)"/>
+<rect x="778.0" y="754" width="330.5" height="132" rx="8" fill="#FFFFFF" stroke="#636B2F" stroke-width="1.4" filter="url(#sh)"/>
+<path d="M778.0,782 V762 Q778.0,754 786.0,754 H1100.5 Q1108.5,754 1108.5,762 V782 Z" fill="#D4DE95" stroke="#636B2F" stroke-width="1.4"/>
+<text x="790.0" y="773.0" font-size="13.5" font-weight="700" fill="#3D4127" text-anchor="start" font-family="'Segoe UI', Inter, Arial, Helvetica, sans-serif">jobs  app</text>
+<text x="790.0" y="795.0" font-size="11.5" font-weight="400" fill="#52564A" text-anchor="start" font-family="'Segoe UI', Inter, Arial, Helvetica, sans-serif">CRUD · publish · close · apply</text>
+<text x="790.0" y="811.5" font-size="11.5" font-weight="400" fill="#52564A" text-anchor="start" font-family="'Segoe UI', Inter, Arial, Helvetica, sans-serif">stage / bulk-upload resumes · embeddings</text>
+<text x="790.0" y="828.0" font-size="11.5" font-weight="400" fill="#52564A" text-anchor="start" font-family="'Segoe UI', Inter, Arial, Helvetica, sans-serif">AI shortlist · application status / notes / tags</text>
+<text x="790.0" y="844.5" font-size="11.5" font-weight="400" fill="#52564A" text-anchor="start" font-family="'Segoe UI', Inter, Arial, Helvetica, sans-serif">interview kit · shortlist emails</text>
+<text x="1096.5" y="773.0" font-size="11" font-weight="400" fill="#636B2F" text-anchor="end" font-family="Consolas, 'JetBrains Mono', 'Courier New', monospace">/api/jobs/*</text>
+<path d="M943.2,730.0 L943.2,754.0" fill="none" stroke="#52564A" stroke-width="1.6" stroke-linejoin="round" marker-end="url(#arrowfill)"/>
+<rect x="1124.5" y="754" width="330.5" height="132" rx="8" fill="#FFFFFF" stroke="#636B2F" stroke-width="1.4" filter="url(#sh)"/>
+<path d="M1124.5,782 V762 Q1124.5,754 1132.5,754 H1447.0 Q1455.0,754 1455.0,762 V782 Z" fill="#D4DE95" stroke="#636B2F" stroke-width="1.4"/>
+<text x="1136.5" y="773.0" font-size="13.5" font-weight="700" fill="#3D4127" text-anchor="start" font-family="'Segoe UI', Inter, Arial, Helvetica, sans-serif">resumes  app</text>
+<text x="1136.5" y="795.0" font-size="11.5" font-weight="400" fill="#52564A" text-anchor="start" font-family="'Segoe UI', Inter, Arial, Helvetica, sans-serif">upload (PDF/DOCX, SHA-256 dedupe)</text>
+<text x="1136.5" y="811.5" font-size="11.5" font-weight="400" fill="#52564A" text-anchor="start" font-family="'Segoe UI', Inter, Arial, Helvetica, sans-serif">parse → skills · education · experience</text>
+<text x="1136.5" y="828.0" font-size="11.5" font-weight="400" fill="#52564A" text-anchor="start" font-family="'Segoe UI', Inter, Arial, Helvetica, sans-serif">AI feedback · tailor for job</text>
+<text x="1136.5" y="844.5" font-size="11.5" font-weight="400" fill="#52564A" text-anchor="start" font-family="'Segoe UI', Inter, Arial, Helvetica, sans-serif">secure stream / download</text>
+<text x="1443.0" y="773.0" font-size="11" font-weight="400" fill="#636B2F" text-anchor="end" font-family="Consolas, 'JetBrains Mono', 'Courier New', monospace">/api/resumes/*</text>
+<path d="M1289.8,730.0 L1289.8,754.0" fill="none" stroke="#52564A" stroke-width="1.6" stroke-linejoin="round" marker-end="url(#arrowfill)"/>
+<rect x="85.0" y="932" width="330.5" height="72" rx="8" fill="#FFFFFF" stroke="#636B2F" stroke-width="1.4" filter="url(#sh)"/>
+<text x="97.0" y="951.0" font-size="13.5" font-weight="700" fill="#3D4127" text-anchor="start" font-family="'Segoe UI', Inter, Arial, Helvetica, sans-serif">Resume Parser</text>
+<text x="403.5" y="951.0" font-size="10" font-weight="400" fill="#636B2F" text-anchor="end" font-family="'Segoe UI', Inter, Arial, Helvetica, sans-serif" font-style="italic">resumes</text>
+<text x="97.0" y="972.0" font-size="11.2" font-weight="400" fill="#52564A" text-anchor="start" font-family="'Segoe UI', Inter, Arial, Helvetica, sans-serif">PyPDF2 / python-docx text extraction, cleaning, skill</text>
+<text x="97.0" y="988.0" font-size="11.2" font-weight="400" fill="#52564A" text-anchor="start" font-family="'Segoe UI', Inter, Arial, Helvetica, sans-serif">&amp; section parsing</text>
+<rect x="431.5" y="932" width="330.5" height="72" rx="8" fill="#FFFFFF" stroke="#636B2F" stroke-width="1.4" filter="url(#sh)"/>
+<text x="443.5" y="951.0" font-size="13.5" font-weight="700" fill="#3D4127" text-anchor="start" font-family="'Segoe UI', Inter, Arial, Helvetica, sans-serif">Gemini Resume AI</text>
+<text x="750.0" y="951.0" font-size="10" font-weight="400" fill="#636B2F" text-anchor="end" font-family="'Segoe UI', Inter, Arial, Helvetica, sans-serif" font-style="italic">resumes</text>
+<text x="443.5" y="972.0" font-size="11.2" font-weight="400" fill="#52564A" text-anchor="start" font-family="'Segoe UI', Inter, Arial, Helvetica, sans-serif">score, strengths, weaknesses, suggestions,</text>
+<text x="443.5" y="988.0" font-size="11.2" font-weight="400" fill="#52564A" text-anchor="start" font-family="'Segoe UI', Inter, Arial, Helvetica, sans-serif">certifications, tailoring</text>
+<rect x="778.0" y="932" width="330.5" height="72" rx="8" fill="#FFFFFF" stroke="#636B2F" stroke-width="1.4" filter="url(#sh)"/>
+<text x="790.0" y="951.0" font-size="13.5" font-weight="700" fill="#3D4127" text-anchor="start" font-family="'Segoe UI', Inter, Arial, Helvetica, sans-serif">Gemini Embedding Service</text>
+<text x="1096.5" y="951.0" font-size="10" font-weight="400" fill="#636B2F" text-anchor="end" font-family="'Segoe UI', Inter, Arial, Helvetica, sans-serif" font-style="italic">jobs · resumes</text>
+<text x="790.0" y="972.0" font-size="11.2" font-weight="400" fill="#52564A" text-anchor="start" font-family="'Segoe UI', Inter, Arial, Helvetica, sans-serif">768-d vectors (JD, resume, staged), cosine similarity,</text>
+<text x="790.0" y="988.0" font-size="11.2" font-weight="400" fill="#52564A" text-anchor="start" font-family="'Segoe UI', Inter, Arial, Helvetica, sans-serif">batching</text>
+<rect x="1124.5" y="932" width="330.5" height="72" rx="8" fill="#FFFFFF" stroke="#636B2F" stroke-width="1.4" filter="url(#sh)"/>
+<text x="1136.5" y="951.0" font-size="13.5" font-weight="700" fill="#3D4127" text-anchor="start" font-family="'Segoe UI', Inter, Arial, Helvetica, sans-serif">JD Generator</text>
+<text x="1443.0" y="951.0" font-size="10" font-weight="400" fill="#636B2F" text-anchor="end" font-family="'Segoe UI', Inter, Arial, Helvetica, sans-serif" font-style="italic">jobs</text>
+<text x="1136.5" y="972.0" font-size="11.2" font-weight="400" fill="#52564A" text-anchor="start" font-family="'Segoe UI', Inter, Arial, Helvetica, sans-serif">drafts job descriptions from title, skills and</text>
+<text x="1136.5" y="988.0" font-size="11.2" font-weight="400" fill="#52564A" text-anchor="start" font-family="'Segoe UI', Inter, Arial, Helvetica, sans-serif">experience</text>
+<rect x="85.0" y="1016" width="330.5" height="72" rx="8" fill="#FFFFFF" stroke="#636B2F" stroke-width="1.4" filter="url(#sh)"/>
+<text x="97.0" y="1035.0" font-size="13.5" font-weight="700" fill="#3D4127" text-anchor="start" font-family="'Segoe UI', Inter, Arial, Helvetica, sans-serif">Preference Parser</text>
+<text x="403.5" y="1035.0" font-size="10" font-weight="400" fill="#636B2F" text-anchor="end" font-family="'Segoe UI', Inter, Arial, Helvetica, sans-serif" font-style="italic">jobs</text>
+<text x="97.0" y="1056.0" font-size="11.2" font-weight="400" fill="#52564A" text-anchor="start" font-family="'Segoe UI', Inter, Arial, Helvetica, sans-serif">LLM query decomposition → positive query + negative</text>
+<text x="97.0" y="1072.0" font-size="11.2" font-weight="400" fill="#52564A" text-anchor="start" font-family="'Segoe UI', Inter, Arial, Helvetica, sans-serif">keywords</text>
+<rect x="431.5" y="1016" width="330.5" height="72" rx="8" fill="#FFFFFF" stroke="#636B2F" stroke-width="1.4" filter="url(#sh)"/>
+<text x="443.5" y="1035.0" font-size="13.5" font-weight="700" fill="#3D4127" text-anchor="start" font-family="'Segoe UI', Inter, Arial, Helvetica, sans-serif">Shortlist Scorer</text>
+<text x="750.0" y="1035.0" font-size="10" font-weight="400" fill="#636B2F" text-anchor="end" font-family="'Segoe UI', Inter, Arial, Helvetica, sans-serif" font-style="italic">jobs</text>
+<text x="443.5" y="1056.0" font-size="11.2" font-weight="400" fill="#52564A" text-anchor="start" font-family="'Segoe UI', Inter, Arial, Helvetica, sans-serif">batch LLM re-rank, plus-points / concerns, one-line</text>
+<text x="443.5" y="1072.0" font-size="11.2" font-weight="400" fill="#52564A" text-anchor="start" font-family="'Segoe UI', Inter, Arial, Helvetica, sans-serif">reason</text>
+<rect x="778.0" y="1016" width="330.5" height="72" rx="8" fill="#FFFFFF" stroke="#636B2F" stroke-width="1.4" filter="url(#sh)"/>
+<text x="790.0" y="1035.0" font-size="13.5" font-weight="700" fill="#3D4127" text-anchor="start" font-family="'Segoe UI', Inter, Arial, Helvetica, sans-serif">Interview Kit Service</text>
+<text x="1096.5" y="1035.0" font-size="10" font-weight="400" fill="#636B2F" text-anchor="end" font-family="'Segoe UI', Inter, Arial, Helvetica, sans-serif" font-style="italic">jobs</text>
+<text x="790.0" y="1056.0" font-size="11.2" font-weight="400" fill="#52564A" text-anchor="start" font-family="'Segoe UI', Inter, Arial, Helvetica, sans-serif">10 personalised questions + model answers per</text>
+<text x="790.0" y="1072.0" font-size="11.2" font-weight="400" fill="#52564A" text-anchor="start" font-family="'Segoe UI', Inter, Arial, Helvetica, sans-serif">candidate</text>
+<rect x="1124.5" y="1016" width="330.5" height="72" rx="8" fill="#FFFFFF" stroke="#636B2F" stroke-width="1.4" filter="url(#sh)"/>
+<text x="1136.5" y="1035.0" font-size="13.5" font-weight="700" fill="#3D4127" text-anchor="start" font-family="'Segoe UI', Inter, Arial, Helvetica, sans-serif">Email Services</text>
+<text x="1443.0" y="1035.0" font-size="10" font-weight="400" fill="#636B2F" text-anchor="end" font-family="'Segoe UI', Inter, Arial, Helvetica, sans-serif" font-style="italic">companies · jobs</text>
+<text x="1136.5" y="1056.0" font-size="11.2" font-weight="400" fill="#52564A" text-anchor="start" font-family="'Segoe UI', Inter, Arial, Helvetica, sans-serif">invites, registration / approval / rejection,</text>
+<text x="1136.5" y="1072.0" font-size="11.2" font-weight="400" fill="#52564A" text-anchor="start" font-family="'Segoe UI', Inter, Arial, Helvetica, sans-serif">shortlist notices</text>
+<path d="M750.0,886.0 L750.0,932.0" fill="none" stroke="#52564A" stroke-width="2" stroke-linejoin="round" marker-end="url(#arrowfill)"/>
+<text x="760.0" y="913.0" font-size="11" font-weight="400" fill="#52564A" text-anchor="start" font-family="'Segoe UI', Inter, Arial, Helvetica, sans-serif" paint-order="stroke" stroke="#ffffff" stroke-width="4" stroke-linejoin="round">apps invoke services  (tag on each card = calling app)</text>
+<rect x="85.0" y="1120" width="261.2" height="34" rx="17" fill="#ECEEDF" stroke="#636B2F" stroke-width="1.2"/>
+<text x="215.6" y="1142.0" font-size="12" font-weight="600" fill="#3D4127" text-anchor="middle" font-family="'Segoe UI', Inter, Arial, Helvetica, sans-serif">Django ORM + pgvector</text>
+<rect x="362.2" y="1120" width="261.2" height="34" rx="17" fill="#ECEEDF" stroke="#636B2F" stroke-width="1.2"/>
+<text x="492.8" y="1142.0" font-size="12" font-weight="600" fill="#3D4127" text-anchor="middle" font-family="'Segoe UI', Inter, Arial, Helvetica, sans-serif">google-genai SDK</text>
+<rect x="639.4" y="1120" width="261.2" height="34" rx="17" fill="#ECEEDF" stroke="#636B2F" stroke-width="1.2"/>
+<text x="770.0" y="1142.0" font-size="12" font-weight="600" fill="#3D4127" text-anchor="middle" font-family="'Segoe UI', Inter, Arial, Helvetica, sans-serif">boto3 (S3 API)</text>
+<rect x="916.5999999999999" y="1120" width="261.2" height="34" rx="17" fill="#ECEEDF" stroke="#636B2F" stroke-width="1.2"/>
+<text x="1047.2" y="1142.0" font-size="12" font-weight="600" fill="#3D4127" text-anchor="middle" font-family="'Segoe UI', Inter, Arial, Helvetica, sans-serif">smtplib (SMTP / TLS)</text>
+<rect x="1193.8" y="1120" width="261.2" height="34" rx="17" fill="#ECEEDF" stroke="#636B2F" stroke-width="1.2"/>
+<text x="1324.4" y="1142.0" font-size="12" font-weight="600" fill="#3D4127" text-anchor="middle" font-family="'Segoe UI', Inter, Arial, Helvetica, sans-serif">FileSystemStorage</text>
+<path d="M215.6,1154.0 L215.6,1234.0" fill="none" stroke="#3D4127" stroke-width="2" stroke-linejoin="round" marker-end="url(#arrowfill)"/>
+<path d="M492.8,1154.0 L492.8,1234.0" fill="none" stroke="#3D4127" stroke-width="2" stroke-linejoin="round" marker-end="url(#arrowfill)"/>
+<path d="M770.0,1154.0 L770.0,1234.0" fill="none" stroke="#3D4127" stroke-width="2" stroke-linejoin="round" marker-end="url(#arrowfill)"/>
+<path d="M1047.2,1154.0 L1047.2,1234.0" fill="none" stroke="#3D4127" stroke-width="2" stroke-linejoin="round" marker-end="url(#arrowfill)"/>
+<path d="M1324.4,1154.0 L1324.4,1234.0" fill="none" stroke="#3D4127" stroke-width="2" stroke-linejoin="round" marker-end="url(#arrowfill)"/>
+<path d="M85.0,1246 V1334 A130.6,12 0 0 0 346.2,1334 V1246" fill="#D4DE95" stroke="#3D4127" stroke-width="1.5" filter="url(#sh)"/>
+<ellipse cx="215.6" cy="1246" rx="130.6" ry="12" fill="#E4EBB4" stroke="#3D4127" stroke-width="1.5"/>
+<text x="215.6" y="1276.0" font-size="13.5" font-weight="700" fill="#3D4127" text-anchor="middle" font-family="'Segoe UI', Inter, Arial, Helvetica, sans-serif">PostgreSQL + pgvector</text>
+<text x="215.6" y="1294.0" font-size="11.5" font-weight="400" fill="#3D4127" text-anchor="middle" font-family="'Segoe UI', Inter, Arial, Helvetica, sans-serif">relational data</text>
+<text x="215.6" y="1310.0" font-size="11.5" font-weight="400" fill="#3D4127" text-anchor="middle" font-family="'Segoe UI', Inter, Arial, Helvetica, sans-serif">vector(768) · HNSW cosine idx</text>
+<rect x="362.2" y="1234" width="261.2" height="112" rx="8" fill="#EAF2F4" stroke="#2F6C82" stroke-width="1.4" filter="url(#sh)"/>
+<text x="374.2" y="1253.0" font-size="13.5" font-weight="700" fill="#3D4127" text-anchor="start" font-family="'Segoe UI', Inter, Arial, Helvetica, sans-serif">Google Gemini API</text>
+<text x="374.2" y="1272.0" font-size="11.5" font-weight="400" fill="#52564A" text-anchor="start" font-family="'Segoe UI', Inter, Arial, Helvetica, sans-serif">LLM: feedback, JD, re-rank,</text>
+<text x="374.2" y="1288.5" font-size="11.5" font-weight="400" fill="#52564A" text-anchor="start" font-family="'Segoe UI', Inter, Arial, Helvetica, sans-serif">preference decomposition,</text>
+<text x="374.2" y="1305.0" font-size="11.5" font-weight="400" fill="#52564A" text-anchor="start" font-family="'Segoe UI', Inter, Arial, Helvetica, sans-serif">interview kits</text>
+<text x="374.2" y="1321.5" font-size="11.5" font-weight="400" fill="#52564A" text-anchor="start" font-family="'Segoe UI', Inter, Arial, Helvetica, sans-serif">text-embedding (768-d)</text>
+<rect x="639.4" y="1234" width="261.2" height="112" rx="8" fill="#EAF2F4" stroke="#2F6C82" stroke-width="1.4" filter="url(#sh)"/>
+<text x="651.4" y="1253.0" font-size="13.5" font-weight="700" fill="#3D4127" text-anchor="start" font-family="'Segoe UI', Inter, Arial, Helvetica, sans-serif">Cloudflare R2</text>
+<text x="651.4" y="1272.0" font-size="11.5" font-weight="400" fill="#52564A" text-anchor="start" font-family="'Segoe UI', Inter, Arial, Helvetica, sans-serif">object storage (S3-compatible)</text>
+<text x="651.4" y="1288.5" font-size="11.5" font-weight="400" fill="#52564A" text-anchor="start" font-family="'Segoe UI', Inter, Arial, Helvetica, sans-serif">shortlisted resumes · CNIC ·</text>
+<text x="651.4" y="1305.0" font-size="11.5" font-weight="400" fill="#52564A" text-anchor="start" font-family="'Segoe UI', Inter, Arial, Helvetica, sans-serif">company documents</text>
+<text x="651.4" y="1321.5" font-size="11.5" font-weight="400" fill="#52564A" text-anchor="start" font-family="'Segoe UI', Inter, Arial, Helvetica, sans-serif">presigned view URLs</text>
+<rect x="916.5999999999999" y="1234" width="261.2" height="112" rx="8" fill="#EAF2F4" stroke="#2F6C82" stroke-width="1.4" filter="url(#sh)"/>
+<text x="928.6" y="1253.0" font-size="13.5" font-weight="700" fill="#3D4127" text-anchor="start" font-family="'Segoe UI', Inter, Arial, Helvetica, sans-serif">SMTP Mail Server</text>
+<text x="928.6" y="1272.0" font-size="11.5" font-weight="400" fill="#52564A" text-anchor="start" font-family="'Segoe UI', Inter, Arial, Helvetica, sans-serif">HTML + plain-text emails</text>
+<text x="928.6" y="1288.5" font-size="11.5" font-weight="400" fill="#52564A" text-anchor="start" font-family="'Segoe UI', Inter, Arial, Helvetica, sans-serif">invites · verification ·</text>
+<text x="928.6" y="1305.0" font-size="11.5" font-weight="400" fill="#52564A" text-anchor="start" font-family="'Segoe UI', Inter, Arial, Helvetica, sans-serif">shortlist notifications</text>
+<rect x="1193.8" y="1234" width="261.2" height="112" rx="8" fill="#EAF2F4" stroke="#2F6C82" stroke-width="1.4" filter="url(#sh)"/>
+<text x="1205.8" y="1253.0" font-size="13.5" font-weight="700" fill="#3D4127" text-anchor="start" font-family="'Segoe UI', Inter, Arial, Helvetica, sans-serif">Local media / temp</text>
+<text x="1205.8" y="1272.0" font-size="11.5" font-weight="400" fill="#52564A" text-anchor="start" font-family="'Segoe UI', Inter, Arial, Helvetica, sans-serif">uploaded resumes (media/)</text>
+<text x="1205.8" y="1288.5" font-size="11.5" font-weight="400" fill="#52564A" text-anchor="start" font-family="'Segoe UI', Inter, Arial, Helvetica, sans-serif">staged bulk resumes</text>
+<text x="1205.8" y="1305.0" font-size="11.5" font-weight="400" fill="#52564A" text-anchor="start" font-family="'Segoe UI', Inter, Arial, Helvetica, sans-serif">(purged after shortlisting)</text>
+<text x="86.0" y="1412.0" font-size="15" font-weight="700" fill="#3D4127" text-anchor="start" font-family="'Segoe UI', Inter, Arial, Helvetica, sans-serif">Key end-to-end flows</text>
+<rect x="86" y="1424" width="5" height="52" rx="2" fill="#D4DE95"/>
+<text x="100.0" y="1438.0" font-size="12.5" font-weight="700" fill="#636B2F" text-anchor="start" font-family="'Segoe UI', Inter, Arial, Helvetica, sans-serif">1  Resume intelligence (Applicant)</text>
+<text x="100.0" y="1457.0" font-size="11.8" font-weight="400" fill="#22241B" text-anchor="start" font-family="'Segoe UI', Inter, Arial, Helvetica, sans-serif">Upload PDF/DOCX → SHA-256 duplicate check → text extraction → clean &amp; parse skills / education / experience</text>
+<text x="100.0" y="1474.0" font-size="11.8" font-weight="400" fill="#22241B" text-anchor="start" font-family="'Segoe UI', Inter, Arial, Helvetica, sans-serif">→ Gemini embedding stored on Resume → on request: Gemini AI feedback (score, strengths, suggestions) or job tailoring.</text>
+<rect x="86" y="1488" width="5" height="69" rx="2" fill="#D4DE95"/>
+<text x="100.0" y="1502.0" font-size="12.5" font-weight="700" fill="#636B2F" text-anchor="start" font-family="'Segoe UI', Inter, Arial, Helvetica, sans-serif">2  AI shortlisting pipeline (Recruiter)</text>
+<text x="100.0" y="1521.0" font-size="11.8" font-weight="400" fill="#22241B" text-anchor="start" font-family="'Segoe UI', Inter, Arial, Helvetica, sans-serif">Stage / bulk-upload resumes (temporary) → JD embedding → LLM decomposes preferences into positive query + negative keywords</text>
+<text x="100.0" y="1538.0" font-size="11.8" font-weight="400" fill="#22241B" text-anchor="start" font-family="'Segoe UI', Inter, Arial, Helvetica, sans-serif">→ hybrid filter drops negative hits → score = jd_weight·cos(JD) + pref_weight·cos(pref)  (default 70 / 30, configurable)</text>
+<text x="100.0" y="1555.0" font-size="11.8" font-weight="400" fill="#22241B" text-anchor="start" font-family="'Segoe UI', Inter, Arial, Helvetica, sans-serif">→ Gemini batch re-rank adds reason, plus-points &amp; concerns → top-N saved to R2 as SHORTLISTED → interview kit / emails.</text>
+<rect x="86" y="1569" width="5" height="52" rx="2" fill="#D4DE95"/>
+<text x="100.0" y="1583.0" font-size="12.5" font-weight="700" fill="#636B2F" text-anchor="start" font-family="'Segoe UI', Inter, Arial, Helvetica, sans-serif">3  Company onboarding (Company Admin → System Admin)</text>
+<text x="100.0" y="1602.0" font-size="11.8" font-weight="400" fill="#22241B" text-anchor="start" font-family="'Segoe UI', Inter, Arial, Helvetica, sans-serif">Register company + SECP / NTN document (R2) → status PENDING → admin approves / rejects (email) → company admin invites</text>
+<text x="100.0" y="1619.0" font-size="11.8" font-weight="400" fill="#22241B" text-anchor="start" font-family="'Segoe UI', Inter, Arial, Helvetica, sans-serif">recruiters (hashed, expiring token link) → recruiter accepts &amp; sets password → joins company, can be flagged HR.</text>
+</svg>

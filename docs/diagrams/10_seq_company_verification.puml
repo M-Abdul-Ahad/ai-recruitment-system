@@ -1,0 +1,45 @@
+@startuml Seq_Company_Verification
+title Sequence Diagram — Company Registration & Admin Verification
+skinparam shadowing false
+autonumber
+actor "Company Admin" as CA
+actor "System Admin" as SA
+participant "React UI" as UI
+participant "CompanyCreateView\n/api/companies/register/" as CV
+participant "AdminApprove / Reject\nCompanyView" as AV
+participant "R2Storage" as R2
+participant "EmailService" as EM
+database "PostgreSQL" as DB
+
+CA -> UI : Enter company details,\nNTN / SECP + document
+UI -> CV : POST company data (JWT)
+CV -> DB : check user has no company
+alt already in a company
+  CV --> UI : 400 Already belongs to a company
+else allowed
+  CV -> R2 : upload_company_document(file)
+  R2 --> CV : document key
+  CV -> DB : create Company (status PENDING)
+  CV -> DB : link user to company, is_hr = true
+  CV -> EM : send_registration_submitted_email()
+  CV --> UI : 201 Created
+  UI --> CA : "Under review" message
+end
+
+SA -> UI : Open pending companies
+UI -> AV : GET company + document
+AV -> R2 : generate_presigned_view_url(key)
+R2 --> AV : temporary URL
+AV --> UI : company details + document link
+SA -> UI : Approve or reject (reason)
+UI -> AV : POST approve / reject
+alt approve
+  AV -> DB : status = VERIFIED
+  AV -> EM : send_company_approved_email()
+else reject
+  AV -> DB : status = REJECTED, rejection_reason
+  AV -> EM : send_company_rejected_email(reason)
+end
+EM --> CA : status email
+AV --> UI : 200 OK
+@enduml

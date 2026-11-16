@@ -1,0 +1,38 @@
+@startuml Seq_Recruiter_Invitation
+title Sequence Diagram — Recruiter Invitation & Onboarding
+skinparam shadowing false
+autonumber
+actor "Company Admin" as CA
+actor Recruiter
+participant "React UI" as UI
+participant "RecruiterInvitationView\n/api/companies/invitations/" as IV
+participant "VerifyInvitationView" as VV
+participant "AcceptInvitationView" as AV
+participant "EmailService" as EM
+database "PostgreSQL" as DB
+
+CA -> UI : Enter recruiter email
+UI -> IV : POST email (JWT)
+IV -> IV : generate raw token,\nSHA-256 hash
+IV -> DB : save RecruiterInvitation\n(token_hash, expires_at)
+IV -> EM : send_invitation_email(setup link)
+EM --> Recruiter : invitation email
+IV --> UI : 201 Created
+UI --> CA : Invitation listed as pending
+
+Recruiter -> UI : Open setup link (?token=...)
+UI -> VV : GET verify?token
+VV -> DB : find invitation by token hash
+alt invalid / expired / already accepted
+  VV --> UI : 400 / 404 error
+  UI --> Recruiter : Show error
+else valid
+  VV --> UI : email, company name
+  Recruiter -> UI : Set username & password
+  UI -> AV : POST token + password
+  AV -> DB : create User (role recruiter, company)
+  AV -> DB : set accepted_at
+  AV --> UI : 201 Account created
+  UI --> Recruiter : Redirect to login
+end
+@enduml

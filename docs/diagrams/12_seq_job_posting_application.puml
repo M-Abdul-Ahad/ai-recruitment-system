@@ -1,0 +1,53 @@
+@startuml Seq_Job_Posting_Application
+title Sequence Diagram — Job Posting (AI JD) & Job Application
+skinparam shadowing false
+autonumber
+actor Recruiter
+actor Applicant
+participant "React UI" as UI
+participant "JobViewSet\n/api/jobs/" as JV
+participant "JDGenerator" as JD
+participant "GeminiEmbedding\nService" as EMB
+participant "Google Gemini" as G
+database "PostgreSQL" as DB
+
+== Create & publish job ==
+Recruiter -> UI : Enter title, skills, experience
+opt Generate JD with AI
+  UI -> JV : POST generate-jd
+  JV -> JD : generate_job_description(data)
+  JD -> G : prompt
+  G --> JD : job description
+  JV --> UI : draft JD
+end
+Recruiter -> UI : Review & save job
+UI -> JV : POST job
+JV -> DB : create Job (status DRAFT, company, created_by)
+JV --> UI : 201 Created
+Recruiter -> UI : Publish job
+UI -> JV : POST {id}/publish (IsJobOwner)
+JV -> JV : validate status DRAFT,\nrequired fields & skills
+alt incomplete
+  JV --> UI : 400 Cannot publish
+else valid
+  JV -> DB : status = ACTIVE
+  JV --> UI : 200 Published
+end
+note over JV, EMB : JD embedding is generated later,\non first shortlisting run
+
+== Apply to job ==
+Applicant -> UI : Browse active jobs
+UI -> JV : GET jobs?status=ACTIVE
+JV -> DB : query active jobs
+JV --> UI : job list
+Applicant -> UI : Apply with a resume
+UI -> JV : POST {id}/apply {resume_id}
+JV -> DB : check job ACTIVE & not already applied
+alt already applied
+  JV --> UI : 400 Already applied
+else ok
+  JV -> DB : create JobApplication (APPLIED)
+  JV --> UI : 201 Created
+  UI --> Applicant : Application tracked in "My Applications"
+end
+@enduml

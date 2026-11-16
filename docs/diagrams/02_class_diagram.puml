@@ -1,0 +1,341 @@
+@startuml AI_Recruitment_Class_Diagram
+' =====================================================================
+'  AI Recruitment System — Class Diagram
+'  Domain models (Django ORM) + AI / integration service classes
+' =====================================================================
+skinparam classAttributeIconSize 0
+skinparam shadowing false
+skinparam defaultFontName "Segoe UI"
+skinparam defaultFontSize 11
+skinparam roundCorner 8
+skinparam ArrowColor #52564A
+skinparam class {
+  BackgroundColor #FFFFFF
+  BorderColor #636B2F
+  HeaderBackgroundColor #D4DE95
+}
+skinparam package {
+  BackgroundColor #F8F9F1
+  BorderColor #BAC095
+}
+hide empty methods
+
+' ---------------------------------------------------------------- users
+package "users" {
+  class AbstractUser <<Django>> {
+    +username: str
+    +password: str
+    +first_name: str
+    +last_name: str
+    +is_active: bool
+    +date_joined: datetime
+    +set_password(raw: str)
+    +check_password(raw: str): bool
+  }
+
+  class User {
+    +id: int
+    +email: str {unique}
+    +role: RoleType
+    +role_fk: Role [0..1]
+    +company: Company [0..1]
+    +is_hr: bool
+    +cnic_number: str
+    +cnic_image: str (R2 key)
+  }
+
+  class Role {
+    +id: int
+    +name: str {unique}
+  }
+
+  class UserRole {
+    +id: int
+    +user: User
+    +role: Role
+    --
+    unique(user, role)
+  }
+
+  enum RoleType {
+    APPLICANT
+    RECRUITER
+    COMPANY_ADMIN
+    ADMIN
+  }
+}
+
+' ------------------------------------------------------------ companies
+package "companies" {
+  class Company {
+    +id: int
+    +name: str {unique}
+    +email: str
+    +description: text
+    +website: url
+    +industry: str
+    +phone: str
+    +address: text
+    +logo: Image
+    +document_type: DocumentType
+    +tax_id: str
+    +registration_document: str (R2 key)
+    +verification_status: VerificationStatus
+    +rejection_reason: text
+    +created_at: datetime
+    +updated_at: datetime
+  }
+
+  class RecruiterInvitation {
+    +id: int
+    +company: Company
+    +email: str
+    +token_hash: str
+    +expires_at: datetime
+    +accepted_at: datetime [0..1]
+    +invited_by: User [0..1]
+    +created_at: datetime
+  }
+
+  enum VerificationStatus {
+    UNVERIFIED
+    PENDING
+    VERIFIED
+    REJECTED
+  }
+
+  enum DocumentType {
+    SECP
+    NTN
+  }
+}
+
+' ----------------------------------------------------------------- jobs
+package "jobs" {
+  class Job {
+    +id: int
+    +title: str
+    +description: text
+    +company: Company
+    +created_by: User
+    +skills: Skill [*]
+    +experience_required: int
+    +status: JobStatus
+    +location: str
+    +salary_min: int [0..1]
+    +salary_max: int [0..1]
+    +jd_embedding: vector(768)
+    +created_at: datetime
+    +updated_at: datetime
+  }
+
+  class Skill {
+    +id: int
+    +name: str {unique}
+  }
+
+  class JobApplication {
+    +id: int
+    +job: Job
+    +applicant: User [0..1]
+    +resume: Resume [0..1]
+    +source_type: SourceType
+    +status: ApplicationStatus
+    +tags: JSON list
+    +recruiter_notes: text
+    +match_score: float
+    +shortlist_reason: text
+    +match_insights: JSON
+    +applied_at: datetime
+    --
+    unique(job, applicant)
+    unique(job, resume)
+  }
+
+  class TemporaryResumeCandidate {
+    +id: int
+    +session_id: UUID
+    +job: Job
+    +file_name: str
+    +temp_file_path: str
+    +extracted_text: text
+    +cleaned_text: text
+    +embedding: vector(768)
+    +created_at: datetime
+  }
+
+  class CandidateInterviewKit {
+    +id: int
+    +application: JobApplication
+    +difficulty: str
+    +questions: JSON list
+    +created_at: datetime
+    +updated_at: datetime
+  }
+
+  enum JobStatus {
+    DRAFT
+    ACTIVE
+    CLOSED
+  }
+
+  enum ApplicationStatus {
+    APPLIED
+    SHORTLISTED
+    INTERVIEW
+    REJECTED
+  }
+
+  enum SourceType {
+    APPLICATION
+    RECRUITER_UPLOAD
+  }
+}
+
+' -------------------------------------------------------------- resumes
+package "resumes" {
+  class Resume {
+    +id: int
+    +user: User [0..1]
+    +file: File
+    +file_hash: str (SHA-256)
+    +extracted_text: text
+    +cleaned_text: text
+    +uploaded_at: datetime
+    +ai_score: int
+    +ai_feedback: text
+    +ai_strengths: JSON
+    +ai_weaknesses: JSON
+    +ai_suggestions: JSON
+    +ai_category_scores: JSON
+    +ai_recommended_certifications: JSON
+    +embedding: vector(768)
+  }
+
+  class ResumeSkill {
+    +id: int
+    +resume: Resume
+    +name: str
+  }
+
+  class Education {
+    +id: int
+    +resume: Resume
+    +degree: str
+    +institution: str
+    +year: str
+  }
+
+  class Experience {
+    +id: int
+    +resume: Resume
+    +job_title: str
+    +company: str
+    +duration: str
+    +description: text
+  }
+}
+
+' ------------------------------------------------------------- services
+package "services" {
+  class ResumeParser <<service>> {
+    +extract_text_from_pdf(path): str
+    +extract_text_from_docx(path): str
+    +clean_resume_text(text): str
+    +extract_skills(text): list
+    +parse_and_store_resume_data(resume)
+  }
+
+  class GeminiResumeAI <<service>> {
+    +generate_ai_resume_feedback(resume_data): dict
+    +tailor_resume_for_job_ai(resume_data, title, jd, req): dict
+  }
+
+  class GeminiEmbeddingService <<service>> {
+    +generate_embedding(text, task_type): float[768]
+    +generate_embeddings_batch(texts, batch_size): list
+    +calculate_cosine_similarity(a, b): float
+    +build_job_embedding_text(job): str
+    +build_resume_embedding_text(resume): str
+  }
+
+  class JDGenerator <<service>> {
+    +generate_job_description(data): str
+  }
+
+  class PreferenceParser <<service>> {
+    +parse_recruiter_preferences(raw): dict
+    +decompose_preferences_with_llm(job, raw): dict
+    +check_candidate_negative_violation(text, terms): list
+  }
+
+  class ShortlistScorer <<service>> {
+    +llm_rerank_and_explain(job, candidates, preferences, decomp): list
+  }
+
+  class InterviewKitService <<service>> {
+    +generate_candidate_interview_kit(application, difficulty): CandidateInterviewKit
+  }
+
+  class EmailService <<service>> {
+    +send_invitation_email(to, link, company, invited_by)
+    +send_registration_submitted_email(to, company, owner)
+    +send_company_approved_email(to, company, owner)
+    +send_company_rejected_email(to, company, owner, reason)
+    +send_candidate_shortlist_email(application, job, msg)
+  }
+
+  class R2Storage <<service>> {
+    +upload_company_document(file, name, company): str
+    +upload_user_cnic(file, name, username): str
+    +upload_file_to_r2(path, key, content_type): str
+    +generate_presigned_view_url(key, expires_in): str
+    +delete_file_from_r2(key): bool
+  }
+}
+
+' -------------------------------------------------------- relationships
+AbstractUser <|-- User
+User "*" --> "0..1" Role : role_fk
+User "1" *-- "*" UserRole
+Role "1" *-- "*" UserRole
+User ..> RoleType
+
+Company "0..1" o-- "*" User : recruiters
+Company "1" *-- "*" RecruiterInvitation : invitations
+User "0..1" -- "*" RecruiterInvitation : invited_by
+Company ..> VerificationStatus
+Company ..> DocumentType
+
+Company "1" *-- "*" Job : jobs
+User "1" -- "*" Job : created_by
+Job "*" o-- "*" Skill : skills
+Job "1" *-- "*" JobApplication : applications
+Job "1" *-- "*" TemporaryResumeCandidate : temp_candidates
+User "0..1" -- "*" JobApplication : applicant
+Resume "0..1" -- "*" JobApplication : resume
+JobApplication "1" *-- "0..1" CandidateInterviewKit : interview_kit
+Job ..> JobStatus
+JobApplication ..> ApplicationStatus
+JobApplication ..> SourceType
+
+User "0..1" -- "*" Resume : uploads
+Resume "1" *-- "*" ResumeSkill : skills
+Resume "1" *-- "*" Education : education
+Resume "1" *-- "*" Experience : experience
+
+ResumeParser ..> Resume : parses
+GeminiResumeAI ..> Resume : analyses
+GeminiEmbeddingService ..> Resume : embeds
+GeminiEmbeddingService ..> Job : embeds
+GeminiEmbeddingService ..> TemporaryResumeCandidate : embeds
+JDGenerator ..> Job : drafts
+PreferenceParser ..> Job
+ShortlistScorer ..> JobApplication : scores / explains
+ShortlistScorer ..> PreferenceParser
+InterviewKitService ..> CandidateInterviewKit : creates
+EmailService ..> RecruiterInvitation
+EmailService ..> JobApplication
+R2Storage ..> Company : documents
+R2Storage ..> Resume : shortlisted files
+@enduml

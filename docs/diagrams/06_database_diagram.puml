@@ -1,0 +1,182 @@
+@startuml Database_ERD
+title AI Recruitment System — Database Diagram (PostgreSQL + pgvector)
+skinparam shadowing false
+hide circle
+skinparam linetype ortho
+skinparam class {
+  BackgroundColor #FFFFFF
+  BorderColor #636B2F
+  HeaderBackgroundColor #D4DE95
+}
+
+entity "roles" as roles {
+  * id : bigint <<PK>>
+  --
+  name : varchar(50) <<UQ>>
+}
+entity "users_user" as user {
+  * id : bigint <<PK>>
+  --
+  email : varchar <<UQ>>
+  username : varchar <<UQ>>
+  password : varchar
+  first_name, last_name : varchar
+  role : varchar(20)
+  role_id : bigint <<FK>>
+  company_id : bigint <<FK>>
+  is_hr : boolean
+  cnic_number : varchar(25)
+  cnic_image : varchar(500)
+  is_active, is_staff : boolean
+  date_joined : timestamptz
+}
+entity "user_roles" as ur {
+  * id : bigint <<PK>>
+  --
+  user_id : bigint <<FK>>
+  role_id : bigint <<FK>>
+  UQ(user_id, role_id)
+}
+entity "companies_company" as company {
+  * id : bigint <<PK>>
+  --
+  name : varchar(255) <<UQ>>
+  email, website, industry, phone : varchar
+  description, address : text
+  logo : varchar
+  document_type : varchar(20)
+  tax_id : varchar(100)
+  registration_document : varchar(500)
+  verification_status : varchar(20)
+  rejection_reason : text
+  created_at, updated_at : timestamptz
+}
+entity "recruiter_invitations" as inv {
+  * id : bigint <<PK>>
+  --
+  company_id : bigint <<FK>>
+  invited_by_id : bigint <<FK>>
+  email : varchar(255)
+  token_hash : varchar(255)
+  expires_at : timestamptz
+  accepted_at : timestamptz
+  created_at : timestamptz
+}
+entity "jobs_job" as job {
+  * id : bigint <<PK>>
+  --
+  company_id : bigint <<FK>>
+  created_by_id : bigint <<FK>>
+  title : varchar(255)
+  description : text
+  experience_required : int
+  status : varchar(20)
+  location : varchar(255)
+  salary_min, salary_max : int
+  jd_embedding : vector(768)
+  created_at, updated_at : timestamptz
+}
+entity "jobs_skill" as skill {
+  * id : bigint <<PK>>
+  --
+  name : varchar(100) <<UQ>>
+}
+entity "jobs_job_skills" as js {
+  * id : bigint <<PK>>
+  --
+  job_id : bigint <<FK>>
+  skill_id : bigint <<FK>>
+}
+entity "jobs_jobapplication" as app {
+  * id : bigint <<PK>>
+  --
+  job_id : bigint <<FK>>
+  applicant_id : bigint <<FK>>
+  resume_id : bigint <<FK>>
+  source_type : varchar(20)
+  status : varchar(20)
+  tags : jsonb
+  recruiter_notes : text
+  match_score : float
+  shortlist_reason : text
+  match_insights : jsonb
+  applied_at : timestamptz
+  UQ(job_id, applicant_id)
+  UQ(job_id, resume_id)
+}
+entity "jobs_temporaryresumecandidate" as tmp {
+  * id : bigint <<PK>>
+  --
+  job_id : bigint <<FK>>
+  session_id : uuid
+  file_name : varchar(255)
+  temp_file_path : varchar(500)
+  extracted_text, cleaned_text : text
+  embedding : vector(768)
+  created_at : timestamptz
+}
+entity "jobs_candidateinterviewkit" as kit {
+  * id : bigint <<PK>>
+  --
+  application_id : bigint <<FK, UQ>>
+  difficulty : varchar(50)
+  questions : jsonb
+  created_at, updated_at : timestamptz
+}
+entity "resumes_resume" as resume {
+  * id : bigint <<PK>>
+  --
+  user_id : bigint <<FK>>
+  file : varchar(100)
+  file_hash : varchar(64)
+  extracted_text, cleaned_text : text
+  uploaded_at : timestamptz
+  ai_score : int
+  ai_feedback : text
+  ai_strengths, ai_weaknesses : jsonb
+  ai_suggestions, ai_category_scores : jsonb
+  ai_recommended_certifications : jsonb
+  embedding : vector(768)
+}
+entity "resumes_resumeskill" as rs {
+  * id : bigint <<PK>>
+  --
+  resume_id : bigint <<FK>>
+  name : varchar(100)
+}
+entity "resumes_education" as edu {
+  * id : bigint <<PK>>
+  --
+  resume_id : bigint <<FK>>
+  degree, institution : varchar(200)
+  year : varchar(10)
+}
+entity "resumes_experience" as exp {
+  * id : bigint <<PK>>
+  --
+  resume_id : bigint <<FK>>
+  job_title, company : varchar(200)
+  duration : varchar(100)
+  description : text
+}
+
+roles |o--o{ user : role_id
+user ||--o{ ur
+roles ||--o{ ur
+company |o--o{ user : company_id
+company ||--o{ inv
+user |o--o{ inv : invited_by_id
+company ||--o{ job
+user ||--o{ job : created_by_id
+job ||--o{ js
+skill ||--o{ js
+job ||--o{ app
+user |o--o{ app : applicant_id
+resume |o--o{ app : resume_id
+app ||--o| kit
+job ||--o{ tmp
+user |o--o{ resume : user_id
+resume ||--o{ rs
+resume ||--o{ edu
+resume ||--o{ exp
+@enduml

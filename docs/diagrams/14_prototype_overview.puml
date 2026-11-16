@@ -1,0 +1,74 @@
+@startuml Prototype_Overview
+title AI Recruitment System — Prototype (Screen Flow Overview)
+skinparam shadowing false
+skinparam defaultFontSize 11
+skinparam roundCorner 8
+skinparam ArrowColor #52564A
+skinparam rectangle {
+  BackgroundColor #FFFFFF
+  BorderColor #636B2F
+}
+skinparam package {
+  BackgroundColor #F8F9F1
+  BorderColor #3D4127
+}
+
+package "Public" {
+  rectangle "**Home**\n----\nHero + features\n[Login] [Sign Up]" as Home
+  rectangle "**Login / Sign Up**\n----\nEmail, password, role\nJWT session" as Login
+  rectangle "**Setup Password**\n----\nInvite token check\nSet password" as Setup
+}
+
+package "Applicant Portal" {
+  rectangle "**Dashboard**\n----\nStats cards, charts" as ADash
+  rectangle "**Resume Analysis**\n----\nUpload PDF/DOCX\nAI score & suggestions" as AResume
+  rectangle "**Resume Builder**\n----\n20 templates\nLive preview" as ABuild
+  rectangle "**Jobs**\n----\nJob cards, search\n[Apply] modal" as AJobs
+  rectangle "**Applications**\n----\nStatus badges" as AApps
+}
+
+package "Recruiter Portal" {
+  rectangle "**Dashboard**\n----\nJobs & candidate stats" as RDash
+  rectangle "**Jobs / Create Job**\n----\nForm + [Generate JD with AI]\nPublish / Close" as RJobs
+  rectangle "**AI Shortlisting**\n----\nUpload resumes, preferences\nWeight sliders, Top-N\nRanked list + insights" as RShort
+  rectangle "**Candidates**\n----\nStatus, notes, tags\nResume preview" as RCand
+  rectangle "**Candidate Detail**\n----\nInterview kit\n[Send Email]" as RDetail
+}
+
+package "Company Portal" {
+  rectangle "**Dashboard**\n----\nCompany stats\nVerification status" as CDash
+  rectangle "**Recruiter Management**\n----\nInvite, revoke\nMembers, HR flag" as CRec
+  rectangle "**Company Settings**\n----\nProfile & documents" as CSet
+}
+
+package "Admin Portal" {
+  rectangle "**Dashboard**\n----\nPlatform stats" as DDash
+  rectangle "**Companies**\n----\nView document\n[Approve] [Reject]" as DComp
+  rectangle "**Users / Roles / Jobs**\n----\nManage tables" as DUsers
+}
+
+Home --> Login
+Setup --> Login
+Login --> ADash : applicant
+Login --> RDash : recruiter
+Login --> CDash : company admin
+Login --> DDash : admin
+
+ADash --> AResume
+ADash --> ABuild
+ADash --> AJobs
+AJobs --> AApps : apply
+
+RDash --> RJobs
+RJobs --> RShort : shortlist
+RShort --> RCand
+RCand --> RDetail
+
+CDash --> CRec
+CDash --> CSet
+
+DDash --> DComp
+DDash --> DUsers
+
+CRec ..> Setup : invite email
+@enduml

@@ -1,0 +1,61 @@
+@startuml Activity_Overall
+title AI Recruitment System — Overall Activity Diagram
+skinparam shadowing false
+skinparam ActivityBackgroundColor #FFFFFF
+skinparam ActivityBorderColor #636B2F
+skinparam SwimlaneBorderColor #3D4127
+
+|Company Admin|
+start
+:Sign up & register company;
+:Upload SECP / NTN document;
+|System Admin|
+:Review company documents;
+if (Documents valid?) then (yes)
+  :Approve company (email sent);
+else (no)
+  :Reject with reason (email sent);
+  |Company Admin|
+  :Correct details & resubmit;
+  stop
+endif
+|Company Admin|
+:Invite recruiter (tokenized email link);
+|Recruiter|
+:Accept invitation & set password;
+:Create job (optionally AI-generated JD);
+:Publish job;
+fork
+  |Applicant|
+  :Sign up / log in;
+  :Upload resume (PDF / DOCX);
+  |System (AI)|
+  :Extract text, parse skills,\neducation & experience;
+  :Generate resume embedding;
+  |Applicant|
+  :View AI resume analysis (optional);
+  :Browse jobs & apply;
+fork again
+  |Recruiter|
+  :Bulk upload / stage external resumes;
+end fork
+|Recruiter|
+:Enter preferences & formula weights;
+|System (AI)|
+:Embed JD & decompose preferences;
+:Drop candidates matching negative keywords;
+:Score = jd_w x cos(JD) + pref_w x cos(pref);
+:LLM re-rank & generate insights;
+:Save top-N as SHORTLISTED (files to R2);
+|Recruiter|
+:Review ranked candidates & insights;
+if (Proceed with candidate?) then (yes)
+  :Generate interview kit;
+  :Send shortlist email / set INTERVIEW;
+else (no)
+  :Set status REJECTED;
+endif
+|Applicant|
+:Track application status;
+stop
+@enduml

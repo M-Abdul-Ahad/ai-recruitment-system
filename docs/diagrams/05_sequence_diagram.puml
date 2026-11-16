@@ -1,0 +1,47 @@
+@startuml Sequence_AI_Shortlisting
+title AI Recruitment System — Sequence Diagram (AI Candidate Shortlisting)
+skinparam shadowing false
+autonumber
+actor Recruiter
+participant "React UI\n(CandidateShortlisting)" as UI
+participant "JobViewSet\n/api/jobs/{id}/shortlist/" as API
+participant "GeminiEmbedding\nService" as EMB
+participant "Preference\nParser" as PP
+participant "Shortlist\nScorer" as SS
+database "PostgreSQL\n+ pgvector" as DB
+participant "Google Gemini" as G
+participant "Cloudflare R2" as R2
+
+Recruiter -> UI : Select job, enter preferences,\ntop-N and weights
+UI -> API : POST shortlist {session_id, top_n,\npreferences, jd_weight, pref_weight}
+API -> API : Validate JWT, IsRecruiter, IsJobOwner
+API -> DB : Load job
+alt JD embedding missing
+  API -> EMB : generate_embedding(JD text)
+  EMB -> G : embed content
+  G --> EMB : 768-d vector
+  API -> DB : save jd_embedding
+end
+API -> PP : decompose_preferences_with_llm(job, prefs)
+PP -> G : prompt
+G --> PP : positive_query, negative_keywords
+API -> EMB : generate_embedding(positive_query)
+EMB --> API : preference vector
+API -> DB : fetch applicants + staged candidates
+loop each candidate
+  API -> API : negative keyword check (score 0 if hit)
+  API -> EMB : cosine similarity vs JD & prefs
+  API -> API : score = jd_w x simJD + pref_w x simPref
+end
+API -> SS : llm_rerank_and_explain(job, top candidates)
+SS -> G : batch prompt
+G --> SS : ranks, reasons, plus points, concerns
+SS --> API : re-ranked list
+loop top-N staged candidates
+  API -> R2 : upload resume file
+  API -> DB : create Resume + JobApplication (SHORTLISTED)
+end
+API -> DB : purge temporary candidates
+API --> UI : ranked shortlist + insights
+UI --> Recruiter : display candidates, scores, reasons
+@enduml

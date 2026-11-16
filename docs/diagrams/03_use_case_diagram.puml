@@ -1,0 +1,159 @@
+@startuml AI_Recruitment_Use_Case_Diagram
+' =====================================================================
+'  AI Recruitment System — Use Case Diagram
+' =====================================================================
+left to right direction
+skinparam shadowing false
+skinparam defaultFontName "Segoe UI"
+skinparam defaultFontSize 11
+skinparam ArrowColor #52564A
+skinparam actor {
+  BorderColor #3D4127
+  BackgroundColor #D4DE95
+}
+skinparam usecase {
+  BackgroundColor #FFFFFF
+  BorderColor #636B2F
+}
+skinparam package {
+  BackgroundColor #F8F9F1
+  BorderColor #BAC095
+}
+skinparam rectangle {
+  BorderColor #3D4127
+}
+
+actor "User" as User
+actor "Applicant" as Applicant
+actor "Recruiter" as Recruiter
+actor "Company Admin" as CompanyAdmin
+actor "System Admin" as Admin
+rectangle "Google Gemini AI" <<external system>> as Gemini
+rectangle "Email Service (SMTP)" <<external system>> as Mail
+
+User <|-- Applicant
+User <|-- Recruiter
+User <|-- CompanyAdmin
+User <|-- Admin
+
+rectangle "AI Recruitment System" {
+
+  package "Account" {
+    usecase "Sign Up" as A1
+    usecase "Log In (JWT)" as A2
+    usecase "Manage Profile" as A3
+    usecase "Change Password" as A4
+  }
+
+  package "Applicant" as PkgApplicant {
+    usecase "View Applicant Dashboard" as P1
+    usecase "Build Resume from Templates" as P2
+    usecase "Tailor Resume for a Job" as P3
+    usecase "Browse Active Jobs" as P4
+    usecase "Apply to Job" as P5
+    usecase "Upload Resume (PDF / DOCX)" as P6
+    usecase "Parse Resume\n(skills, education, experience)" as P7
+    usecase "View AI Resume Analysis" as P8
+    usecase "Track Applications" as P9
+  }
+
+  package "Company" as PkgCompany {
+    usecase "Register Company &\nUpload Verification Doc" as C1
+    usecase "Manage Company Profile" as C2
+    usecase "Invite Recruiter" as C3
+    usecase "Revoke Invitation" as C4
+    usecase "Manage Members / HR" as C5
+    usecase "View Company Dashboard" as C6
+  }
+
+  package "Recruiter" as PkgRecruiter {
+    usecase "Accept Invitation & Set Password" as R1
+    usecase "View Recruiter Dashboard" as R2
+    usecase "Create / Edit Job" as R3
+    usecase "Generate JD with AI" as R4
+    usecase "Publish / Close Job" as R5
+    usecase "Bulk Upload / Stage Resumes" as R6
+    usecase "Configure Formula Weights\n(JD % vs Preference %)" as R7
+    usecase "AI Shortlist Candidates" as R8
+    usecase "Generate Embeddings" as R9
+    usecase "Decompose Preferences &\nNegative Filtering" as R10
+    usecase "LLM Re-rank & Candidate Insights" as R11
+    usecase "Manage Applications\n(status, notes, tags)" as R12
+    usecase "Preview / Download Resume" as R13
+    usecase "Generate Interview Kit" as R14
+    usecase "Send Shortlist Emails" as R15
+  }
+
+  package "Administration" {
+    usecase "View Platform Statistics" as D1
+    usecase "Manage Users" as D2
+    usecase "Manage Roles" as D3
+    usecase "Manage Companies" as D4
+    usecase "Verify Company\n(Approve / Reject)" as D5
+    usecase "Manage Jobs" as D6
+  }
+}
+
+' ----- account (inherited by every role)
+User --> A1
+User --> A2
+User --> A3
+User --> A4
+
+' ----- applicant
+Applicant --> P1
+Applicant --> P2
+Applicant --> P3
+Applicant --> P4
+Applicant --> P5
+Applicant --> P6
+Applicant --> P8
+Applicant --> P9
+P5 ..> P6 : <<include>>
+P6 ..> P7 : <<include>>
+
+' ----- company admin
+CompanyAdmin --> C1
+CompanyAdmin --> C2
+CompanyAdmin --> C3
+CompanyAdmin --> C4
+CompanyAdmin --> C5
+CompanyAdmin --> C6
+
+' ----- recruiter
+Recruiter --> R1
+Recruiter --> R2
+Recruiter --> R3
+Recruiter --> R5
+Recruiter --> R6
+Recruiter --> R8
+Recruiter --> R12
+Recruiter --> R13
+Recruiter --> R14
+Recruiter --> R15
+R4 ..> R3 : <<extend>>
+R6 ..> P7 : <<include>>
+R7 ..> R8 : <<extend>>
+R8 ..> R9 : <<include>>
+R8 ..> R10 : <<include>>
+R8 ..> R11 : <<include>>
+
+' ----- system admin
+Admin --> D1
+Admin --> D2
+Admin --> D3
+Admin --> D4
+Admin --> D5
+Admin --> D6
+
+' ----- external systems
+P3 --> Gemini
+P8 --> Gemini
+R4 --> Gemini
+R8 --> Gemini
+R14 --> Gemini
+C1 --> Mail
+C3 --> Mail
+R15 --> Mail
+D5 --> Mail
+@enduml

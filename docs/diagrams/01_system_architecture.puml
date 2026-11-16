@@ -1,0 +1,120 @@
+@startuml AI_Recruitment_System_Architecture
+' =====================================================================
+'  AI Recruitment System — Overall System Architecture
+'  React (Vite) SPA  ->  Django REST API (JWT)  ->  PostgreSQL + pgvector
+'  AI: Google Gemini (LLM + text embeddings) | Files: Cloudflare R2 | SMTP
+' =====================================================================
+left to right direction
+skinparam shadowing false
+skinparam defaultFontName "Segoe UI"
+skinparam defaultFontSize 12
+skinparam roundCorner 10
+skinparam ArrowColor #52564A
+skinparam ActorBorderColor #3D4127
+skinparam ActorBackgroundColor #D4DE95
+skinparam rectangle {
+  BackgroundColor #F8F9F1
+  BorderColor #636B2F
+}
+skinparam component {
+  BackgroundColor #FFFFFF
+  BorderColor #636B2F
+}
+skinparam database {
+  BackgroundColor #D4DE95
+  BorderColor #3D4127
+}
+skinparam cloud {
+  BackgroundColor #ECEEDF
+  BorderColor #3D4127
+}
+
+actor "Applicant" as Applicant
+actor "Recruiter" as Recruiter
+actor "Company Admin" as CompanyAdmin
+actor "System Admin" as Admin
+
+rectangle "Frontend — React 19 + Vite + Tailwind 4 SPA" as FE {
+  component "Public Pages\n(Home, Login, Signup,\nSetup Password / Accept Invite)" as PublicUI
+  component "Applicant Portal\n(Dashboard, Resume Analysis,\nResume Builder, Jobs, Applications)" as ApplicantUI
+  component "Recruiter Portal\n(Dashboard, Jobs, Create Job,\nCandidates, AI Shortlisting)" as RecruiterUI
+  component "Company Portal\n(Dashboard, Recruiter Mgmt,\nCompany Settings)" as CompanyUI
+  component "Admin Portal\n(Dashboard, Users, Roles,\nCompanies, Jobs)" as AdminUI
+  component "AuthContext + Route Guards\n(Protected / Role / HR / Public)" as AuthCtx
+  component "Axios API Client\n(JWT interceptor + refresh)" as ApiClient
+}
+
+rectangle "Backend — Django 6 + Django REST Framework (SimpleJWT)" as BE {
+  component "core\n(settings, URL router,\npagination, R2 storage)" as Core
+  component "users app\n/api/auth/*\nJWT login, signup, profile,\nadmin users & roles" as UsersApp
+  component "companies app\n/api/companies/*\nregistration, verification,\nmembers, invitations" as CompaniesApp
+  component "jobs app\n/api/jobs/*\njobs, applications, staging,\nshortlisting, interview kits" as JobsApp
+  component "resumes app\n/api/resumes/*\nupload, parse, AI feedback,\ntailoring, streaming" as ResumesApp
+
+  rectangle "AI & Integration Services" as Services {
+    component "Resume Parser\n(PyPDF2 / python-docx,\nskills, education, experience)" as Parser
+    component "Gemini Embedding Service\n(768-d vectors, cosine sim)" as EmbedSvc
+    component "Gemini Resume AI\n(feedback, tailoring)" as ResumeAI
+    component "JD Generator" as JDGen
+    component "Preference Parser\n(query decomposition,\nnegative filtering)" as PrefParser
+    component "Shortlist Scorer\n(LLM re-rank + insights)" as Scorer
+    component "Interview Kit Service" as KitSvc
+    component "Email Services\n(invites, verification,\nshortlist notices)" as EmailSvc
+  }
+}
+
+database "PostgreSQL + pgvector\n(HNSW cosine indexes)" as DB
+cloud "Google Gemini API\n(LLM + text-embedding)" as Gemini
+cloud "Cloudflare R2\n(resumes, CNIC,\ncompany documents)" as R2
+cloud "SMTP Mail Server" as SMTP
+folder "Local media / temp\nstaging storage" as Media
+
+Applicant --> ApplicantUI
+Recruiter --> RecruiterUI
+CompanyAdmin --> CompanyUI
+Admin --> AdminUI
+Applicant --> PublicUI
+Recruiter --> PublicUI
+CompanyAdmin --> PublicUI
+
+PublicUI ..> AuthCtx
+ApplicantUI ..> AuthCtx
+RecruiterUI ..> AuthCtx
+CompanyUI ..> AuthCtx
+AdminUI ..> AuthCtx
+AuthCtx --> ApiClient
+
+ApiClient --> Core : HTTPS / JSON\n(JWT Bearer)
+Core --> UsersApp
+Core --> CompaniesApp
+Core --> JobsApp
+Core --> ResumesApp
+
+ResumesApp --> Parser
+ResumesApp --> ResumeAI
+ResumesApp --> EmbedSvc
+JobsApp --> JDGen
+JobsApp --> EmbedSvc
+JobsApp --> PrefParser
+JobsApp --> Scorer
+JobsApp --> KitSvc
+JobsApp --> EmailSvc
+CompaniesApp --> EmailSvc
+
+UsersApp --> DB : ORM
+CompaniesApp --> DB : ORM
+JobsApp --> DB : ORM + vector search
+ResumesApp --> DB : ORM + vector search
+
+EmbedSvc --> Gemini
+ResumeAI --> Gemini
+JDGen --> Gemini
+PrefParser --> Gemini
+Scorer --> Gemini
+KitSvc --> Gemini
+
+Core --> R2 : boto3 (S3 API)\npresigned URLs
+EmailSvc --> SMTP
+ResumesApp --> Media
+JobsApp --> Media : staged bulk resumes
+@enduml

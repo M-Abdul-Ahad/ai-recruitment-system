@@ -1,0 +1,417 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1464" height="2027.0" viewBox="0 0 1464 2027.0" font-family="'Segoe UI', Inter, Arial, Helvetica, sans-serif">
+<title>AI Recruitment System — Class Diagram</title>
+<defs>
+  <marker id="arrow" viewBox="0 0 12 12" refX="11" refY="6" markerWidth="12" markerHeight="12" markerUnits="userSpaceOnUse" orient="auto-start-reverse"><path d="M1,1.5 L11,6 L1,10.5" fill="none" stroke="#52564A" stroke-width="1.5"/></marker>
+  <marker id="arrowfill" viewBox="0 0 12 12" refX="11" refY="6" markerWidth="12" markerHeight="12" markerUnits="userSpaceOnUse" orient="auto-start-reverse"><path d="M0,0.5 L12,6 L0,11.5 z" fill="#3D4127"/></marker>
+  <marker id="arrowinfo" viewBox="0 0 12 12" refX="11" refY="6" markerWidth="12" markerHeight="12" markerUnits="userSpaceOnUse" orient="auto-start-reverse"><path d="M0,0.5 L12,6 L0,11.5 z" fill="#2F6C82"/></marker>
+  <marker id="tri" viewBox="0 0 18 18" refX="17" refY="9" markerWidth="18" markerHeight="18" markerUnits="userSpaceOnUse" orient="auto-start-reverse"><path d="M1,1.5 L17,9 L1,16.5 z" fill="#fff" stroke="#52564A" stroke-width="1.4"/></marker>
+  <marker id="diamond" viewBox="0 0 22 12" refX="1" refY="6" markerWidth="22" markerHeight="12" markerUnits="userSpaceOnUse" orient="auto-start-reverse"><path d="M1,6 L11,1 L21,6 L11,11 z" fill="#3D4127" stroke="#3D4127" stroke-width="1"/></marker>
+  <marker id="odiamond" viewBox="0 0 22 12" refX="1" refY="6" markerWidth="22" markerHeight="12" markerUnits="userSpaceOnUse" orient="auto-start-reverse"><path d="M1,6 L11,1 L21,6 L11,11 z" fill="#fff" stroke="#52564A" stroke-width="1.3"/></marker>
+  <filter id="sh" x="-5%" y="-5%" width="110%" height="115%"><feDropShadow dx="0" dy="1.5" stdDeviation="1.5" flood-color="#3D4127" flood-opacity="0.16"/></filter>
+</defs>
+<rect width="100%" height="100%" fill="#FFFFFF"/>
+<rect x="30" y="68" width="63.5" height="22" rx="3" fill="#BAC095" stroke="#52564A" stroke-width="1"/>
+<rect x="30" y="89" width="518" height="562.0" rx="3" fill="#F8F9F1" stroke="#52564A" stroke-width="1"/>
+<text x="40.0" y="83.5" font-size="12" font-weight="700" fill="#3D4127" text-anchor="start" font-family="'Segoe UI', Inter, Arial, Helvetica, sans-serif">users</text>
+<rect x="634" y="68" width="93.5" height="22" rx="3" fill="#BAC095" stroke="#52564A" stroke-width="1"/>
+<rect x="634" y="89" width="734" height="357" rx="3" fill="#F8F9F1" stroke="#52564A" stroke-width="1"/>
+<text x="644.0" y="83.5" font-size="12" font-weight="700" fill="#3D4127" text-anchor="start" font-family="'Segoe UI', Inter, Arial, Helvetica, sans-serif">companies</text>
+<rect x="30" y="743.0" width="78.5" height="22" rx="3" fill="#BAC095" stroke="#52564A" stroke-width="1"/>
+<rect x="30" y="764.0" width="549" height="457.0" rx="3" fill="#F8F9F1" stroke="#52564A" stroke-width="1"/>
+<text x="40.0" y="758.5" font-size="12" font-weight="700" fill="#3D4127" text-anchor="start" font-family="'Segoe UI', Inter, Arial, Helvetica, sans-serif">resumes</text>
+<rect x="634" y="743.0" width="56.0" height="22" rx="3" fill="#BAC095" stroke="#52564A" stroke-width="1"/>
+<rect x="634" y="764.0" width="800" height="581.0" rx="3" fill="#F8F9F1" stroke="#52564A" stroke-width="1"/>
+<text x="644.0" y="758.5" font-size="12" font-weight="700" fill="#3D4127" text-anchor="start" font-family="'Segoe UI', Inter, Arial, Helvetica, sans-serif">jobs</text>
+<rect x="30" y="1415.0" width="648.5" height="22" rx="3" fill="#BAC095" stroke="#52564A" stroke-width="1"/>
+<rect x="30" y="1436.0" width="1404" height="561.0" rx="3" fill="#F8F9F1" stroke="#52564A" stroke-width="1"/>
+<text x="40.0" y="1430.5" font-size="12" font-weight="700" fill="#3D4127" text-anchor="start" font-family="'Segoe UI', Inter, Arial, Helvetica, sans-serif">services  (jobs/services, resumes/services, companies/email_utils, core/r2_storage)</text>
+<path d="M409.0,350.0 L409.0,294.0" fill="none" stroke="#52564A" stroke-width="1.4" stroke-linejoin="round" marker-end="url(#tri)"/>
+<path d="M300.0,376.0 L260.0,376.0 L260.0,135.0 L214.0,135.0" fill="none" stroke="#52564A" stroke-width="1.4" stroke-linejoin="round" marker-end="url(#arrow)"/>
+<path d="M300.0,420.0 L214.0,420.0" fill="none" stroke="#52564A" stroke-width="1.4" stroke-linejoin="round" marker-start="url(#diamond)"/>
+<path d="M132.0,172.0 L132.0,367.0" fill="none" stroke="#52564A" stroke-width="1.4" stroke-linejoin="round" marker-start="url(#diamond)"/>
+<path d="M324.0,520.0 L324.0,567.0 L214.0,567.0" fill="none" stroke="#52564A" stroke-width="1.4" stroke-linejoin="round" stroke-dasharray="6 4" marker-end="url(#arrow)"/>
+<path d="M658.0,376.0 L518.0,376.0" fill="none" stroke="#52564A" stroke-width="1.4" stroke-linejoin="round" marker-start="url(#odiamond)"/>
+<path d="M932.0,138.0 L1022.0,138.0" fill="none" stroke="#52564A" stroke-width="1.4" stroke-linejoin="round" marker-start="url(#diamond)"/>
+<path d="M518.0,412.0 L977.0,412.0 L977.0,238.0 L1022.0,238.0" fill="none" stroke="#52564A" stroke-width="1.4" stroke-linejoin="round"/>
+<path d="M932.0,362.0 L1022.0,362.0" fill="none" stroke="#52564A" stroke-width="1.4" stroke-linejoin="round" stroke-dasharray="6 4" marker-end="url(#arrow)"/>
+<path d="M932.0,288.0 L1283.0,288.0 L1283.0,302.0" fill="none" stroke="#52564A" stroke-width="1.4" stroke-linejoin="round" stroke-dasharray="6 4" marker-end="url(#arrow)"/>
+<path d="M771.5,396.0 L771.5,787.0" fill="none" stroke="#52564A" stroke-width="1.4" stroke-linejoin="round" marker-start="url(#diamond)"/>
+<path d="M518.0,486.0 L644.0,486.0 L644.0,827.0 L658.0,827.0" fill="none" stroke="#52564A" stroke-width="1.4" stroke-linejoin="round"/>
+<path d="M518.0,510.0 L985.0,510.0 L985.0,787.0" fill="none" stroke="#52564A" stroke-width="1.4" stroke-linejoin="round"/>
+<path d="M449.0,520.0 L449.0,787.0" fill="none" stroke="#52564A" stroke-width="1.4" stroke-linejoin="round"/>
+<path d="M845.0,847.0 L935.0,847.0" fill="none" stroke="#52564A" stroke-width="1.4" stroke-linejoin="round" marker-start="url(#diamond)"/>
+<path d="M831.0,787.0 L831.0,763.0 L1301.0,763.0 L1301.0,787.0" fill="none" stroke="#52564A" stroke-width="1.4" stroke-linejoin="round" marker-start="url(#diamond)"/>
+<path d="M751.5,1053.0 L751.5,1113.0" fill="none" stroke="#52564A" stroke-width="1.4" stroke-linejoin="round" marker-start="url(#odiamond)"/>
+<path d="M658.0,1023.0 L644.0,1023.0 L644.0,1269.0 L658.0,1269.0" fill="none" stroke="#52564A" stroke-width="1.4" stroke-linejoin="round" stroke-dasharray="6 4" marker-end="url(#arrow)"/>
+<path d="M549.0,1063.0 L905.0,1063.0 L905.0,1013.0 L935.0,1013.0" fill="none" stroke="#52564A" stroke-width="1.4" stroke-linejoin="round"/>
+<path d="M1028.5,1053.0 L1028.5,1113.0" fill="none" stroke="#52564A" stroke-width="1.4" stroke-linejoin="round" marker-start="url(#diamond)"/>
+<path d="M1122.0,1073.0 L1192.0,1073.0" fill="none" stroke="#52564A" stroke-width="1.4" stroke-linejoin="round" stroke-dasharray="6 4" marker-end="url(#arrow)"/>
+<path d="M1122.0,1073.0 L1152.0,1073.0 L1152.0,1207.0 L1192.0,1207.0" fill="none" stroke="#52564A" stroke-width="1.4" stroke-linejoin="round" stroke-dasharray="6 4" marker-end="url(#arrow)"/>
+<path d="M300.0,832.0 L188.0,832.0" fill="none" stroke="#52564A" stroke-width="1.4" stroke-linejoin="round" marker-start="url(#diamond)"/>
+<path d="M300.0,968.0 L188.0,968.0" fill="none" stroke="#52564A" stroke-width="1.4" stroke-linejoin="round" marker-start="url(#diamond)"/>
+<path d="M330.0,1069.0 L330.0,1128.0 L188.0,1128.0" fill="none" stroke="#52564A" stroke-width="1.4" stroke-linejoin="round" marker-start="url(#diamond)"/>
+<g filter="url(#sh)"><rect x="300" y="98" width="218" height="196" rx="6" fill="#FFFFFF" stroke="#636B2F" stroke-width="1.3"/></g>
+<path d="M300,142 V104 Q300,98 306,98 H512 Q518,98 518,104 V142 Z" fill="#ECEEDF" stroke="#636B2F" stroke-width="1.3"/>
+<text x="409.0" y="116.0" font-size="10" font-weight="400" fill="#3D4127" text-anchor="middle" font-family="'Segoe UI', Inter, Arial, Helvetica, sans-serif" font-style="italic">«Django»</text>
+<text x="409.0" y="132.0" font-size="13" font-weight="700" fill="#3D4127" text-anchor="middle" font-family="'Segoe UI', Inter, Arial, Helvetica, sans-serif" font-style="italic">AbstractUser</text>
+<text x="310.0" y="160.0" font-size="11" font-weight="400" fill="#22241B" text-anchor="start" font-family="Consolas, 'JetBrains Mono', 'Courier New', monospace">+username: str</text>
+<text x="310.0" y="176.0" font-size="11" font-weight="400" fill="#22241B" text-anchor="start" font-family="Consolas, 'JetBrains Mono', 'Courier New', monospace">+password: str (hashed)</text>
+<text x="310.0" y="192.0" font-size="11" font-weight="400" fill="#22241B" text-anchor="start" font-family="Consolas, 'JetBrains Mono', 'Courier New', monospace">+first_name: str</text>
+<text x="310.0" y="208.0" font-size="11" font-weight="400" fill="#22241B" text-anchor="start" font-family="Consolas, 'JetBrains Mono', 'Courier New', monospace">+last_name: str</text>
+<text x="310.0" y="224.0" font-size="11" font-weight="400" fill="#22241B" text-anchor="start" font-family="Consolas, 'JetBrains Mono', 'Courier New', monospace">+is_active: bool</text>
+<text x="310.0" y="240.0" font-size="11" font-weight="400" fill="#22241B" text-anchor="start" font-family="Consolas, 'JetBrains Mono', 'Courier New', monospace">+date_joined: datetime</text>
+<line x1="300" y1="250" x2="518" y2="250" stroke="#636B2F" stroke-width="1"/>
+<text x="310.0" y="268.0" font-size="11" font-weight="400" fill="#22241B" text-anchor="start" font-family="Consolas, 'JetBrains Mono', 'Courier New', monospace">+set_password(raw: str)</text>
+<text x="310.0" y="284.0" font-size="11" font-weight="400" fill="#22241B" text-anchor="start" font-family="Consolas, 'JetBrains Mono', 'Courier New', monospace">+check_password(raw: str): bool</text>
+<g filter="url(#sh)"><rect x="300" y="350" width="218" height="170" rx="6" fill="#FFFFFF" stroke="#636B2F" stroke-width="1.3"/></g>
+<path d="M300,380 V356 Q300,350 306,350 H512 Q518,350 518,356 V380 Z" fill="#D4DE95" stroke="#636B2F" stroke-width="1.3"/>
+<text x="409.0" y="370.0" font-size="13" font-weight="700" fill="#3D4127" text-anchor="middle" font-family="'Segoe UI', Inter, Arial, Helvetica, sans-serif">User</text>
+<text x="310.0" y="398.0" font-size="11" font-weight="400" fill="#22241B" text-anchor="start" font-family="Consolas, 'JetBrains Mono', 'Courier New', monospace">+id: int</text>
+<text x="310.0" y="414.0" font-size="11" font-weight="400" fill="#22241B" text-anchor="start" font-family="Consolas, 'JetBrains Mono', 'Courier New', monospace">+email: str {unique}</text>
+<text x="310.0" y="430.0" font-size="11" font-weight="400" fill="#22241B" text-anchor="start" font-family="Consolas, 'JetBrains Mono', 'Courier New', monospace">+role: RoleType</text>
+<text x="310.0" y="446.0" font-size="11" font-weight="400" fill="#22241B" text-anchor="start" font-family="Consolas, 'JetBrains Mono', 'Courier New', monospace">+role_fk: Role [0..1]</text>
+<text x="310.0" y="462.0" font-size="11" font-weight="400" fill="#22241B" text-anchor="start" font-family="Consolas, 'JetBrains Mono', 'Courier New', monospace">+company: Company [0..1]</text>
+<text x="310.0" y="478.0" font-size="11" font-weight="400" fill="#22241B" text-anchor="start" font-family="Consolas, 'JetBrains Mono', 'Courier New', monospace">+is_hr: bool</text>
+<text x="310.0" y="494.0" font-size="11" font-weight="400" fill="#22241B" text-anchor="start" font-family="Consolas, 'JetBrains Mono', 'Courier New', monospace">+cnic_number: str</text>
+<text x="310.0" y="510.0" font-size="11" font-weight="400" fill="#22241B" text-anchor="start" font-family="Consolas, 'JetBrains Mono', 'Courier New', monospace">+cnic_image: str (R2 key)</text>
+<g filter="url(#sh)"><rect x="50" y="367.0" width="164" height="106" rx="6" fill="#FFFFFF" stroke="#636B2F" stroke-width="1.3"/></g>
+<path d="M50,397.0 V373.0 Q50,367.0 56,367.0 H208 Q214,367.0 214,373.0 V397.0 Z" fill="#D4DE95" stroke="#636B2F" stroke-width="1.3"/>
+<text x="132.0" y="387.0" font-size="13" font-weight="700" fill="#3D4127" text-anchor="middle" font-family="'Segoe UI', Inter, Arial, Helvetica, sans-serif">UserRole</text>
+<text x="60.0" y="415.0" font-size="11" font-weight="400" fill="#22241B" text-anchor="start" font-family="Consolas, 'JetBrains Mono', 'Courier New', monospace">+id: int</text>
+<text x="60.0" y="431.0" font-size="11" font-weight="400" fill="#22241B" text-anchor="start" font-family="Consolas, 'JetBrains Mono', 'Courier New', monospace">+user: User</text>
+<text x="60.0" y="447.0" font-size="11" font-weight="400" fill="#22241B" text-anchor="start" font-family="Consolas, 'JetBrains Mono', 'Courier New', monospace">+role: Role</text>
+<text x="60.0" y="463.0" font-size="11" font-weight="400" fill="#8A8F76" text-anchor="start" font-family="Consolas, 'JetBrains Mono', 'Courier New', monospace" font-style="italic">{unique(user, role)}</text>
+<g filter="url(#sh)"><rect x="50" y="98" width="164" height="74" rx="6" fill="#FFFFFF" stroke="#636B2F" stroke-width="1.3"/></g>
+<path d="M50,128 V104 Q50,98 56,98 H208 Q214,98 214,104 V128 Z" fill="#D4DE95" stroke="#636B2F" stroke-width="1.3"/>
+<text x="132.0" y="118.0" font-size="13" font-weight="700" fill="#3D4127" text-anchor="middle" font-family="'Segoe UI', Inter, Arial, Helvetica, sans-serif">Role</text>
+<text x="60.0" y="146.0" font-size="11" font-weight="400" fill="#22241B" text-anchor="start" font-family="Consolas, 'JetBrains Mono', 'Courier New', monospace">+id: int</text>
+<text x="60.0" y="162.0" font-size="11" font-weight="400" fill="#22241B" text-anchor="start" font-family="Consolas, 'JetBrains Mono', 'Courier New', monospace">+name: str {unique}</text>
+<g filter="url(#sh)"><rect x="50" y="507.0" width="164" height="120" rx="6" fill="#FFFFFF" stroke="#636B2F" stroke-width="1.3"/></g>
+<path d="M50,551.0 V513.0 Q50,507.0 56,507.0 H208 Q214,507.0 214,513.0 V551.0 Z" fill="#BAC095" stroke="#636B2F" stroke-width="1.3"/>
+<text x="132.0" y="525.0" font-size="10" font-weight="400" fill="#3D4127" text-anchor="middle" font-family="'Segoe UI', Inter, Arial, Helvetica, sans-serif" font-style="italic">«enumeration»</text>
+<text x="132.0" y="541.0" font-size="13" font-weight="700" fill="#3D4127" text-anchor="middle" font-family="'Segoe UI', Inter, Arial, Helvetica, sans-serif">RoleType</text>
+<text x="60.0" y="569.0" font-size="11" font-weight="400" fill="#22241B" text-anchor="start" font-family="Consolas, 'JetBrains Mono', 'Courier New', monospace">APPLICANT</text>
+<text x="60.0" y="585.0" font-size="11" font-weight="400" fill="#22241B" text-anchor="start" font-family="Consolas, 'JetBrains Mono', 'Courier New', monospace">RECRUITER</text>
+<text x="60.0" y="601.0" font-size="11" font-weight="400" fill="#22241B" text-anchor="start" font-family="Consolas, 'JetBrains Mono', 'Courier New', monospace">COMPANY_ADMIN</text>
+<text x="60.0" y="617.0" font-size="11" font-weight="400" fill="#22241B" text-anchor="start" font-family="Consolas, 'JetBrains Mono', 'Courier New', monospace">ADMIN</text>
+<g filter="url(#sh)"><rect x="658" y="98" width="274" height="298" rx="6" fill="#FFFFFF" stroke="#636B2F" stroke-width="1.3"/></g>
+<path d="M658,128 V104 Q658,98 664,98 H926 Q932,98 932,104 V128 Z" fill="#D4DE95" stroke="#636B2F" stroke-width="1.3"/>
+<text x="795.0" y="118.0" font-size="13" font-weight="700" fill="#3D4127" text-anchor="middle" font-family="'Segoe UI', Inter, Arial, Helvetica, sans-serif">Company</text>
+<text x="668.0" y="146.0" font-size="11" font-weight="400" fill="#22241B" text-anchor="start" font-family="Consolas, 'JetBrains Mono', 'Courier New', monospace">+id: int</text>
+<text x="668.0" y="162.0" font-size="11" font-weight="400" fill="#22241B" text-anchor="start" font-family="Consolas, 'JetBrains Mono', 'Courier New', monospace">+name: str {unique}</text>
+<text x="668.0" y="178.0" font-size="11" font-weight="400" fill="#22241B" text-anchor="start" font-family="Consolas, 'JetBrains Mono', 'Courier New', monospace">+email: str</text>
+<text x="668.0" y="194.0" font-size="11" font-weight="400" fill="#22241B" text-anchor="start" font-family="Consolas, 'JetBrains Mono', 'Courier New', monospace">+description: text</text>
+<text x="668.0" y="210.0" font-size="11" font-weight="400" fill="#22241B" text-anchor="start" font-family="Consolas, 'JetBrains Mono', 'Courier New', monospace">+website: url</text>
+<text x="668.0" y="226.0" font-size="11" font-weight="400" fill="#22241B" text-anchor="start" font-family="Consolas, 'JetBrains Mono', 'Courier New', monospace">+industry: str</text>
+<text x="668.0" y="242.0" font-size="11" font-weight="400" fill="#22241B" text-anchor="start" font-family="Consolas, 'JetBrains Mono', 'Courier New', monospace">+phone: str</text>
+<text x="668.0" y="258.0" font-size="11" font-weight="400" fill="#22241B" text-anchor="start" font-family="Consolas, 'JetBrains Mono', 'Courier New', monospace">+address: text</text>
+<text x="668.0" y="274.0" font-size="11" font-weight="400" fill="#22241B" text-anchor="start" font-family="Consolas, 'JetBrains Mono', 'Courier New', monospace">+logo: Image</text>
+<text x="668.0" y="290.0" font-size="11" font-weight="400" fill="#22241B" text-anchor="start" font-family="Consolas, 'JetBrains Mono', 'Courier New', monospace">+document_type: DocumentType</text>
+<text x="668.0" y="306.0" font-size="11" font-weight="400" fill="#22241B" text-anchor="start" font-family="Consolas, 'JetBrains Mono', 'Courier New', monospace">+tax_id: str</text>
+<text x="668.0" y="322.0" font-size="11" font-weight="400" fill="#22241B" text-anchor="start" font-family="Consolas, 'JetBrains Mono', 'Courier New', monospace">+registration_document: str (R2 key)</text>
+<text x="668.0" y="338.0" font-size="11" font-weight="400" fill="#22241B" text-anchor="start" font-family="Consolas, 'JetBrains Mono', 'Courier New', monospace">+verification_status: VerificationStatus</text>
+<text x="668.0" y="354.0" font-size="11" font-weight="400" fill="#22241B" text-anchor="start" font-family="Consolas, 'JetBrains Mono', 'Courier New', monospace">+rejection_reason: text</text>
+<text x="668.0" y="370.0" font-size="11" font-weight="400" fill="#22241B" text-anchor="start" font-family="Consolas, 'JetBrains Mono', 'Courier New', monospace">+created_at: datetime</text>
+<text x="668.0" y="386.0" font-size="11" font-weight="400" fill="#22241B" text-anchor="start" font-family="Consolas, 'JetBrains Mono', 'Courier New', monospace">+updated_at: datetime</text>
+<g filter="url(#sh)"><rect x="1022" y="98" width="206" height="170" rx="6" fill="#FFFFFF" stroke="#636B2F" stroke-width="1.3"/></g>
+<path d="M1022,128 V104 Q1022,98 1028,98 H1222 Q1228,98 1228,104 V128 Z" fill="#D4DE95" stroke="#636B2F" stroke-width="1.3"/>
+<text x="1125.0" y="118.0" font-size="13" font-weight="700" fill="#3D4127" text-anchor="middle" font-family="'Segoe UI', Inter, Arial, Helvetica, sans-serif">RecruiterInvitation</text>
+<text x="1032.0" y="146.0" font-size="11" font-weight="400" fill="#22241B" text-anchor="start" font-family="Consolas, 'JetBrains Mono', 'Courier New', monospace">+id: int</text>
+<text x="1032.0" y="162.0" font-size="11" font-weight="400" fill="#22241B" text-anchor="start" font-family="Consolas, 'JetBrains Mono', 'Courier New', monospace">+company: Company</text>
+<text x="1032.0" y="178.0" font-size="11" font-weight="400" fill="#22241B" text-anchor="start" font-family="Consolas, 'JetBrains Mono', 'Courier New', monospace">+email: str</text>
+<text x="1032.0" y="194.0" font-size="11" font-weight="400" fill="#22241B" text-anchor="start" font-family="Consolas, 'JetBrains Mono', 'Courier New', monospace">+token_hash: str</text>
+<text x="1032.0" y="210.0" font-size="11" font-weight="400" fill="#22241B" text-anchor="start" font-family="Consolas, 'JetBrains Mono', 'Courier New', monospace">+expires_at: datetime</text>
+<text x="1032.0" y="226.0" font-size="11" font-weight="400" fill="#22241B" text-anchor="start" font-family="Consolas, 'JetBrains Mono', 'Courier New', monospace">+accepted_at: datetime [0..1]</text>
+<text x="1032.0" y="242.0" font-size="11" font-weight="400" fill="#22241B" text-anchor="start" font-family="Consolas, 'JetBrains Mono', 'Courier New', monospace">+invited_by: User [0..1]</text>
+<text x="1032.0" y="258.0" font-size="11" font-weight="400" fill="#22241B" text-anchor="start" font-family="Consolas, 'JetBrains Mono', 'Courier New', monospace">+created_at: datetime</text>
+<g filter="url(#sh)"><rect x="1022" y="302" width="170" height="120" rx="6" fill="#FFFFFF" stroke="#636B2F" stroke-width="1.3"/></g>
+<path d="M1022,346 V308 Q1022,302 1028,302 H1186 Q1192,302 1192,308 V346 Z" fill="#BAC095" stroke="#636B2F" stroke-width="1.3"/>
+<text x="1107.0" y="320.0" font-size="10" font-weight="400" fill="#3D4127" text-anchor="middle" font-family="'Segoe UI', Inter, Arial, Helvetica, sans-serif" font-style="italic">«enumeration»</text>
+<text x="1107.0" y="336.0" font-size="13" font-weight="700" fill="#3D4127" text-anchor="middle" font-family="'Segoe UI', Inter, Arial, Helvetica, sans-serif">VerificationStatus</text>
+<text x="1032.0" y="364.0" font-size="11" font-weight="400" fill="#22241B" text-anchor="start" font-family="Consolas, 'JetBrains Mono', 'Courier New', monospace">UNVERIFIED</text>
+<text x="1032.0" y="380.0" font-size="11" font-weight="400" fill="#22241B" text-anchor="start" font-family="Consolas, 'JetBrains Mono', 'Courier New', monospace">PENDING</text>
+<text x="1032.0" y="396.0" font-size="11" font-weight="400" fill="#22241B" text-anchor="start" font-family="Consolas, 'JetBrains Mono', 'Courier New', monospace">VERIFIED</text>
+<text x="1032.0" y="412.0" font-size="11" font-weight="400" fill="#22241B" text-anchor="start" font-family="Consolas, 'JetBrains Mono', 'Courier New', monospace">REJECTED</text>
+<g filter="url(#sh)"><rect x="1222" y="302" width="122" height="88" rx="6" fill="#FFFFFF" stroke="#636B2F" stroke-width="1.3"/></g>
+<path d="M1222,346 V308 Q1222,302 1228,302 H1338 Q1344,302 1344,308 V346 Z" fill="#BAC095" stroke="#636B2F" stroke-width="1.3"/>
+<text x="1283.0" y="320.0" font-size="10" font-weight="400" fill="#3D4127" text-anchor="middle" font-family="'Segoe UI', Inter, Arial, Helvetica, sans-serif" font-style="italic">«enumeration»</text>
+<text x="1283.0" y="336.0" font-size="13" font-weight="700" fill="#3D4127" text-anchor="middle" font-family="'Segoe UI', Inter, Arial, Helvetica, sans-serif">DocumentType</text>
+<text x="1232.0" y="364.0" font-size="11" font-weight="400" fill="#22241B" text-anchor="start" font-family="Consolas, 'JetBrains Mono', 'Courier New', monospace">SECP</text>
+<text x="1232.0" y="380.0" font-size="11" font-weight="400" fill="#22241B" text-anchor="start" font-family="Consolas, 'JetBrains Mono', 'Courier New', monospace">NTN</text>
+<g filter="url(#sh)"><rect x="300" y="787.0" width="249" height="282" rx="6" fill="#FFFFFF" stroke="#636B2F" stroke-width="1.3"/></g>
+<path d="M300,817.0 V793.0 Q300,787.0 306,787.0 H543 Q549,787.0 549,793.0 V817.0 Z" fill="#D4DE95" stroke="#636B2F" stroke-width="1.3"/>
+<text x="424.5" y="807.0" font-size="13" font-weight="700" fill="#3D4127" text-anchor="middle" font-family="'Segoe UI', Inter, Arial, Helvetica, sans-serif">Resume</text>
+<text x="310.0" y="835.0" font-size="11" font-weight="400" fill="#22241B" text-anchor="start" font-family="Consolas, 'JetBrains Mono', 'Courier New', monospace">+id: int</text>
+<text x="310.0" y="851.0" font-size="11" font-weight="400" fill="#22241B" text-anchor="start" font-family="Consolas, 'JetBrains Mono', 'Courier New', monospace">+user: User [0..1]</text>
+<text x="310.0" y="867.0" font-size="11" font-weight="400" fill="#22241B" text-anchor="start" font-family="Consolas, 'JetBrains Mono', 'Courier New', monospace">+file: File</text>
+<text x="310.0" y="883.0" font-size="11" font-weight="400" fill="#22241B" text-anchor="start" font-family="Consolas, 'JetBrains Mono', 'Courier New', monospace">+file_hash: str (SHA-256)</text>
+<text x="310.0" y="899.0" font-size="11" font-weight="400" fill="#22241B" text-anchor="start" font-family="Consolas, 'JetBrains Mono', 'Courier New', monospace">+extracted_text: text</text>
+<text x="310.0" y="915.0" font-size="11" font-weight="400" fill="#22241B" text-anchor="start" font-family="Consolas, 'JetBrains Mono', 'Courier New', monospace">+cleaned_text: text</text>
+<text x="310.0" y="931.0" font-size="11" font-weight="400" fill="#22241B" text-anchor="start" font-family="Consolas, 'JetBrains Mono', 'Courier New', monospace">+uploaded_at: datetime</text>
+<text x="310.0" y="947.0" font-size="11" font-weight="400" fill="#22241B" text-anchor="start" font-family="Consolas, 'JetBrains Mono', 'Courier New', monospace">+ai_score: int</text>
+<text x="310.0" y="963.0" font-size="11" font-weight="400" fill="#22241B" text-anchor="start" font-family="Consolas, 'JetBrains Mono', 'Courier New', monospace">+ai_feedback: text</text>
+<text x="310.0" y="979.0" font-size="11" font-weight="400" fill="#22241B" text-anchor="start" font-family="Consolas, 'JetBrains Mono', 'Courier New', monospace">+ai_strengths: JSON</text>
+<text x="310.0" y="995.0" font-size="11" font-weight="400" fill="#22241B" text-anchor="start" font-family="Consolas, 'JetBrains Mono', 'Courier New', monospace">+ai_weaknesses: JSON</text>
+<text x="310.0" y="1011.0" font-size="11" font-weight="400" fill="#22241B" text-anchor="start" font-family="Consolas, 'JetBrains Mono', 'Courier New', monospace">+ai_suggestions: JSON</text>
+<text x="310.0" y="1027.0" font-size="11" font-weight="400" fill="#22241B" text-anchor="start" font-family="Consolas, 'JetBrains Mono', 'Courier New', monospace">+ai_category_scores: JSON</text>
+<text x="310.0" y="1043.0" font-size="11" font-weight="400" fill="#22241B" text-anchor="start" font-family="Consolas, 'JetBrains Mono', 'Courier New', monospace">+ai_recommended_certifications: JSON</text>
+<text x="310.0" y="1059.0" font-size="11" font-weight="400" fill="#22241B" text-anchor="start" font-family="Consolas, 'JetBrains Mono', 'Courier New', monospace">+embedding: vector(768)</text>
+<g filter="url(#sh)"><rect x="50" y="787.0" width="138" height="90" rx="6" fill="#FFFFFF" stroke="#636B2F" stroke-width="1.3"/></g>
+<path d="M50,817.0 V793.0 Q50,787.0 56,787.0 H182 Q188,787.0 188,793.0 V817.0 Z" fill="#D4DE95" stroke="#636B2F" stroke-width="1.3"/>
+<text x="119.0" y="807.0" font-size="13" font-weight="700" fill="#3D4127" text-anchor="middle" font-family="'Segoe UI', Inter, Arial, Helvetica, sans-serif">ResumeSkill</text>
+<text x="60.0" y="835.0" font-size="11" font-weight="400" fill="#22241B" text-anchor="start" font-family="Consolas, 'JetBrains Mono', 'Courier New', monospace">+id: int</text>
+<text x="60.0" y="851.0" font-size="11" font-weight="400" fill="#22241B" text-anchor="start" font-family="Consolas, 'JetBrains Mono', 'Courier New', monospace">+resume: Resume</text>
+<text x="60.0" y="867.0" font-size="11" font-weight="400" fill="#22241B" text-anchor="start" font-family="Consolas, 'JetBrains Mono', 'Courier New', monospace">+name: str</text>
+<g filter="url(#sh)"><rect x="50" y="907.0" width="138" height="122" rx="6" fill="#FFFFFF" stroke="#636B2F" stroke-width="1.3"/></g>
+<path d="M50,937.0 V913.0 Q50,907.0 56,907.0 H182 Q188,907.0 188,913.0 V937.0 Z" fill="#D4DE95" stroke="#636B2F" stroke-width="1.3"/>
+<text x="119.0" y="927.0" font-size="13" font-weight="700" fill="#3D4127" text-anchor="middle" font-family="'Segoe UI', Inter, Arial, Helvetica, sans-serif">Education</text>
+<text x="60.0" y="955.0" font-size="11" font-weight="400" fill="#22241B" text-anchor="start" font-family="Consolas, 'JetBrains Mono', 'Courier New', monospace">+id: int</text>
+<text x="60.0" y="971.0" font-size="11" font-weight="400" fill="#22241B" text-anchor="start" font-family="Consolas, 'JetBrains Mono', 'Courier New', monospace">+resume: Resume</text>
+<text x="60.0" y="987.0" font-size="11" font-weight="400" fill="#22241B" text-anchor="start" font-family="Consolas, 'JetBrains Mono', 'Courier New', monospace">+degree: str</text>
+<text x="60.0" y="1003.0" font-size="11" font-weight="400" fill="#22241B" text-anchor="start" font-family="Consolas, 'JetBrains Mono', 'Courier New', monospace">+institution: str</text>
+<text x="60.0" y="1019.0" font-size="11" font-weight="400" fill="#22241B" text-anchor="start" font-family="Consolas, 'JetBrains Mono', 'Courier New', monospace">+year: str</text>
+<g filter="url(#sh)"><rect x="50" y="1059.0" width="138" height="138" rx="6" fill="#FFFFFF" stroke="#636B2F" stroke-width="1.3"/></g>
+<path d="M50,1089.0 V1065.0 Q50,1059.0 56,1059.0 H182 Q188,1059.0 188,1065.0 V1089.0 Z" fill="#D4DE95" stroke="#636B2F" stroke-width="1.3"/>
+<text x="119.0" y="1079.0" font-size="13" font-weight="700" fill="#3D4127" text-anchor="middle" font-family="'Segoe UI', Inter, Arial, Helvetica, sans-serif">Experience</text>
+<text x="60.0" y="1107.0" font-size="11" font-weight="400" fill="#22241B" text-anchor="start" font-family="Consolas, 'JetBrains Mono', 'Courier New', monospace">+id: int</text>
+<text x="60.0" y="1123.0" font-size="11" font-weight="400" fill="#22241B" text-anchor="start" font-family="Consolas, 'JetBrains Mono', 'Courier New', monospace">+resume: Resume</text>
+<text x="60.0" y="1139.0" font-size="11" font-weight="400" fill="#22241B" text-anchor="start" font-family="Consolas, 'JetBrains Mono', 'Courier New', monospace">+job_title: str</text>
+<text x="60.0" y="1155.0" font-size="11" font-weight="400" fill="#22241B" text-anchor="start" font-family="Consolas, 'JetBrains Mono', 'Courier New', monospace">+company: str</text>
+<text x="60.0" y="1171.0" font-size="11" font-weight="400" fill="#22241B" text-anchor="start" font-family="Consolas, 'JetBrains Mono', 'Courier New', monospace">+duration: str</text>
+<text x="60.0" y="1187.0" font-size="11" font-weight="400" fill="#22241B" text-anchor="start" font-family="Consolas, 'JetBrains Mono', 'Courier New', monospace">+description: text</text>
+<g filter="url(#sh)"><rect x="658" y="787.0" width="187" height="266" rx="6" fill="#FFFFFF" stroke="#636B2F" stroke-width="1.3"/></g>
+<path d="M658,817.0 V793.0 Q658,787.0 664,787.0 H839 Q845,787.0 845,793.0 V817.0 Z" fill="#D4DE95" stroke="#636B2F" stroke-width="1.3"/>
+<text x="751.5" y="807.0" font-size="13" font-weight="700" fill="#3D4127" text-anchor="middle" font-family="'Segoe UI', Inter, Arial, Helvetica, sans-serif">Job</text>
+<text x="668.0" y="835.0" font-size="11" font-weight="400" fill="#22241B" text-anchor="start" font-family="Consolas, 'JetBrains Mono', 'Courier New', monospace">+id: int</text>
+<text x="668.0" y="851.0" font-size="11" font-weight="400" fill="#22241B" text-anchor="start" font-family="Consolas, 'JetBrains Mono', 'Courier New', monospace">+title: str</text>
+<text x="668.0" y="867.0" font-size="11" font-weight="400" fill="#22241B" text-anchor="start" font-family="Consolas, 'JetBrains Mono', 'Courier New', monospace">+description: text</text>
+<text x="668.0" y="883.0" font-size="11" font-weight="400" fill="#22241B" text-anchor="start" font-family="Consolas, 'JetBrains Mono', 'Courier New', monospace">+company: Company</text>
+<text x="668.0" y="899.0" font-size="11" font-weight="400" fill="#22241B" text-anchor="start" font-family="Consolas, 'JetBrains Mono', 'Courier New', monospace">+created_by: User</text>
+<text x="668.0" y="915.0" font-size="11" font-weight="400" fill="#22241B" text-anchor="start" font-family="Consolas, 'JetBrains Mono', 'Courier New', monospace">+skills: Skill [*]</text>
+<text x="668.0" y="931.0" font-size="11" font-weight="400" fill="#22241B" text-anchor="start" font-family="Consolas, 'JetBrains Mono', 'Courier New', monospace">+experience_required: int</text>
+<text x="668.0" y="947.0" font-size="11" font-weight="400" fill="#22241B" text-anchor="start" font-family="Consolas, 'JetBrains Mono', 'Courier New', monospace">+status: JobStatus</text>
+<text x="668.0" y="963.0" font-size="11" font-weight="400" fill="#22241B" text-anchor="start" font-family="Consolas, 'JetBrains Mono', 'Courier New', monospace">+location: str</text>
+<text x="668.0" y="979.0" font-size="11" font-weight="400" fill="#22241B" text-anchor="start" font-family="Consolas, 'JetBrains Mono', 'Courier New', monospace">+salary_min: int [0..1]</text>
+<text x="668.0" y="995.0" font-size="11" font-weight="400" fill="#22241B" text-anchor="start" font-family="Consolas, 'JetBrains Mono', 'Courier New', monospace">+salary_max: int [0..1]</text>
+<text x="668.0" y="1011.0" font-size="11" font-weight="400" fill="#22241B" text-anchor="start" font-family="Consolas, 'JetBrains Mono', 'Courier New', monospace">+jd_embedding: vector(768)</text>
+<text x="668.0" y="1027.0" font-size="11" font-weight="400" fill="#22241B" text-anchor="start" font-family="Consolas, 'JetBrains Mono', 'Courier New', monospace">+created_at: datetime</text>
+<text x="668.0" y="1043.0" font-size="11" font-weight="400" fill="#22241B" text-anchor="start" font-family="Consolas, 'JetBrains Mono', 'Courier New', monospace">+updated_at: datetime</text>
+<g filter="url(#sh)"><rect x="935" y="787.0" width="187" height="266" rx="6" fill="#FFFFFF" stroke="#636B2F" stroke-width="1.3"/></g>
+<path d="M935,817.0 V793.0 Q935,787.0 941,787.0 H1116 Q1122,787.0 1122,793.0 V817.0 Z" fill="#D4DE95" stroke="#636B2F" stroke-width="1.3"/>
+<text x="1028.5" y="807.0" font-size="13" font-weight="700" fill="#3D4127" text-anchor="middle" font-family="'Segoe UI', Inter, Arial, Helvetica, sans-serif">JobApplication</text>
+<text x="945.0" y="835.0" font-size="11" font-weight="400" fill="#22241B" text-anchor="start" font-family="Consolas, 'JetBrains Mono', 'Courier New', monospace">+id: int</text>
+<text x="945.0" y="851.0" font-size="11" font-weight="400" fill="#22241B" text-anchor="start" font-family="Consolas, 'JetBrains Mono', 'Courier New', monospace">+job: Job</text>
+<text x="945.0" y="867.0" font-size="11" font-weight="400" fill="#22241B" text-anchor="start" font-family="Consolas, 'JetBrains Mono', 'Courier New', monospace">+applicant: User [0..1]</text>
+<text x="945.0" y="883.0" font-size="11" font-weight="400" fill="#22241B" text-anchor="start" font-family="Consolas, 'JetBrains Mono', 'Courier New', monospace">+resume: Resume [0..1]</text>
+<text x="945.0" y="899.0" font-size="11" font-weight="400" fill="#22241B" text-anchor="start" font-family="Consolas, 'JetBrains Mono', 'Courier New', monospace">+source_type: SourceType</text>
+<text x="945.0" y="915.0" font-size="11" font-weight="400" fill="#22241B" text-anchor="start" font-family="Consolas, 'JetBrains Mono', 'Courier New', monospace">+status: ApplicationStatus</text>
+<text x="945.0" y="931.0" font-size="11" font-weight="400" fill="#22241B" text-anchor="start" font-family="Consolas, 'JetBrains Mono', 'Courier New', monospace">+tags: JSON list</text>
+<text x="945.0" y="947.0" font-size="11" font-weight="400" fill="#22241B" text-anchor="start" font-family="Consolas, 'JetBrains Mono', 'Courier New', monospace">+recruiter_notes: text</text>
+<text x="945.0" y="963.0" font-size="11" font-weight="400" fill="#22241B" text-anchor="start" font-family="Consolas, 'JetBrains Mono', 'Courier New', monospace">+match_score: float</text>
+<text x="945.0" y="979.0" font-size="11" font-weight="400" fill="#22241B" text-anchor="start" font-family="Consolas, 'JetBrains Mono', 'Courier New', monospace">+shortlist_reason: text</text>
+<text x="945.0" y="995.0" font-size="11" font-weight="400" fill="#22241B" text-anchor="start" font-family="Consolas, 'JetBrains Mono', 'Courier New', monospace">+match_insights: JSON</text>
+<text x="945.0" y="1011.0" font-size="11" font-weight="400" fill="#22241B" text-anchor="start" font-family="Consolas, 'JetBrains Mono', 'Courier New', monospace">+applied_at: datetime</text>
+<text x="945.0" y="1027.0" font-size="11" font-weight="400" fill="#8A8F76" text-anchor="start" font-family="Consolas, 'JetBrains Mono', 'Courier New', monospace" font-style="italic">{unique(job, applicant)}</text>
+<text x="945.0" y="1043.0" font-size="11" font-weight="400" fill="#8A8F76" text-anchor="start" font-family="Consolas, 'JetBrains Mono', 'Courier New', monospace" font-style="italic">{unique(job, resume)}</text>
+<g filter="url(#sh)"><rect x="1192" y="787.0" width="218" height="186" rx="6" fill="#FFFFFF" stroke="#636B2F" stroke-width="1.3"/></g>
+<path d="M1192,817.0 V793.0 Q1192,787.0 1198,787.0 H1404 Q1410,787.0 1410,793.0 V817.0 Z" fill="#D4DE95" stroke="#636B2F" stroke-width="1.3"/>
+<text x="1301.0" y="807.0" font-size="13" font-weight="700" fill="#3D4127" text-anchor="middle" font-family="'Segoe UI', Inter, Arial, Helvetica, sans-serif">TemporaryResumeCandidate</text>
+<text x="1202.0" y="835.0" font-size="11" font-weight="400" fill="#22241B" text-anchor="start" font-family="Consolas, 'JetBrains Mono', 'Courier New', monospace">+id: int</text>
+<text x="1202.0" y="851.0" font-size="11" font-weight="400" fill="#22241B" text-anchor="start" font-family="Consolas, 'JetBrains Mono', 'Courier New', monospace">+session_id: UUID</text>
+<text x="1202.0" y="867.0" font-size="11" font-weight="400" fill="#22241B" text-anchor="start" font-family="Consolas, 'JetBrains Mono', 'Courier New', monospace">+job: Job</text>
+<text x="1202.0" y="883.0" font-size="11" font-weight="400" fill="#22241B" text-anchor="start" font-family="Consolas, 'JetBrains Mono', 'Courier New', monospace">+file_name: str</text>
+<text x="1202.0" y="899.0" font-size="11" font-weight="400" fill="#22241B" text-anchor="start" font-family="Consolas, 'JetBrains Mono', 'Courier New', monospace">+temp_file_path: str</text>
+<text x="1202.0" y="915.0" font-size="11" font-weight="400" fill="#22241B" text-anchor="start" font-family="Consolas, 'JetBrains Mono', 'Courier New', monospace">+extracted_text: text</text>
+<text x="1202.0" y="931.0" font-size="11" font-weight="400" fill="#22241B" text-anchor="start" font-family="Consolas, 'JetBrains Mono', 'Courier New', monospace">+cleaned_text: text</text>
+<text x="1202.0" y="947.0" font-size="11" font-weight="400" fill="#22241B" text-anchor="start" font-family="Consolas, 'JetBrains Mono', 'Courier New', monospace">+embedding: vector(768)</text>
+<text x="1202.0" y="963.0" font-size="11" font-weight="400" fill="#22241B" text-anchor="start" font-family="Consolas, 'JetBrains Mono', 'Courier New', monospace">+created_at: datetime</text>
+<g filter="url(#sh)"><rect x="658" y="1113.0" width="187" height="74" rx="6" fill="#FFFFFF" stroke="#636B2F" stroke-width="1.3"/></g>
+<path d="M658,1143.0 V1119.0 Q658,1113.0 664,1113.0 H839 Q845,1113.0 845,1119.0 V1143.0 Z" fill="#D4DE95" stroke="#636B2F" stroke-width="1.3"/>
+<text x="751.5" y="1133.0" font-size="13" font-weight="700" fill="#3D4127" text-anchor="middle" font-family="'Segoe UI', Inter, Arial, Helvetica, sans-serif">Skill</text>
+<text x="668.0" y="1161.0" font-size="11" font-weight="400" fill="#22241B" text-anchor="start" font-family="Consolas, 'JetBrains Mono', 'Courier New', monospace">+id: int</text>
+<text x="668.0" y="1177.0" font-size="11" font-weight="400" fill="#22241B" text-anchor="start" font-family="Consolas, 'JetBrains Mono', 'Courier New', monospace">+name: str {unique}</text>
+<g filter="url(#sh)"><rect x="658" y="1217.0" width="187" height="104" rx="6" fill="#FFFFFF" stroke="#636B2F" stroke-width="1.3"/></g>
+<path d="M658,1261.0 V1223.0 Q658,1217.0 664,1217.0 H839 Q845,1217.0 845,1223.0 V1261.0 Z" fill="#BAC095" stroke="#636B2F" stroke-width="1.3"/>
+<text x="751.5" y="1235.0" font-size="10" font-weight="400" fill="#3D4127" text-anchor="middle" font-family="'Segoe UI', Inter, Arial, Helvetica, sans-serif" font-style="italic">«enumeration»</text>
+<text x="751.5" y="1251.0" font-size="13" font-weight="700" fill="#3D4127" text-anchor="middle" font-family="'Segoe UI', Inter, Arial, Helvetica, sans-serif">JobStatus</text>
+<text x="668.0" y="1279.0" font-size="11" font-weight="400" fill="#22241B" text-anchor="start" font-family="Consolas, 'JetBrains Mono', 'Courier New', monospace">DRAFT</text>
+<text x="668.0" y="1295.0" font-size="11" font-weight="400" fill="#22241B" text-anchor="start" font-family="Consolas, 'JetBrains Mono', 'Courier New', monospace">ACTIVE</text>
+<text x="668.0" y="1311.0" font-size="11" font-weight="400" fill="#22241B" text-anchor="start" font-family="Consolas, 'JetBrains Mono', 'Courier New', monospace">CLOSED</text>
+<g filter="url(#sh)"><rect x="935" y="1113.0" width="200" height="138" rx="6" fill="#FFFFFF" stroke="#636B2F" stroke-width="1.3"/></g>
+<path d="M935,1143.0 V1119.0 Q935,1113.0 941,1113.0 H1129 Q1135,1113.0 1135,1119.0 V1143.0 Z" fill="#D4DE95" stroke="#636B2F" stroke-width="1.3"/>
+<text x="1035.0" y="1133.0" font-size="13" font-weight="700" fill="#3D4127" text-anchor="middle" font-family="'Segoe UI', Inter, Arial, Helvetica, sans-serif">CandidateInterviewKit</text>
+<text x="945.0" y="1161.0" font-size="11" font-weight="400" fill="#22241B" text-anchor="start" font-family="Consolas, 'JetBrains Mono', 'Courier New', monospace">+id: int</text>
+<text x="945.0" y="1177.0" font-size="11" font-weight="400" fill="#22241B" text-anchor="start" font-family="Consolas, 'JetBrains Mono', 'Courier New', monospace">+application: JobApplication</text>
+<text x="945.0" y="1193.0" font-size="11" font-weight="400" fill="#22241B" text-anchor="start" font-family="Consolas, 'JetBrains Mono', 'Courier New', monospace">+difficulty: str</text>
+<text x="945.0" y="1209.0" font-size="11" font-weight="400" fill="#22241B" text-anchor="start" font-family="Consolas, 'JetBrains Mono', 'Courier New', monospace">+questions: JSON list</text>
+<text x="945.0" y="1225.0" font-size="11" font-weight="400" fill="#22241B" text-anchor="start" font-family="Consolas, 'JetBrains Mono', 'Courier New', monospace">+created_at: datetime</text>
+<text x="945.0" y="1241.0" font-size="11" font-weight="400" fill="#22241B" text-anchor="start" font-family="Consolas, 'JetBrains Mono', 'Courier New', monospace">+updated_at: datetime</text>
+<g filter="url(#sh)"><rect x="1192" y="1013.0" width="162" height="120" rx="6" fill="#FFFFFF" stroke="#636B2F" stroke-width="1.3"/></g>
+<path d="M1192,1057.0 V1019.0 Q1192,1013.0 1198,1013.0 H1348 Q1354,1013.0 1354,1019.0 V1057.0 Z" fill="#BAC095" stroke="#636B2F" stroke-width="1.3"/>
+<text x="1273.0" y="1031.0" font-size="10" font-weight="400" fill="#3D4127" text-anchor="middle" font-family="'Segoe UI', Inter, Arial, Helvetica, sans-serif" font-style="italic">«enumeration»</text>
+<text x="1273.0" y="1047.0" font-size="13" font-weight="700" fill="#3D4127" text-anchor="middle" font-family="'Segoe UI', Inter, Arial, Helvetica, sans-serif">ApplicationStatus</text>
+<text x="1202.0" y="1075.0" font-size="11" font-weight="400" fill="#22241B" text-anchor="start" font-family="Consolas, 'JetBrains Mono', 'Courier New', monospace">APPLIED</text>
+<text x="1202.0" y="1091.0" font-size="11" font-weight="400" fill="#22241B" text-anchor="start" font-family="Consolas, 'JetBrains Mono', 'Courier New', monospace">SHORTLISTED</text>
+<text x="1202.0" y="1107.0" font-size="11" font-weight="400" fill="#22241B" text-anchor="start" font-family="Consolas, 'JetBrains Mono', 'Courier New', monospace">INTERVIEW</text>
+<text x="1202.0" y="1123.0" font-size="11" font-weight="400" fill="#22241B" text-anchor="start" font-family="Consolas, 'JetBrains Mono', 'Courier New', monospace">REJECTED</text>
+<g filter="url(#sh)"><rect x="1192" y="1163.0" width="125" height="88" rx="6" fill="#FFFFFF" stroke="#636B2F" stroke-width="1.3"/></g>
+<path d="M1192,1207.0 V1169.0 Q1192,1163.0 1198,1163.0 H1311 Q1317,1163.0 1317,1169.0 V1207.0 Z" fill="#BAC095" stroke="#636B2F" stroke-width="1.3"/>
+<text x="1254.5" y="1181.0" font-size="10" font-weight="400" fill="#3D4127" text-anchor="middle" font-family="'Segoe UI', Inter, Arial, Helvetica, sans-serif" font-style="italic">«enumeration»</text>
+<text x="1254.5" y="1197.0" font-size="13" font-weight="700" fill="#3D4127" text-anchor="middle" font-family="'Segoe UI', Inter, Arial, Helvetica, sans-serif">SourceType</text>
+<text x="1202.0" y="1225.0" font-size="11" font-weight="400" fill="#22241B" text-anchor="start" font-family="Consolas, 'JetBrains Mono', 'Courier New', monospace">APPLICATION</text>
+<text x="1202.0" y="1241.0" font-size="11" font-weight="400" fill="#22241B" text-anchor="start" font-family="Consolas, 'JetBrains Mono', 'Courier New', monospace">RECRUITER_UPLOAD</text>
+<g filter="url(#sh)"><rect x="50" y="1455.0" width="318.0" height="166" rx="6" fill="#FFFFFF" stroke="#636B2F" stroke-width="1.3"/></g>
+<path d="M50,1499.0 V1461.0 Q50,1455.0 56,1455.0 H362.0 Q368.0,1455.0 368.0,1461.0 V1499.0 Z" fill="#636B2F" stroke="#636B2F" stroke-width="1.3"/>
+<text x="209.0" y="1473.0" font-size="10" font-weight="400" fill="#FFFFFF" text-anchor="middle" font-family="'Segoe UI', Inter, Arial, Helvetica, sans-serif" font-style="italic">«service»</text>
+<text x="209.0" y="1489.0" font-size="13" font-weight="700" fill="#FFFFFF" text-anchor="middle" font-family="'Segoe UI', Inter, Arial, Helvetica, sans-serif">ResumeParser</text>
+<line x1="50" y1="1509.0" x2="368.0" y2="1509.0" stroke="#636B2F" stroke-width="1"/>
+<text x="60.0" y="1527.0" font-size="11" font-weight="400" fill="#22241B" text-anchor="start" font-family="Consolas, 'JetBrains Mono', 'Courier New', monospace">+extract_text_from_pdf(path): str</text>
+<text x="60.0" y="1543.0" font-size="11" font-weight="400" fill="#22241B" text-anchor="start" font-family="Consolas, 'JetBrains Mono', 'Courier New', monospace">+extract_text_from_docx(path): str</text>
+<text x="60.0" y="1559.0" font-size="11" font-weight="400" fill="#22241B" text-anchor="start" font-family="Consolas, 'JetBrains Mono', 'Courier New', monospace">+clean_resume_text(text): str</text>
+<text x="60.0" y="1575.0" font-size="11" font-weight="400" fill="#22241B" text-anchor="start" font-family="Consolas, 'JetBrains Mono', 'Courier New', monospace">+extract_skills(text): list</text>
+<text x="60.0" y="1591.0" font-size="11" font-weight="400" fill="#22241B" text-anchor="start" font-family="Consolas, 'JetBrains Mono', 'Courier New', monospace">+parse_and_store_resume_data(resume)</text>
+<line x1="50" y1="1601.0" x2="368.0" y2="1601.0" stroke="#D3D6C4" stroke-width="1"/>
+<text x="60.0" y="1615.0" font-size="10.5" font-weight="400" fill="#636B2F" text-anchor="start" font-family="'Segoe UI', Inter, Arial, Helvetica, sans-serif" font-style="italic">uses → Resume, ResumeSkill, Education, Experience</text>
+<g filter="url(#sh)"><rect x="394.0" y="1455.0" width="398" height="118" rx="6" fill="#FFFFFF" stroke="#636B2F" stroke-width="1.3"/></g>
+<path d="M394.0,1499.0 V1461.0 Q394.0,1455.0 400.0,1455.0 H786.0 Q792.0,1455.0 792.0,1461.0 V1499.0 Z" fill="#636B2F" stroke="#636B2F" stroke-width="1.3"/>
+<text x="593.0" y="1473.0" font-size="10" font-weight="400" fill="#FFFFFF" text-anchor="middle" font-family="'Segoe UI', Inter, Arial, Helvetica, sans-serif" font-style="italic">«service»</text>
+<text x="593.0" y="1489.0" font-size="13" font-weight="700" fill="#FFFFFF" text-anchor="middle" font-family="'Segoe UI', Inter, Arial, Helvetica, sans-serif">GeminiResumeAI</text>
+<line x1="394.0" y1="1509.0" x2="792.0" y2="1509.0" stroke="#636B2F" stroke-width="1"/>
+<text x="404.0" y="1527.0" font-size="11" font-weight="400" fill="#22241B" text-anchor="start" font-family="Consolas, 'JetBrains Mono', 'Courier New', monospace">+generate_ai_resume_feedback(resume_data): dict</text>
+<text x="404.0" y="1543.0" font-size="11" font-weight="400" fill="#22241B" text-anchor="start" font-family="Consolas, 'JetBrains Mono', 'Courier New', monospace">+tailor_resume_for_job_ai(resume_data, title, jd, req): dict</text>
+<line x1="394.0" y1="1553.0" x2="792.0" y2="1553.0" stroke="#D3D6C4" stroke-width="1"/>
+<text x="404.0" y="1567.0" font-size="10.5" font-weight="400" fill="#636B2F" text-anchor="start" font-family="'Segoe UI', Inter, Arial, Helvetica, sans-serif" font-style="italic">uses → Resume  ·  Gemini LLM</text>
+<g filter="url(#sh)"><rect x="818.0" y="1455.0" width="342" height="166" rx="6" fill="#FFFFFF" stroke="#636B2F" stroke-width="1.3"/></g>
+<path d="M818.0,1499.0 V1461.0 Q818.0,1455.0 824.0,1455.0 H1154.0 Q1160.0,1455.0 1160.0,1461.0 V1499.0 Z" fill="#636B2F" stroke="#636B2F" stroke-width="1.3"/>
+<text x="989.0" y="1473.0" font-size="10" font-weight="400" fill="#FFFFFF" text-anchor="middle" font-family="'Segoe UI', Inter, Arial, Helvetica, sans-serif" font-style="italic">«service»</text>
+<text x="989.0" y="1489.0" font-size="13" font-weight="700" fill="#FFFFFF" text-anchor="middle" font-family="'Segoe UI', Inter, Arial, Helvetica, sans-serif">GeminiEmbeddingService</text>
+<line x1="818.0" y1="1509.0" x2="1160.0" y2="1509.0" stroke="#636B2F" stroke-width="1"/>
+<text x="828.0" y="1527.0" font-size="11" font-weight="400" fill="#22241B" text-anchor="start" font-family="Consolas, 'JetBrains Mono', 'Courier New', monospace">+generate_embedding(text, task_type): float[768]</text>
+<text x="828.0" y="1543.0" font-size="11" font-weight="400" fill="#22241B" text-anchor="start" font-family="Consolas, 'JetBrains Mono', 'Courier New', monospace">+generate_embeddings_batch(texts, batch_size): list</text>
+<text x="828.0" y="1559.0" font-size="11" font-weight="400" fill="#22241B" text-anchor="start" font-family="Consolas, 'JetBrains Mono', 'Courier New', monospace">+calculate_cosine_similarity(a, b): float</text>
+<text x="828.0" y="1575.0" font-size="11" font-weight="400" fill="#22241B" text-anchor="start" font-family="Consolas, 'JetBrains Mono', 'Courier New', monospace">+build_job_embedding_text(job): str</text>
+<text x="828.0" y="1591.0" font-size="11" font-weight="400" fill="#22241B" text-anchor="start" font-family="Consolas, 'JetBrains Mono', 'Courier New', monospace">+build_resume_embedding_text(resume): str</text>
+<line x1="818.0" y1="1601.0" x2="1160.0" y2="1601.0" stroke="#D3D6C4" stroke-width="1"/>
+<text x="828.0" y="1615.0" font-size="10.5" font-weight="400" fill="#636B2F" text-anchor="start" font-family="'Segoe UI', Inter, Arial, Helvetica, sans-serif" font-style="italic">uses → Job, Resume, TemporaryResumeCandidate</text>
+<g filter="url(#sh)"><rect x="50" y="1647.0" width="249" height="102" rx="6" fill="#FFFFFF" stroke="#636B2F" stroke-width="1.3"/></g>
+<path d="M50,1691.0 V1653.0 Q50,1647.0 56,1647.0 H293 Q299,1647.0 299,1653.0 V1691.0 Z" fill="#636B2F" stroke="#636B2F" stroke-width="1.3"/>
+<text x="174.5" y="1665.0" font-size="10" font-weight="400" fill="#FFFFFF" text-anchor="middle" font-family="'Segoe UI', Inter, Arial, Helvetica, sans-serif" font-style="italic">«service»</text>
+<text x="174.5" y="1681.0" font-size="13" font-weight="700" fill="#FFFFFF" text-anchor="middle" font-family="'Segoe UI', Inter, Arial, Helvetica, sans-serif">JDGenerator</text>
+<line x1="50" y1="1701.0" x2="299" y2="1701.0" stroke="#636B2F" stroke-width="1"/>
+<text x="60.0" y="1719.0" font-size="11" font-weight="400" fill="#22241B" text-anchor="start" font-family="Consolas, 'JetBrains Mono', 'Courier New', monospace">+generate_job_description(data): str</text>
+<line x1="50" y1="1729.0" x2="299" y2="1729.0" stroke="#D3D6C4" stroke-width="1"/>
+<text x="60.0" y="1743.0" font-size="10.5" font-weight="400" fill="#636B2F" text-anchor="start" font-family="'Segoe UI', Inter, Arial, Helvetica, sans-serif" font-style="italic">uses → Job  ·  Gemini LLM</text>
+<g filter="url(#sh)"><rect x="325" y="1647.0" width="361" height="134" rx="6" fill="#FFFFFF" stroke="#636B2F" stroke-width="1.3"/></g>
+<path d="M325,1691.0 V1653.0 Q325,1647.0 331,1647.0 H680 Q686,1647.0 686,1653.0 V1691.0 Z" fill="#636B2F" stroke="#636B2F" stroke-width="1.3"/>
+<text x="505.5" y="1665.0" font-size="10" font-weight="400" fill="#FFFFFF" text-anchor="middle" font-family="'Segoe UI', Inter, Arial, Helvetica, sans-serif" font-style="italic">«service»</text>
+<text x="505.5" y="1681.0" font-size="13" font-weight="700" fill="#FFFFFF" text-anchor="middle" font-family="'Segoe UI', Inter, Arial, Helvetica, sans-serif">PreferenceParser</text>
+<line x1="325" y1="1701.0" x2="686" y2="1701.0" stroke="#636B2F" stroke-width="1"/>
+<text x="335.0" y="1719.0" font-size="11" font-weight="400" fill="#22241B" text-anchor="start" font-family="Consolas, 'JetBrains Mono', 'Courier New', monospace">+parse_recruiter_preferences(raw): dict</text>
+<text x="335.0" y="1735.0" font-size="11" font-weight="400" fill="#22241B" text-anchor="start" font-family="Consolas, 'JetBrains Mono', 'Courier New', monospace">+decompose_preferences_with_llm(job, raw): dict</text>
+<text x="335.0" y="1751.0" font-size="11" font-weight="400" fill="#22241B" text-anchor="start" font-family="Consolas, 'JetBrains Mono', 'Courier New', monospace">+check_candidate_negative_violation(text, terms): list</text>
+<line x1="325" y1="1761.0" x2="686" y2="1761.0" stroke="#D3D6C4" stroke-width="1"/>
+<text x="335.0" y="1775.0" font-size="10.5" font-weight="400" fill="#636B2F" text-anchor="start" font-family="'Segoe UI', Inter, Arial, Helvetica, sans-serif" font-style="italic">uses → Job  ·  Gemini LLM</text>
+<g filter="url(#sh)"><rect x="712" y="1647.0" width="404" height="102" rx="6" fill="#FFFFFF" stroke="#636B2F" stroke-width="1.3"/></g>
+<path d="M712,1691.0 V1653.0 Q712,1647.0 718,1647.0 H1110 Q1116,1647.0 1116,1653.0 V1691.0 Z" fill="#636B2F" stroke="#636B2F" stroke-width="1.3"/>
+<text x="914.0" y="1665.0" font-size="10" font-weight="400" fill="#FFFFFF" text-anchor="middle" font-family="'Segoe UI', Inter, Arial, Helvetica, sans-serif" font-style="italic">«service»</text>
+<text x="914.0" y="1681.0" font-size="13" font-weight="700" fill="#FFFFFF" text-anchor="middle" font-family="'Segoe UI', Inter, Arial, Helvetica, sans-serif">ShortlistScorer</text>
+<line x1="712" y1="1701.0" x2="1116" y2="1701.0" stroke="#636B2F" stroke-width="1"/>
+<text x="722.0" y="1719.0" font-size="11" font-weight="400" fill="#22241B" text-anchor="start" font-family="Consolas, 'JetBrains Mono', 'Courier New', monospace">+llm_rerank_and_explain(job, candidates, prefs, decomp): list</text>
+<line x1="712" y1="1729.0" x2="1116" y2="1729.0" stroke="#D3D6C4" stroke-width="1"/>
+<text x="722.0" y="1743.0" font-size="10.5" font-weight="400" fill="#636B2F" text-anchor="start" font-family="'Segoe UI', Inter, Arial, Helvetica, sans-serif" font-style="italic">uses → JobApplication, PreferenceParser  ·  Gemini LLM</text>
+<g filter="url(#sh)"><rect x="50" y="1807.0" width="386" height="102" rx="6" fill="#FFFFFF" stroke="#636B2F" stroke-width="1.3"/></g>
+<path d="M50,1851.0 V1813.0 Q50,1807.0 56,1807.0 H430 Q436,1807.0 436,1813.0 V1851.0 Z" fill="#636B2F" stroke="#636B2F" stroke-width="1.3"/>
+<text x="243.0" y="1825.0" font-size="10" font-weight="400" fill="#FFFFFF" text-anchor="middle" font-family="'Segoe UI', Inter, Arial, Helvetica, sans-serif" font-style="italic">«service»</text>
+<text x="243.0" y="1841.0" font-size="13" font-weight="700" fill="#FFFFFF" text-anchor="middle" font-family="'Segoe UI', Inter, Arial, Helvetica, sans-serif">InterviewKitService</text>
+<line x1="50" y1="1861.0" x2="436" y2="1861.0" stroke="#636B2F" stroke-width="1"/>
+<text x="60.0" y="1879.0" font-size="11" font-weight="400" fill="#22241B" text-anchor="start" font-family="Consolas, 'JetBrains Mono', 'Courier New', monospace">+generate_candidate_interview_kit(application, difficulty)</text>
+<line x1="50" y1="1889.0" x2="436" y2="1889.0" stroke="#D3D6C4" stroke-width="1"/>
+<text x="60.0" y="1903.0" font-size="10.5" font-weight="400" fill="#636B2F" text-anchor="start" font-family="'Segoe UI', Inter, Arial, Helvetica, sans-serif" font-style="italic">creates → CandidateInterviewKit  ·  Gemini LLM</text>
+<g filter="url(#sh)"><rect x="462" y="1807.0" width="373" height="166" rx="6" fill="#FFFFFF" stroke="#636B2F" stroke-width="1.3"/></g>
+<path d="M462,1851.0 V1813.0 Q462,1807.0 468,1807.0 H829 Q835,1807.0 835,1813.0 V1851.0 Z" fill="#636B2F" stroke="#636B2F" stroke-width="1.3"/>
+<text x="648.5" y="1825.0" font-size="10" font-weight="400" fill="#FFFFFF" text-anchor="middle" font-family="'Segoe UI', Inter, Arial, Helvetica, sans-serif" font-style="italic">«service»</text>
+<text x="648.5" y="1841.0" font-size="13" font-weight="700" fill="#FFFFFF" text-anchor="middle" font-family="'Segoe UI', Inter, Arial, Helvetica, sans-serif">EmailService</text>
+<line x1="462" y1="1861.0" x2="835" y2="1861.0" stroke="#636B2F" stroke-width="1"/>
+<text x="472.0" y="1879.0" font-size="11" font-weight="400" fill="#22241B" text-anchor="start" font-family="Consolas, 'JetBrains Mono', 'Courier New', monospace">+send_invitation_email(to, link, company, invited_by)</text>
+<text x="472.0" y="1895.0" font-size="11" font-weight="400" fill="#22241B" text-anchor="start" font-family="Consolas, 'JetBrains Mono', 'Courier New', monospace">+send_registration_submitted_email(to, company, owner)</text>
+<text x="472.0" y="1911.0" font-size="11" font-weight="400" fill="#22241B" text-anchor="start" font-family="Consolas, 'JetBrains Mono', 'Courier New', monospace">+send_company_approved_email(to, company, owner)</text>
+<text x="472.0" y="1927.0" font-size="11" font-weight="400" fill="#22241B" text-anchor="start" font-family="Consolas, 'JetBrains Mono', 'Courier New', monospace">+send_company_rejected_email(to, company, owner, reason)</text>
+<text x="472.0" y="1943.0" font-size="11" font-weight="400" fill="#22241B" text-anchor="start" font-family="Consolas, 'JetBrains Mono', 'Courier New', monospace">+send_candidate_shortlist_email(application, job, msg)</text>
+<line x1="462" y1="1953.0" x2="835" y2="1953.0" stroke="#D3D6C4" stroke-width="1"/>
+<text x="472.0" y="1967.0" font-size="10.5" font-weight="400" fill="#636B2F" text-anchor="start" font-family="'Segoe UI', Inter, Arial, Helvetica, sans-serif" font-style="italic">uses → RecruiterInvitation, Company, JobApplication</text>
+<g filter="url(#sh)"><rect x="861" y="1807.0" width="336" height="166" rx="6" fill="#FFFFFF" stroke="#636B2F" stroke-width="1.3"/></g>
+<path d="M861,1851.0 V1813.0 Q861,1807.0 867,1807.0 H1191 Q1197,1807.0 1197,1813.0 V1851.0 Z" fill="#636B2F" stroke="#636B2F" stroke-width="1.3"/>
+<text x="1029.0" y="1825.0" font-size="10" font-weight="400" fill="#FFFFFF" text-anchor="middle" font-family="'Segoe UI', Inter, Arial, Helvetica, sans-serif" font-style="italic">«service»</text>
+<text x="1029.0" y="1841.0" font-size="13" font-weight="700" fill="#FFFFFF" text-anchor="middle" font-family="'Segoe UI', Inter, Arial, Helvetica, sans-serif">R2Storage</text>
+<line x1="861" y1="1861.0" x2="1197" y2="1861.0" stroke="#636B2F" stroke-width="1"/>
+<text x="871.0" y="1879.0" font-size="11" font-weight="400" fill="#22241B" text-anchor="start" font-family="Consolas, 'JetBrains Mono', 'Courier New', monospace">+upload_company_document(file, name, company): str</text>
+<text x="871.0" y="1895.0" font-size="11" font-weight="400" fill="#22241B" text-anchor="start" font-family="Consolas, 'JetBrains Mono', 'Courier New', monospace">+upload_user_cnic(file, name, username): str</text>
+<text x="871.0" y="1911.0" font-size="11" font-weight="400" fill="#22241B" text-anchor="start" font-family="Consolas, 'JetBrains Mono', 'Courier New', monospace">+upload_file_to_r2(path, key, content_type): str</text>
+<text x="871.0" y="1927.0" font-size="11" font-weight="400" fill="#22241B" text-anchor="start" font-family="Consolas, 'JetBrains Mono', 'Courier New', monospace">+generate_presigned_view_url(key, expires_in): str</text>
+<text x="871.0" y="1943.0" font-size="11" font-weight="400" fill="#22241B" text-anchor="start" font-family="Consolas, 'JetBrains Mono', 'Courier New', monospace">+delete_file_from_r2(key): bool</text>
+<line x1="861" y1="1953.0" x2="1197" y2="1953.0" stroke="#D3D6C4" stroke-width="1"/>
+<text x="871.0" y="1967.0" font-size="10.5" font-weight="400" fill="#636B2F" text-anchor="start" font-family="'Segoe UI', Inter, Arial, Helvetica, sans-serif" font-style="italic">uses → Company, User, Resume  ·  Cloudflare R2</text>
+<text x="284.0" y="129.0" font-size="11" font-weight="400" fill="#52564A" text-anchor="middle" font-family="'Segoe UI', Inter, Arial, Helvetica, sans-serif" font-style="italic" paint-order="stroke" stroke="#ffffff" stroke-width="4" stroke-linejoin="round">role_fk</text>
+<text x="288.0" y="370.0" font-size="11" font-weight="600" fill="#636B2F" text-anchor="middle" font-family="'Segoe UI', Inter, Arial, Helvetica, sans-serif" paint-order="stroke" stroke="#ffffff" stroke-width="4" stroke-linejoin="round">*</text>
+<text x="228.0" y="129.0" font-size="11" font-weight="600" fill="#636B2F" text-anchor="middle" font-family="'Segoe UI', Inter, Arial, Helvetica, sans-serif" paint-order="stroke" stroke="#ffffff" stroke-width="4" stroke-linejoin="round">0..1</text>
+<text x="270.0" y="414.0" font-size="11" font-weight="600" fill="#636B2F" text-anchor="middle" font-family="'Segoe UI', Inter, Arial, Helvetica, sans-serif" paint-order="stroke" stroke="#ffffff" stroke-width="4" stroke-linejoin="round">1</text>
+<text x="226.0" y="414.0" font-size="11" font-weight="600" fill="#636B2F" text-anchor="middle" font-family="'Segoe UI', Inter, Arial, Helvetica, sans-serif" paint-order="stroke" stroke="#ffffff" stroke-width="4" stroke-linejoin="round">*</text>
+<text x="144.0" y="198.0" font-size="11" font-weight="600" fill="#636B2F" text-anchor="middle" font-family="'Segoe UI', Inter, Arial, Helvetica, sans-serif" paint-order="stroke" stroke="#ffffff" stroke-width="4" stroke-linejoin="round">1</text>
+<text x="142.0" y="359.0" font-size="11" font-weight="600" fill="#636B2F" text-anchor="middle" font-family="'Segoe UI', Inter, Arial, Helvetica, sans-serif" paint-order="stroke" stroke="#ffffff" stroke-width="4" stroke-linejoin="round">*</text>
+<text x="588.0" y="371.0" font-size="11" font-weight="400" fill="#52564A" text-anchor="middle" font-family="'Segoe UI', Inter, Arial, Helvetica, sans-serif" font-style="italic" paint-order="stroke" stroke="#ffffff" stroke-width="4" stroke-linejoin="round">recruiters</text>
+<text x="626.0" y="370.0" font-size="11" font-weight="600" fill="#636B2F" text-anchor="middle" font-family="'Segoe UI', Inter, Arial, Helvetica, sans-serif" paint-order="stroke" stroke="#ffffff" stroke-width="4" stroke-linejoin="round">0..1</text>
+<text x="532.0" y="370.0" font-size="11" font-weight="600" fill="#636B2F" text-anchor="middle" font-family="'Segoe UI', Inter, Arial, Helvetica, sans-serif" paint-order="stroke" stroke="#ffffff" stroke-width="4" stroke-linejoin="round">*</text>
+<text x="977.0" y="132.0" font-size="11" font-weight="400" fill="#52564A" text-anchor="middle" font-family="'Segoe UI', Inter, Arial, Helvetica, sans-serif" font-style="italic" paint-order="stroke" stroke="#ffffff" stroke-width="4" stroke-linejoin="round">invitations</text>
+<text x="962.0" y="154.0" font-size="11" font-weight="600" fill="#636B2F" text-anchor="middle" font-family="'Segoe UI', Inter, Arial, Helvetica, sans-serif" paint-order="stroke" stroke="#ffffff" stroke-width="4" stroke-linejoin="round">1</text>
+<text x="1012.0" y="154.0" font-size="11" font-weight="600" fill="#636B2F" text-anchor="middle" font-family="'Segoe UI', Inter, Arial, Helvetica, sans-serif" paint-order="stroke" stroke="#ffffff" stroke-width="4" stroke-linejoin="round">*</text>
+<text x="728.0" y="427.0" font-size="11" font-weight="400" fill="#52564A" text-anchor="middle" font-family="'Segoe UI', Inter, Arial, Helvetica, sans-serif" font-style="italic" paint-order="stroke" stroke="#ffffff" stroke-width="4" stroke-linejoin="round">invited_by</text>
+<text x="536.0" y="406.0" font-size="11" font-weight="600" fill="#636B2F" text-anchor="middle" font-family="'Segoe UI', Inter, Arial, Helvetica, sans-serif" paint-order="stroke" stroke="#ffffff" stroke-width="4" stroke-linejoin="round">0..1</text>
+<text x="1010.0" y="232.0" font-size="11" font-weight="600" fill="#636B2F" text-anchor="middle" font-family="'Segoe UI', Inter, Arial, Helvetica, sans-serif" paint-order="stroke" stroke="#ffffff" stroke-width="4" stroke-linejoin="round">*</text>
+<text x="793.5" y="621.5" font-size="11" font-weight="400" fill="#52564A" text-anchor="middle" font-family="'Segoe UI', Inter, Arial, Helvetica, sans-serif" font-style="italic" paint-order="stroke" stroke="#ffffff" stroke-width="4" stroke-linejoin="round">jobs</text>
+<text x="783.5" y="426.0" font-size="11" font-weight="600" fill="#636B2F" text-anchor="middle" font-family="'Segoe UI', Inter, Arial, Helvetica, sans-serif" paint-order="stroke" stroke="#ffffff" stroke-width="4" stroke-linejoin="round">1</text>
+<text x="759.5" y="779.0" font-size="11" font-weight="600" fill="#636B2F" text-anchor="middle" font-family="'Segoe UI', Inter, Arial, Helvetica, sans-serif" paint-order="stroke" stroke="#ffffff" stroke-width="4" stroke-linejoin="round">*</text>
+<text x="578.0" y="480.0" font-size="11" font-weight="400" fill="#52564A" text-anchor="middle" font-family="'Segoe UI', Inter, Arial, Helvetica, sans-serif" font-style="italic" paint-order="stroke" stroke="#ffffff" stroke-width="4" stroke-linejoin="round">created_by</text>
+<text x="532.0" y="480.0" font-size="11" font-weight="600" fill="#636B2F" text-anchor="middle" font-family="'Segoe UI', Inter, Arial, Helvetica, sans-serif" paint-order="stroke" stroke="#ffffff" stroke-width="4" stroke-linejoin="round">1</text>
+<text x="650.0" y="821.0" font-size="11" font-weight="600" fill="#636B2F" text-anchor="middle" font-family="'Segoe UI', Inter, Arial, Helvetica, sans-serif" paint-order="stroke" stroke="#ffffff" stroke-width="4" stroke-linejoin="round">*</text>
+<text x="915.0" y="504.0" font-size="11" font-weight="400" fill="#52564A" text-anchor="middle" font-family="'Segoe UI', Inter, Arial, Helvetica, sans-serif" font-style="italic" paint-order="stroke" stroke="#ffffff" stroke-width="4" stroke-linejoin="round">applicant</text>
+<text x="536.0" y="526.0" font-size="11" font-weight="600" fill="#636B2F" text-anchor="middle" font-family="'Segoe UI', Inter, Arial, Helvetica, sans-serif" paint-order="stroke" stroke="#ffffff" stroke-width="4" stroke-linejoin="round">0..1</text>
+<text x="973.0" y="779.0" font-size="11" font-weight="600" fill="#636B2F" text-anchor="middle" font-family="'Segoe UI', Inter, Arial, Helvetica, sans-serif" paint-order="stroke" stroke="#ffffff" stroke-width="4" stroke-linejoin="round">*</text>
+<text x="479.0" y="677.5" font-size="11" font-weight="400" fill="#52564A" text-anchor="middle" font-family="'Segoe UI', Inter, Arial, Helvetica, sans-serif" font-style="italic" paint-order="stroke" stroke="#ffffff" stroke-width="4" stroke-linejoin="round">uploads</text>
+<text x="429.0" y="536.0" font-size="11" font-weight="600" fill="#636B2F" text-anchor="middle" font-family="'Segoe UI', Inter, Arial, Helvetica, sans-serif" paint-order="stroke" stroke="#ffffff" stroke-width="4" stroke-linejoin="round">0..1</text>
+<text x="437.0" y="779.0" font-size="11" font-weight="600" fill="#636B2F" text-anchor="middle" font-family="'Segoe UI', Inter, Arial, Helvetica, sans-serif" paint-order="stroke" stroke="#ffffff" stroke-width="4" stroke-linejoin="round">*</text>
+<text x="890.0" y="841.0" font-size="11" font-weight="400" fill="#52564A" text-anchor="middle" font-family="'Segoe UI', Inter, Arial, Helvetica, sans-serif" font-style="italic" paint-order="stroke" stroke="#ffffff" stroke-width="4" stroke-linejoin="round">applications</text>
+<text x="875.0" y="863.0" font-size="11" font-weight="600" fill="#636B2F" text-anchor="middle" font-family="'Segoe UI', Inter, Arial, Helvetica, sans-serif" paint-order="stroke" stroke="#ffffff" stroke-width="4" stroke-linejoin="round">1</text>
+<text x="925.0" y="863.0" font-size="11" font-weight="600" fill="#636B2F" text-anchor="middle" font-family="'Segoe UI', Inter, Arial, Helvetica, sans-serif" paint-order="stroke" stroke="#ffffff" stroke-width="4" stroke-linejoin="round">*</text>
+<text x="1182.0" y="757.0" font-size="11" font-weight="400" fill="#52564A" text-anchor="middle" font-family="'Segoe UI', Inter, Arial, Helvetica, sans-serif" font-style="italic" paint-order="stroke" stroke="#ffffff" stroke-width="4" stroke-linejoin="round">temp_candidates</text>
+<text x="819.0" y="779.0" font-size="11" font-weight="600" fill="#636B2F" text-anchor="middle" font-family="'Segoe UI', Inter, Arial, Helvetica, sans-serif" paint-order="stroke" stroke="#ffffff" stroke-width="4" stroke-linejoin="round">1</text>
+<text x="1289.0" y="779.0" font-size="11" font-weight="600" fill="#636B2F" text-anchor="middle" font-family="'Segoe UI', Inter, Arial, Helvetica, sans-serif" paint-order="stroke" stroke="#ffffff" stroke-width="4" stroke-linejoin="round">*</text>
+<text x="781.5" y="1097.0" font-size="11" font-weight="400" fill="#52564A" text-anchor="middle" font-family="'Segoe UI', Inter, Arial, Helvetica, sans-serif" font-style="italic" paint-order="stroke" stroke="#ffffff" stroke-width="4" stroke-linejoin="round">skills</text>
+<text x="739.5" y="1089.0" font-size="11" font-weight="600" fill="#636B2F" text-anchor="middle" font-family="'Segoe UI', Inter, Arial, Helvetica, sans-serif" paint-order="stroke" stroke="#ffffff" stroke-width="4" stroke-linejoin="round">*</text>
+<text x="739.5" y="1105.0" font-size="11" font-weight="600" fill="#636B2F" text-anchor="middle" font-family="'Segoe UI', Inter, Arial, Helvetica, sans-serif" paint-order="stroke" stroke="#ffffff" stroke-width="4" stroke-linejoin="round">*</text>
+<text x="599.0" y="1057.0" font-size="11" font-weight="400" fill="#52564A" text-anchor="middle" font-family="'Segoe UI', Inter, Arial, Helvetica, sans-serif" font-style="italic" paint-order="stroke" stroke="#ffffff" stroke-width="4" stroke-linejoin="round">resume</text>
+<text x="567.0" y="1057.0" font-size="11" font-weight="600" fill="#636B2F" text-anchor="middle" font-family="'Segoe UI', Inter, Arial, Helvetica, sans-serif" paint-order="stroke" stroke="#ffffff" stroke-width="4" stroke-linejoin="round">0..1</text>
+<text x="923.0" y="1007.0" font-size="11" font-weight="600" fill="#636B2F" text-anchor="middle" font-family="'Segoe UI', Inter, Arial, Helvetica, sans-serif" paint-order="stroke" stroke="#ffffff" stroke-width="4" stroke-linejoin="round">*</text>
+<text x="1080.5" y="1087.0" font-size="11" font-weight="400" fill="#52564A" text-anchor="middle" font-family="'Segoe UI', Inter, Arial, Helvetica, sans-serif" font-style="italic" paint-order="stroke" stroke="#ffffff" stroke-width="4" stroke-linejoin="round">interview_kit</text>
+<text x="1016.5" y="1081.0" font-size="11" font-weight="600" fill="#636B2F" text-anchor="middle" font-family="'Segoe UI', Inter, Arial, Helvetica, sans-serif" paint-order="stroke" stroke="#ffffff" stroke-width="4" stroke-linejoin="round">1</text>
+<text x="1010.5" y="1105.0" font-size="11" font-weight="600" fill="#636B2F" text-anchor="middle" font-family="'Segoe UI', Inter, Arial, Helvetica, sans-serif" paint-order="stroke" stroke="#ffffff" stroke-width="4" stroke-linejoin="round">0..1</text>
+<text x="270.0" y="826.0" font-size="11" font-weight="600" fill="#636B2F" text-anchor="middle" font-family="'Segoe UI', Inter, Arial, Helvetica, sans-serif" paint-order="stroke" stroke="#ffffff" stroke-width="4" stroke-linejoin="round">1</text>
+<text x="200.0" y="826.0" font-size="11" font-weight="600" fill="#636B2F" text-anchor="middle" font-family="'Segoe UI', Inter, Arial, Helvetica, sans-serif" paint-order="stroke" stroke="#ffffff" stroke-width="4" stroke-linejoin="round">*</text>
+<text x="270.0" y="962.0" font-size="11" font-weight="600" fill="#636B2F" text-anchor="middle" font-family="'Segoe UI', Inter, Arial, Helvetica, sans-serif" paint-order="stroke" stroke="#ffffff" stroke-width="4" stroke-linejoin="round">1</text>
+<text x="200.0" y="962.0" font-size="11" font-weight="600" fill="#636B2F" text-anchor="middle" font-family="'Segoe UI', Inter, Arial, Helvetica, sans-serif" paint-order="stroke" stroke="#ffffff" stroke-width="4" stroke-linejoin="round">*</text>
+<text x="318.0" y="1097.0" font-size="11" font-weight="600" fill="#636B2F" text-anchor="middle" font-family="'Segoe UI', Inter, Arial, Helvetica, sans-serif" paint-order="stroke" stroke="#ffffff" stroke-width="4" stroke-linejoin="round">1</text>
+<text x="200.0" y="1122.0" font-size="11" font-weight="600" fill="#636B2F" text-anchor="middle" font-family="'Segoe UI', Inter, Arial, Helvetica, sans-serif" paint-order="stroke" stroke="#ffffff" stroke-width="4" stroke-linejoin="round">*</text>
+<text x="30.0" y="38.0" font-size="22" font-weight="700" fill="#3D4127" text-anchor="start" font-family="'Segoe UI', Inter, Arial, Helvetica, sans-serif">AI Recruitment System — Class Diagram</text>
+<text x="30.0" y="58.0" font-size="12.5" font-weight="400" fill="#52564A" text-anchor="start" font-family="'Segoe UI', Inter, Arial, Helvetica, sans-serif">Django ORM domain model (users · companies · jobs · resumes) and AI / integration services</text>
+<rect x="751.1999999999999" y="14" width="682.8000000000001" height="46" rx="6" fill="#F8F9F1" stroke="#D3D6C4"/>
+<path d="M765.2,44.0 L799.2,44.0" fill="none" stroke="#52564A" stroke-width="1.4" stroke-linejoin="round" marker-start="url(#diamond)"/>
+<text x="805.2" y="48.0" font-size="11" font-weight="400" fill="#52564A" text-anchor="start" font-family="'Segoe UI', Inter, Arial, Helvetica, sans-serif">composition</text>
+<path d="M893.6,44.0 L927.6,44.0" fill="none" stroke="#52564A" stroke-width="1.4" stroke-linejoin="round" marker-start="url(#odiamond)"/>
+<text x="933.6" y="48.0" font-size="11" font-weight="400" fill="#52564A" text-anchor="start" font-family="'Segoe UI', Inter, Arial, Helvetica, sans-serif">aggregation</text>
+<path d="M1022.0,44.0 L1056.0,44.0" fill="none" stroke="#52564A" stroke-width="1.4" stroke-linejoin="round"/>
+<text x="1062.0" y="48.0" font-size="11" font-weight="400" fill="#52564A" text-anchor="start" font-family="'Segoe UI', Inter, Arial, Helvetica, sans-serif">association</text>
+<path d="M1150.4,44.0 L1184.4,44.0" fill="none" stroke="#52564A" stroke-width="1.4" stroke-linejoin="round" marker-end="url(#tri)"/>
+<text x="1190.4" y="48.0" font-size="11" font-weight="400" fill="#52564A" text-anchor="start" font-family="'Segoe UI', Inter, Arial, Helvetica, sans-serif">generalization</text>
+<path d="M1298.0,44.0 L1332.0,44.0" fill="none" stroke="#52564A" stroke-width="1.4" stroke-linejoin="round" stroke-dasharray="6 4" marker-end="url(#arrow)"/>
+<text x="1338.0" y="48.0" font-size="11" font-weight="400" fill="#52564A" text-anchor="start" font-family="'Segoe UI', Inter, Arial, Helvetica, sans-serif">dependency</text>
+<text x="765.2" y="29.0" font-size="10.5" font-weight="700" fill="#636B2F" text-anchor="start" font-family="'Segoe UI', Inter, Arial, Helvetica, sans-serif">Notation</text>
+</svg>
